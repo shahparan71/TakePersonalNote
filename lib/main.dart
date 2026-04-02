@@ -4,6 +4,7 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:take_personal_note/services/settings_provider.dart';
 import 'package:take_personal_note/services/task_provider.dart';
+import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/theme/app_theme.dart';
 
 import 'screens/lock_screen.dart';
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NoteProvider()..fetchNotes()),
         ChangeNotifierProvider(create: (_) => TaskProvider()..fetchTasks()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
+        ChangeNotifierProvider(create: (_) => TabProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {

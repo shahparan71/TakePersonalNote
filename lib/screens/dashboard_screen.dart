@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/models/task.dart';
 import 'package:take_personal_note/services/note_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:take_personal_note/services/tab_provider.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
@@ -11,46 +14,110 @@ import 'settings_screen.dart';
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 220,
             floating: false,
             pinned: true,
+            elevation: 0,
+            backgroundColor: const Color(0xFF54BF8F),
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text('Dashboard', 
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800)),
-              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
-              background: Stack(
+              expandedTitleScale: 1.1,
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 20, right: 20),
+              title: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.withOpacity(0.05), Colors.white],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                  Text(
+                    _getGreeting(),
+                    style: GoogleFonts.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    'Welcome back!',
+                    style: GoogleFonts.outfit(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFE4E3D1), Color(0xFFF8F6F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -30,
+                      top: 40,
+                      child: Icon(
+                        Icons.auto_awesome_mosaic_rounded,
+                        size: 200,
+                        color: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                    Positioned(
+                      left: 20,
+                      top: 60,
+                      child: Text(
+                        DateFormat('EEEE, MMMM d').format(now),
+                        style: GoogleFonts.outfit(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    right: -20,
-                    top: -20,
-                    child: Icon(Icons.dashboard_rounded, size: 120, color: Colors.blue.withOpacity(0.03)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.settings, color: Colors.black),
+                icon: const Icon(Icons.archive_outlined, color: Colors.black87, size: 20),
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  MaterialPageRoute(builder: (_) => const ArchiveScreen()),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.black87, size: 20),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TrashScreen()),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.settings_outlined, color: Colors.black87, size: 20),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
                 ),
               ),
             ],
@@ -59,22 +126,16 @@ class DashboardScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const Text(
-                  'Your Overview',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  'Overview',
+                  style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 const SizedBox(height: 16),
                 _buildStatsGrid(context),
                 const SizedBox(height: 32),
-                const Text(
-                  'Quick Access',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                _buildQuickLinks(context),
-                const SizedBox(height: 32),
-                const Text(
+                Text(
                   'Upcoming Tasks',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
+                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
                 const SizedBox(height: 12),
                 _buildUpcomingTasks(context),
@@ -87,8 +148,8 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildStatsGrid(BuildContext context) {
-    return Consumer2<NoteProvider, TaskProvider>(
-      builder: (context, noteProvider, taskProvider, child) {
+    return Consumer3<NoteProvider, TaskProvider, TabProvider>(
+      builder: (context, noteProvider, taskProvider, tabProvider, child) {
         return GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
@@ -97,69 +158,75 @@ class DashboardScreen extends StatelessWidget {
           mainAxisSpacing: 16,
           childAspectRatio: 1.0,
           children: [
-            _buildStatCard('Total Notes', noteProvider.notes.length.toString(), Colors.blue),
-            _buildStatCard('Pending Tasks', taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(), Colors.orange),
-            _buildStatCard('Pinned Notes', noteProvider.notes.where((n) => n.isPinned).length.toString(), Colors.purple),
-            _buildStatCard('Due Today', '0', Colors.red),
+            InkWell(
+              onTap: () => tabProvider.setIndex(1), // Notes tab
+              child: _buildStatCard('Total Notes', noteProvider.notes.length.toString(), Colors.indigo, Icons.description_outlined),
+            ),
+            InkWell(
+              onTap: () => tabProvider.setIndex(2), // Tasks tab
+              child: _buildStatCard('Pending Tasks', taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(), Colors.orange, Icons.assignment_late_outlined),
+            ),
+            _buildStatCard('Pinned Notes', noteProvider.notes.where((n) => n.isPinned).length.toString(), Colors.pink, Icons.push_pin_outlined),
+            _buildStatCard('Completed', taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(), Colors.green, Icons.task_alt_outlined),
           ],
         );
       },
     );
   }
 
-  Widget _buildQuickLinks(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: ListTile(
-            leading: const Icon(Icons.archive_outlined),
-            title: const Text('Archive'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListTile(
-            leading: const Icon(Icons.delete_outline),
-            title: const Text('Trash'),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const TrashScreen()),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildUpcomingTasks(BuildContext context) {
+    final now = DateTime.now();
     return Consumer<TaskProvider>(
       builder: (context, provider, child) {
         final upcoming = provider.tasks
-            .where((t) => t.status != TaskStatus.completed && t.reminderTime != null)
+            .where((t) => t.status != TaskStatus.completed && t.reminderTime != null && t.reminderTime!.isAfter(now))
             .toList()
           ..sort((a, b) => a.reminderTime!.compareTo(b.reminderTime!));
 
         if (upcoming.isEmpty) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.withOpacity(0.1)),
+            ),
+            child: const Center(
               child: Text('No upcoming reminders', style: TextStyle(color: Colors.grey)),
             ),
           );
         }
 
         return Column(
-          children: upcoming.take(3).map((task) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
+          children: upcoming.take(3).map((task) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
             child: ListTile(
-              title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w500)),
-              subtitle: Text(task.reminderTime != null 
-                ? 'Remind at ${task.reminderTime!.hour}:${task.reminderTime!.minute.toString().padLeft(2, '0')}' 
-                : ''),
-              trailing: Icon(Icons.chevron_right, size: 16, color: Colors.grey[400]),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.alarm, color: Colors.blue, size: 20),
+              ),
+              title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16)),
+              subtitle: Text(
+                task.reminderTime != null 
+                  ? DateFormat('MMM d, h:mm a').format(task.reminderTime!)
+                  : '',
+                style: const TextStyle(fontSize: 12),
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
             ),
           )).toList(),
         );
@@ -167,36 +234,40 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color) {
+  Widget _buildStatCard(String label, String value, Color color, IconData icon) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.15)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.analytics_outlined, color: color, size: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              Icon(Icons.more_horiz, color: Colors.grey[300], size: 18),
+            ],
           ),
           const Spacer(),
-          Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color, letterSpacing: -1)),
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+          Text(value, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: -1)),
+          Text(label, style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
         ],
       ),
     );

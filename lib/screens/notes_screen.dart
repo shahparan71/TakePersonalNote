@@ -162,6 +162,7 @@ class _NotesScreenState extends State<NotesScreen> {
   void _showSortDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -182,6 +183,7 @@ class _NotesScreenState extends State<NotesScreen> {
     final provider = Provider.of<NoteProvider>(context, listen: false);
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

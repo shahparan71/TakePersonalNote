@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
+import 'package:take_personal_note/services/tab_provider.dart';
 import 'dashboard_screen.dart';
 import 'notes_screen.dart';
 import 'tasks_screen.dart';
@@ -18,7 +19,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
   late StreamSubscription _intentDataStreamSubscription;
 
   @override
@@ -96,17 +96,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tabProvider = Provider.of<TabProvider>(context);
+
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex,
+        index: tabProvider.selectedIndex,
         children: _screens,
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: tabProvider.selectedIndex,
         onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          tabProvider.setIndex(index);
         },
         destinations: const [
           NavigationDestination(

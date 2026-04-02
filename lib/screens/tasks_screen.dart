@@ -50,11 +50,20 @@ class _TasksScreenState extends State<TasksScreen> {
           if (provider.tasks.isEmpty) {
             return const Center(child: Text('No tasks yet. Create one!'));
           }
+
+          // Sort tasks: Incomplete (pending/inProgress) first, then Completed.
+          final sortedTasks = List<Task>.from(provider.tasks)
+            ..sort((a, b) {
+              if (a.status == TaskStatus.completed && b.status != TaskStatus.completed) return 1;
+              if (a.status != TaskStatus.completed && b.status == TaskStatus.completed) return -1;
+              return b.createdAt.compareTo(a.createdAt); // Secondary sort by date
+            });
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: provider.tasks.length,
+            itemCount: sortedTasks.length,
             itemBuilder: (context, index) {
-              final task = provider.tasks[index];
+              final task = sortedTasks[index];
               return _buildTaskTile(context, task);
             },
           );
@@ -90,11 +99,21 @@ class _TasksScreenState extends State<TasksScreen> {
                 padding: const EdgeInsets.only(top: 4.0),
                 child: Row(
                   children: [
-                    const Icon(Icons.alarm, size: 14, color: Colors.blue),
+                    Icon(
+                      Icons.alarm,
+                      size: 14,
+                      color: task.reminderTime!.isBefore(DateTime.now()) ? Colors.red : Colors.blue,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      'Reminder: ${DateFormat('MMM d, h:mm a').format(task.reminderTime!)}',
-                      style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w500),
+                      task.reminderTime!.isBefore(DateTime.now())
+                          ? 'Expired'
+                          : 'Reminder: ${DateFormat('MMM d, h:mm a').format(task.reminderTime!)}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: task.reminderTime!.isBefore(DateTime.now()) ? Colors.red : Colors.blue,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
