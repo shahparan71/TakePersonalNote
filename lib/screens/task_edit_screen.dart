@@ -77,6 +77,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             body: generatedTitle,
             scheduledDate: _reminderTime!,
             payload: 'task_$id',
+            recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
           );
           if (mounted) {
             _showSchedulingFeedback(success);
@@ -92,6 +93,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             body: generatedTitle,
             scheduledDate: _reminderTime!,
             payload: 'task_${widget.task!.id!}',
+            recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
           );
           if (mounted) {
             _showSchedulingFeedback(success);
@@ -176,14 +178,14 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
               ),
               if (_reminderTime != null) ...[
                 const SizedBox(width: 8),
-                _buildRecurrenceToggle(),
+                _buildRecurrenceRow(),
               ],
             ],
           ),
-          if (_isRecurring)
+          if (_reminderTime != null && _isRecurring)
             Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: _buildRecurrenceIntervalSelector(),
+              padding: const EdgeInsets.only(top: 8, bottom: 16),
+              child: _buildNextReminderInfo(),
             ),
           const Divider(),
           const SizedBox(height: 16),
@@ -193,13 +195,46 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
   }
 
+  Widget _buildRecurrenceRow() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildRecurrenceToggle(),
+        if (_isRecurring) ...[
+          const SizedBox(width: 12),
+          _buildRecurrenceIntervalSelector(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNextReminderInfo() {
+    final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
+    if (nextDate == null) return const SizedBox.shrink();
+    
+    return Row(
+      children: [
+        const Icon(Icons.update, size: 14, color: Colors.indigo),
+        const SizedBox(width: 6),
+        Text(
+          'Next occurrence: ${AppDateUtils.formatReminder(nextDate)}',
+          style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
   Widget _buildRecurrenceToggle() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         const Text('Repeat', style: TextStyle(fontSize: 10, color: Colors.grey)),
-        Switch.adaptive(
-          value: _isRecurring,
-          onChanged: (val) => setState(() => _isRecurring = val),
+        SizedBox(
+          height: 32,
+          child: Switch.adaptive(
+            value: _isRecurring,
+            onChanged: (val) => setState(() => _isRecurring = val),
+          ),
         ),
       ],
     );

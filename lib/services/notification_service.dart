@@ -7,6 +7,7 @@ import 'dart:io';
 import '../main.dart';
 import '../screens/note_edit_screen.dart';
 import '../screens/task_edit_screen.dart';
+import '../models/recurring_interval.dart';
 import 'database_service.dart';
 
 class NotificationService {
@@ -83,6 +84,7 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
     String? payload,
+    RecurringInterval? recurrence,
   }) async {
     if (scheduledDate.isBefore(DateTime.now())) {
       // Don't schedule notifications in the past
@@ -114,6 +116,13 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
+        matchDateTimeComponents: recurrence == null || recurrence == RecurringInterval.none
+            ? null
+            : recurrence == RecurringInterval.daily
+                ? DateTimeComponents.time
+                : recurrence == RecurringInterval.weekly
+                    ? DateTimeComponents.dayOfWeekAndTime
+                    : DateTimeComponents.dayOfMonthAndTime,
       );
       return true;
     } catch (e) {
