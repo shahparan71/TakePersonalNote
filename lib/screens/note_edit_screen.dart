@@ -9,7 +9,8 @@ import 'package:intl/intl.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
-  const NoteEditScreen({super.key, this.note});
+  final String? initialText;
+  const NoteEditScreen({super.key, this.note, this.initialText});
 
   @override
   State<NoteEditScreen> createState() => _NoteEditScreenState();
@@ -29,7 +30,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
-    _contentController = TextEditingController(text: widget.note?.content ?? '');
+    _contentController = TextEditingController(text: widget.note?.content ?? widget.initialText ?? '');
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
     _isPinned = widget.note?.isPinned ?? false;
     _reminderTime = widget.note?.reminderTime;
@@ -143,7 +144,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(_selectedColor),
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
@@ -162,57 +166,80 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: 'Title',
-                border: InputBorder.none,
-                hintStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            _buildRecurrencePicker(),
-            _buildFormattingToolbar(),
-            const Divider(),
-            IconButton(
-              icon: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active),
-              onPressed: _selectReminder,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _reminderTime != null
-                  ? Text(
-                      'Reminder: ${DateFormat('MMM d, h:mm a').format(_reminderTime!)}',
-                      style: const TextStyle(fontSize: 12, color: Colors.blue),
-                    )
-                  : const SizedBox(),
-            ),
-            Checkbox(
-              value: _isPinned,
-              onChanged: (val) => setState(() => _isPinned = val!),
-            ),
-            const Text('Pin'),
-            IconButton(
-              icon: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields),
-              onPressed: () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text),
-            ),
-            const Text('Type'),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                maxLines: null,
-                decoration: InputDecoration(
-                  hintText: _type == NoteType.text ? 'Start typing...' : '- [ ] New item',
-                  border: InputBorder.none,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              children: [
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    hintText: 'Title',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-              ),
+                _buildOptionsToolbar(),
+                const Divider(height: 1),
+                _buildFormattingToolbar(),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _contentController,
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    hintText: _type == NoteType.text ? 'Start typing...' : '- [ ] New item',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionsToolbar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          ActionChip(
+            avatar: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active, size: 16),
+            label: Text(_reminderTime == null ? 'Set Reminder' : DateFormat('MMM d, h:mm a').format(_reminderTime!)),
+            onPressed: _selectReminder,
+          ),
+          ActionChip(
+            avatar: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields, size: 16),
+            label: Text(_type == NoteType.text ? 'Text Mode' : 'Checklist'),
+            onPressed: () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text),
+          ),
+          if (_reminderTime != null)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Repeat', style: TextStyle(fontSize: 12)),
+                Switch.adaptive(
+                  value: _isRecurring,
+                  onChanged: (val) => setState(() => _isRecurring = val),
+                ),
+                if (_isRecurring)
+                  DropdownButton<RecurringInterval>(
+                    value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
+                    style: const TextStyle(fontSize: 12, color: Colors.blue),
+                    items: RecurringInterval.values
+                        .where((v) => v != RecurringInterval.none)
+                        .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase())))
+                        .toList(),
+                    onChanged: (val) => setState(() => _recurringInterval = val!),
+                  ),
+              ],
+            ),
+        ],
       ),
     );
   }

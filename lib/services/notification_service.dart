@@ -48,29 +48,61 @@ class NotificationService {
     }
   }
 
-  Future<void> scheduleNotification({
+  Future<bool> scheduleNotification({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledDate,
   }) async {
-    await _notificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'reminders_channel',
-          'Reminders',
-          importance: Importance.max,
-          priority: Priority.high,
+    if (scheduledDate.isBefore(DateTime.now())) {
+      // Don't schedule notifications in the past
+      return false;
+    }
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledDate, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reminders_channel',
+            'Reminders',
+            channelDescription: 'Task reminders',
+            importance: Importance.max,
+            priority: Priority.high,
+            ticker: 'ticker',
+            showWhen: true,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> showTestNotification({required String title, required String body}) async {
+    final tzName = tz.local.name;
+    final fullBody = '$body\nDetected Timezone: $tzName';
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'test_channel',
+      'Test Notifications',
+      channelDescription: 'Used for testing initial setup',
+      importance: Importance.max,
+      priority: Priority.high,
     );
+    const NotificationDetails details = NotificationDetails(android: androidDetails, iOS: DarwinNotificationDetails());
+    await _notificationsPlugin.show(999, title, fullBody, details);
   }
 
   Future<void> cancelNotification(int id) async {

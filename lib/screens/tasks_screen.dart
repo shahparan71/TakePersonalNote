@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 
 import '../models/task.dart';
@@ -60,6 +61,7 @@ class _TasksScreenState extends State<TasksScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'tasks_fab',
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const TaskEditScreen()),
@@ -78,7 +80,27 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
         onLongPress: () => _showQuickActions(context, task),
         title: Text(task.title),
-        subtitle: Text(task.description, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (task.description.isNotEmpty)
+              Text(task.description, maxLines: 1, overflow: TextOverflow.ellipsis),
+            if (task.reminderTime != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.alarm, size: 14, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Reminder: ${DateFormat('MMM d, h:mm a').format(task.reminderTime!)}',
+                      style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
         trailing: _buildPriorityChip(task.priority),
         leading: Checkbox(
           value: task.status == TaskStatus.completed,
@@ -115,34 +137,36 @@ class _TasksScreenState extends State<TasksScreen> {
   void _showFilterDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const ListTile(title: Text('Filter by Priority', style: TextStyle(fontWeight: FontWeight.bold))),
-          ...TaskPriority.values.map((p) => ListTile(
-            title: Text(p.name.toUpperCase()),
-            onTap: () {
-              Provider.of<TaskProvider>(context, listen: false).fetchTasks(priority: p);
-              Navigator.pop(context);
-            },
-          )),
-          const Divider(),
-          const ListTile(title: Text('Filter by Status', style: TextStyle(fontWeight: FontWeight.bold))),
-          ...TaskStatus.values.map((s) => ListTile(
-            title: Text(s.name.toUpperCase()),
-            onTap: () {
-              Provider.of<TaskProvider>(context, listen: false).fetchTasks(status: s);
-              Navigator.pop(context);
-            },
-          )),
-          ListTile(
-            title: const Text('Clear Filters', style: TextStyle(color: Colors.blue)),
-            onTap: () {
-              Provider.of<TaskProvider>(context, listen: false).fetchTasks();
-              Navigator.pop(context);
-            },
-          ),
-        ],
+      builder: (context) => SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(title: Text('Filter by Priority', style: TextStyle(fontWeight: FontWeight.bold))),
+            ...TaskPriority.values.map((p) => ListTile(
+              title: Text(p.name.toUpperCase()),
+              onTap: () {
+                Provider.of<TaskProvider>(context, listen: false).fetchTasks(priority: p);
+                Navigator.pop(context);
+              },
+            )),
+            const Divider(),
+            const ListTile(title: Text('Filter by Status', style: TextStyle(fontWeight: FontWeight.bold))),
+            ...TaskStatus.values.map((s) => ListTile(
+              title: Text(s.name.toUpperCase()),
+              onTap: () {
+                Provider.of<TaskProvider>(context, listen: false).fetchTasks(status: s);
+                Navigator.pop(context);
+              },
+            )),
+            ListTile(
+              title: const Text('Clear Filters', style: TextStyle(color: Colors.blue)),
+              onTap: () {
+                Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

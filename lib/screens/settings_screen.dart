@@ -6,6 +6,7 @@ import '../services/note_provider.dart';
 import '../services/task_provider.dart';
 import '../services/settings_provider.dart';
 import '../services/export_service.dart';
+import '../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -81,6 +82,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DropdownMenuItem(value: 'dark', child: Text('Dark')),
                   ],
                 ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Test Notification'),
+                subtitle: const Text('Check if reminders are working'),
+                onTap: () async {
+                  await NotificationService().showTestNotification(
+                    title: 'Test Reminder',
+                    body: 'If you see this, notifications are correctly configured!',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Test notification sent!')),
+                    );
+                  }
+                },
               ),
               const Divider(),
               const _SettingsSection(title: 'Security'),

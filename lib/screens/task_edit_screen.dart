@@ -8,7 +8,8 @@ import '../services/notification_service.dart';
 
 class TaskEditScreen extends StatefulWidget {
   final Task? task;
-  const TaskEditScreen({super.key, this.task});
+  final String? initialText;
+  const TaskEditScreen({super.key, this.task, this.initialText});
 
   @override
   State<TaskEditScreen> createState() => _TaskEditScreenState();
@@ -26,7 +27,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task?.title ?? '');
-    _descController = TextEditingController(text: widget.task?.description ?? '');
+    _descController = TextEditingController(text: widget.task?.description ?? widget.initialText ?? '');
     _priority = widget.task?.priority ?? TaskPriority.low;
     _reminderTime = widget.task?.reminderTime;
     _isRecurring = widget.task?.isRecurring ?? false;
@@ -64,29 +65,49 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
 
     if (widget.task == null) {
-      provider.addTask(task).then((id) {
+      provider.addTask(task).then((id) async {
         if (_reminderTime != null) {
-          NotificationService().scheduleNotification(
-            id: (id ?? 0) + 10000, // Offset to avoid conflict with note IDs
+          final success = await NotificationService().scheduleNotification(
+            id: (id ?? 0) + 10000,
             title: 'Task Reminder',
             body: _titleController.text,
             scheduledDate: _reminderTime!,
           );
+          if (mounted) {
+            _showSchedulingFeedback(success);
+          }
         }
       });
     } else {
-      provider.updateTask(task).then((_) {
+      provider.updateTask(task).then((_) async {
         if (_reminderTime != null) {
-          NotificationService().scheduleNotification(
+          final success = await NotificationService().scheduleNotification(
             id: widget.task!.id! + 10000,
             title: 'Task Reminder',
             body: _titleController.text,
             scheduledDate: _reminderTime!,
           );
+          if (mounted) {
+            _showSchedulingFeedback(success);
+          }
         }
       });
     }
     Navigator.pop(context);
+  }
+
+  void _showSchedulingFeedback(bool success) {
+    String message;
+    if (success) {
+      message = '✅ Reminder scheduled for ${DateFormat('MMM d, h:mm a').format(_reminderTime!)}';
+    } else {
+      if (_reminderTime!.isBefore(DateTime.now())) {
+        message = '⚠️ Reminder skipped: Time is in the past';
+      } else {
+        message = '❌ Failed to schedule reminder (Timezone error)';
+      }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

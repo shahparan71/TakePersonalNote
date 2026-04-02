@@ -65,6 +65,7 @@ class _NotesScreenState extends State<NotesScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'notes_fab',
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const NoteEditScreen()),
