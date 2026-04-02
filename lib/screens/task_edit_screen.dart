@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:take_personal_note/models/recurring_interval.dart';
 import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
@@ -20,6 +21,8 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   DateTime? _startTime;
   DateTime? _expiryTime;
   DateTime? _reminderTime;
+  bool _isRecurring = false;
+  RecurringInterval _recurringInterval = RecurringInterval.none;
 
   @override
   void initState() {
@@ -29,6 +32,9 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     _priority = widget.task?.priority ?? TaskPriority.low;
     _startTime = widget.task?.startTime;
     _expiryTime = widget.task?.expiryTime;
+    _reminderTime = widget.task?.reminderTime;
+    _isRecurring = widget.task?.isRecurring ?? false;
+    _recurringInterval = widget.task?.recurringInterval ?? RecurringInterval.none;
     // Note: Task model currently doesn't have a specific reminderTime field separate from startTime
     // but the FRD mentions reminders as a feature of tasks. I'll use startTime as reminder time for now
     // or add a separate field if needed. For now, I'll use a local state.
@@ -57,6 +63,9 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       priority: _priority,
       startTime: _startTime,
       expiryTime: _expiryTime,
+      reminderTime: _reminderTime,
+      isRecurring: _isRecurring,
+      recurringInterval: _recurringInterval,
       updatedAt: now,
     );
 
@@ -114,6 +123,35 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           _buildDateTimePicker('Start Time', _startTime, (val) => setState(() => _startTime = val)),
           _buildDateTimePicker('Expiry Time', _expiryTime, (val) => setState(() => _expiryTime = val)),
           _buildDateTimePicker('Reminder Time', _reminderTime, (val) => setState(() => _reminderTime = val)),
+          if (_reminderTime != null)
+            _buildRecurrenceSelector(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecurrenceSelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          const Text('Repeat Task'),
+          Switch(
+            value: _isRecurring,
+            onChanged: (val) => setState(() => _isRecurring = val),
+          ),
+          if (_isRecurring)
+            Expanded(
+              child: DropdownButton<RecurringInterval>(
+                isExpanded: true,
+                value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
+                items: RecurringInterval.values
+                    .where((v) => v != RecurringInterval.none)
+                    .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase())))
+                    .toList(),
+                onChanged: (val) => setState(() => _recurringInterval = val!),
+              ),
+            ),
         ],
       ),
     );

@@ -1,3 +1,5 @@
+import 'recurring_interval.dart';
+
 enum NoteType { text, checklist, voice, image }
 
 class Note {
@@ -11,6 +13,8 @@ class Note {
   final bool isArchived;
   final bool isTrashed;
   final DateTime? reminderTime;
+  final bool isRecurring;
+  final RecurringInterval recurringInterval; 
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -26,6 +30,8 @@ class Note {
     this.isArchived = false,
     this.isTrashed = false,
     this.reminderTime,
+    this.isRecurring = false,
+    this.recurringInterval = RecurringInterval.none,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -42,6 +48,8 @@ class Note {
     bool? isArchived,
     bool? isTrashed,
     DateTime? reminderTime,
+    bool? isRecurring,
+    RecurringInterval? recurringInterval,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -57,6 +65,8 @@ class Note {
       isArchived: isArchived ?? this.isArchived,
       isTrashed: isTrashed ?? this.isTrashed,
       reminderTime: reminderTime ?? this.reminderTime,
+      isRecurring: isRecurring ?? this.isRecurring,
+      recurringInterval: recurringInterval ?? this.recurringInterval,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -75,6 +85,8 @@ class Note {
       'isArchived': isArchived ? 1 : 0,
       'isTrashed': isTrashed ? 1 : 0,
       'reminderTime': reminderTime?.toIso8601String(),
+      'isRecurring': isRecurring ? 1 : 0,
+      'recurringInterval': recurringInterval.index,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -93,6 +105,8 @@ class Note {
       isArchived: map['isArchived'] == 1,
       isTrashed: map['isTrashed'] == 1,
       reminderTime: map['reminderTime'] != null ? DateTime.parse(map['reminderTime']) : null,
+      isRecurring: map['isRecurring'] == 1,
+      recurringInterval: RecurringInterval.values[map['recurringInterval']],
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
       deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/models/note.dart';
+import 'package:take_personal_note/models/task.dart';
+import 'package:take_personal_note/models/recurring_interval.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +21,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
   DateTime? _reminderTime;
+  bool _isRecurring = false;
+  RecurringInterval _recurringInterval = RecurringInterval.none;
   NoteType _type = NoteType.text;
 
   @override
@@ -29,6 +33,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
     _isPinned = widget.note?.isPinned ?? false;
     _reminderTime = widget.note?.reminderTime;
+    _isRecurring = widget.note?.isRecurring ?? false;
+    _recurringInterval = (widget.note?.recurringInterval as RecurringInterval?) ?? RecurringInterval.none;
     _type = widget.note?.type ?? NoteType.text;
   }
 
@@ -52,6 +58,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         color: _selectedColor,
         isPinned: _isPinned,
         type: _type,
+        reminderTime: _reminderTime,
+        isRecurring: _isRecurring,
+        recurringInterval: _recurringInterval,
         createdAt: now,
         updatedAt: now,
       );
@@ -73,6 +82,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         isPinned: _isPinned,
         type: _type,
         reminderTime: _reminderTime,
+        isRecurring: _isRecurring,
+        recurringInterval: _recurringInterval,
         updatedAt: now,
       );
       provider.updateNote(updatedNote).then((_) {
@@ -116,6 +127,19 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
+  void _formatText(String prefix, String suffix) {
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    if (selection.isValid) {
+      final selectedText = selection.textInside(text);
+      final newText = text.replaceRange(selection.start, selection.end, '$prefix$selectedText$suffix');
+      _contentController.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: selection.start + prefix.length + selectedText.length + suffix.length),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -151,6 +175,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               ),
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+            _buildRecurrencePicker(),
+            _buildFormattingToolbar(),
             const Divider(),
             IconButton(
               icon: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active),
@@ -187,6 +213,71 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildRecurrencePicker() {
+    if (_reminderTime == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          const Icon(Icons.repeat, size: 20, color: Colors.blue),
+          const SizedBox(width: 8),
+          const Text('Repeat: '),
+          Switch(
+            value: _isRecurring,
+            onChanged: (val) => setState(() => _isRecurring = val),
+          ),
+          if (_isRecurring)
+            DropdownButton<RecurringInterval>(
+              value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
+              items: RecurringInterval.values
+                  .where((v) => v != RecurringInterval.none)
+                  .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase())))
+                  .toList(),
+              onChanged: (val) => setState(() => _recurringInterval = val!),
+            ),
+          const Spacer(),
+          Text(DateFormat('MMM d, h:mm a').format(_reminderTime!)),
+          IconButton(icon: const Icon(Icons.edit_calendar, size: 20), onPressed: _selectReminder),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormattingToolbar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.format_bold, size: 20),
+            onPressed: () => _formatText('**', '**'),
+            tooltip: 'Bold',
+          ),
+          IconButton(
+            icon: const Icon(Icons.format_italic, size: 20),
+            onPressed: () => _formatText('_', '_'),
+            tooltip: 'Italic',
+          ),
+          IconButton(
+            icon: const Icon(Icons.format_list_bulleted, size: 20),
+            onPressed: () => _formatText('\n- ', ''),
+            tooltip: 'Bullet List',
+          ),
+          const Spacer(),
+          IconButton(
+            icon: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields, size: 20),
+            onPressed: () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text),
+            tooltip: 'Toggle Type',
+          ),
+        ],
       ),
     );
   }

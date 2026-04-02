@@ -1,6 +1,7 @@
+import 'recurring_interval.dart';
+
 enum TaskPriority { low, medium, high }
 enum TaskStatus { pending, inProgress, completed }
-enum RecurringInterval { none, daily, weekly, monthly }
 
 class Task {
   final int? id;
@@ -8,6 +9,7 @@ class Task {
   final String description;
   final DateTime? startTime;
   final DateTime? expiryTime;
+  final DateTime? reminderTime;
   final TaskPriority priority;
   final TaskStatus status;
   final bool isRecurring;
@@ -21,6 +23,7 @@ class Task {
     this.description = '',
     this.startTime,
     this.expiryTime,
+    this.reminderTime,
     this.priority = TaskPriority.low,
     this.status = TaskStatus.pending,
     this.isRecurring = false,
@@ -35,6 +38,7 @@ class Task {
     String? description,
     DateTime? startTime,
     DateTime? expiryTime,
+    DateTime? reminderTime,
     TaskPriority? priority,
     TaskStatus? status,
     bool? isRecurring,
@@ -48,6 +52,7 @@ class Task {
       description: description ?? this.description,
       startTime: startTime ?? this.startTime,
       expiryTime: expiryTime ?? this.expiryTime,
+      reminderTime: reminderTime ?? this.reminderTime,
       priority: priority ?? this.priority,
       status: status ?? this.status,
       isRecurring: isRecurring ?? this.isRecurring,
@@ -64,6 +69,7 @@ class Task {
       'description': description,
       'startTime': startTime?.toIso8601String(),
       'expiryTime': expiryTime?.toIso8601String(),
+      'reminderTime': reminderTime?.toIso8601String(),
       'priority': priority.index,
       'status': status.index,
       'isRecurring': isRecurring ? 1 : 0,
@@ -80,6 +86,7 @@ class Task {
       description: map['description'] ?? '',
       startTime: map['startTime'] != null ? DateTime.parse(map['startTime']) : null,
       expiryTime: map['expiryTime'] != null ? DateTime.parse(map['expiryTime']) : null,
+      reminderTime: map['reminderTime'] != null ? DateTime.parse(map['reminderTime']) : null,
       priority: TaskPriority.values[map['priority']],
       status: TaskStatus.values[map['status']],
       isRecurring: map['isRecurring'] == 1,

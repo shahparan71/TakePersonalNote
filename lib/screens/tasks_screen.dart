@@ -27,13 +27,21 @@ class _TasksScreenState extends State<TasksScreen> {
       appBar: AppBar(
         title: TextField(
           controller: _searchController,
-          decoration: const InputDecoration(hintText: 'Search tasks...', border: InputBorder.none),
+          decoration: const InputDecoration(
+            hintText: 'Search tasks...',
+            border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, size: 20),
+          ),
           onChanged: (val) {
             Provider.of<TaskProvider>(context, listen: false).fetchTasks(query: val);
           },
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () => _showFilterDialog(context),
+            tooltip: 'Filter Tasks',
+          ),
         ],
       ),
       body: Consumer<TaskProvider>(
@@ -68,6 +76,7 @@ class _TasksScreenState extends State<TasksScreen> {
           context,
           MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
         ),
+        onLongPress: () => _showQuickActions(context, task),
         title: Text(task.title),
         subtitle: Text(task.description, maxLines: 1, overflow: TextOverflow.ellipsis),
         trailing: _buildPriorityChip(task.priority),
@@ -87,14 +96,74 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildPriorityChip(TaskPriority priority) {
     Color color;
     switch (priority) {
-      case TaskPriority.low: color = Colors.green; break;
-      case TaskPriority.medium: color = Colors.orange; break;
-      case TaskPriority.high: color = Colors.red; break;
+      case TaskPriority.low:
+        color = Colors.green;
+        break;
+      case TaskPriority.medium:
+        color = Colors.orange;
+        break;
+      case TaskPriority.high:
+        color = Colors.red;
+        break;
     }
     return Chip(
       label: Text(priority.name.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.white)),
       backgroundColor: color,
       padding: EdgeInsets.zero,
+    );
+  }
+  void _showFilterDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ListTile(title: Text('Filter by Priority', style: TextStyle(fontWeight: FontWeight.bold))),
+          ...TaskPriority.values.map((p) => ListTile(
+            title: Text(p.name.toUpperCase()),
+            onTap: () {
+              Provider.of<TaskProvider>(context, listen: false).fetchTasks(priority: p);
+              Navigator.pop(context);
+            },
+          )),
+          const Divider(),
+          const ListTile(title: Text('Filter by Status', style: TextStyle(fontWeight: FontWeight.bold))),
+          ...TaskStatus.values.map((s) => ListTile(
+            title: Text(s.name.toUpperCase()),
+            onTap: () {
+              Provider.of<TaskProvider>(context, listen: false).fetchTasks(status: s);
+              Navigator.pop(context);
+            },
+          )),
+          ListTile(
+            title: const Text('Clear Filters', style: TextStyle(color: Colors.blue)),
+            onTap: () {
+              Provider.of<TaskProvider>(context, listen: false).fetchTasks();
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQuickActions(BuildContext context, Task task) {
+    final provider = Provider.of<TaskProvider>(context, listen: false);
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: Colors.red),
+            title: const Text('Delete Task', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              provider.deleteTask(task.id!);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
     );
   }
 }

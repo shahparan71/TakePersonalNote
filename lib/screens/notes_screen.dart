@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/note_provider.dart';
 import '../models/note.dart';
+import '../models/recurring_interval.dart';
 import 'note_edit_screen.dart';
 
 class NotesScreen extends StatefulWidget {
@@ -26,13 +27,21 @@ class _NotesScreenState extends State<NotesScreen> {
       appBar: AppBar(
         title: TextField(
           controller: _searchController,
-          decoration: const InputDecoration(hintText: 'Search notes...', border: InputBorder.none),
+          decoration: const InputDecoration(
+            hintText: 'Search notes...',
+            border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, size: 20),
+          ),
           onChanged: (val) {
             Provider.of<NoteProvider>(context, listen: false).fetchNotes(query: val);
           },
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.sort), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.swap_vert),
+            onPressed: () => _showSortDialog(context),
+            tooltip: 'Sort Notes',
+          ),
         ],
       ),
       body: Consumer<NoteProvider>(
@@ -81,13 +90,15 @@ class _NotesScreenState extends State<NotesScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
-        ),
+        onTap: () =>
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
+            ),
+        onLongPress: () => _showQuickActions(context, note),
         child: Stack(
           children: [
-            PositionValue(
+            Positioned(
               left: 0, top: 20, bottom: 20,
               child: Container(
                 width: 4,
@@ -127,7 +138,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   ),
                   if (note.reminderTime != null)
                     Padding(
-                      padding: const EdgeInsets.top(8.0),
+                      padding: const EdgeInsets.only(top: 8.0),
                       child: Row(
                         children: [
                           const Icon(Icons.access_time, size: 12, color: Colors.orange),
@@ -144,6 +155,60 @@ class _NotesScreenState extends State<NotesScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+  void _showSortDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(title: const Text('Sort by Date'), onTap: () => _sort('updatedAt DESC')),
+          ListTile(title: const Text('Sort by Title'), onTap: () => _sort('title ASC')),
+          ListTile(title: const Text('Sort by Color'), onTap: () => _sort('color ASC')),
+        ],
+      ),
+    );
+  }
+
+  void _sort(String criteria) {
+    Provider.of<NoteProvider>(context, listen: false).fetchNotes(orderBy: criteria);
+    Navigator.pop(context);
+  }
+
+  void _showQuickActions(BuildContext context, Note note) {
+    final provider = Provider.of<NoteProvider>(context, listen: false);
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(note.isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+            title: Text(note.isPinned ? 'Unpin' : 'Pin'),
+            onTap: () {
+              provider.updateNote(note.copyWith(isPinned: !note.isPinned));
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.archive_outlined),
+            title: const Text('Archive'),
+            onTap: () {
+              provider.updateNote(note.copyWith(isArchived: true));
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: Colors.red),
+            title: const Text('Delete', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              provider.updateNote(note.copyWith(isTrashed: true, deletedAt: DateTime.now()));
+              Navigator.pop(context);
+            },
+          ),
+        ],
       ),
     );
   }

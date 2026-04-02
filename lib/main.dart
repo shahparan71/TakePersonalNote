@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
+import 'package:take_personal_note/services/settings_provider.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/theme/app_theme.dart';
 
@@ -24,25 +25,19 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => NoteProvider()..fetchNotes()),
         ChangeNotifierProvider(create: (_) => TaskProvider()..fetchTasks()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
       ],
-      child: MaterialApp(
-        title: 'Personal Notes & Tasks',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: FutureBuilder<bool>(
-          future: PreferenceService().isAppLockEnabled(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(body: Center(child: CircularProgressIndicator()));
-            }
-            if (snapshot.data == true) {
-              return const LockScreen();
-            }
-            return const HomeScreen();
-          },
-        ),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settings, child) {
+          return MaterialApp(
+            title: 'Personal Notes & Tasks',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: settings.themeMode,
+            home: settings.isAppLockEnabled ? const LockScreen() : const HomeScreen(),
+          );
+        },
       ),
     );
   }

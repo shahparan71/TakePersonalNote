@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:take_personal_note/services/note_provider.dart';
 import 'dashboard_screen.dart';
 import 'notes_screen.dart';
 import 'tasks_screen.dart';
@@ -13,6 +15,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      Provider.of<NoteProvider>(context, listen: false).cleanOldTrash();
+    });
+  }
 
   final List<Widget> _screens = [
     const DashboardScreen(),

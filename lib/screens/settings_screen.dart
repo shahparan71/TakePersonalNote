@@ -4,7 +4,8 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import '../services/note_provider.dart';
 import '../services/task_provider.dart';
-import '../services/preference_service.dart';
+import '../services/settings_provider.dart';
+import '../services/export_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,78 +15,97 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isAppLockEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPreferences();
-  }
-
-  Future<void> _loadPreferences() async {
-    final enabled = await PreferenceService().isAppLockEnabled();
-    setState(() => _isAppLockEnabled = enabled);
-  }
-
-  Future<void> _toggleAppLock(bool value) async {
-    await PreferenceService().setAppLockEnabled(value);
-    setState(() => _isAppLockEnabled = value);
-  }
-
-  void _exportData() {
+  void _showExportOptions() {
     final noteProvider = Provider.of<NoteProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
+    final exportService = ExportService();
 
-    final data = {
-      'notes': noteProvider.notes.map((n) => n.toMap()).toList(),
-      'tasks': taskProvider.tasks.map((t) => t.toMap()).toList(),
-    };
-
-    final jsonString = jsonEncode(data);
-    Share.share(jsonString, subject: 'My Personal Notes & Tasks Export');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Data'),
+        content: const Text('Choose your preferred export format:'),
+        actions: [
+          TextButton(
+            child: const Text('JSON'),
+            onPressed: () {
+              Navigator.pop(context);
+              exportService.exportToJSON(noteProvider.notes, taskProvider.tasks);
+            },
+          ),
+          TextButton(
+            child: const Text('TEXT'),
+            onPressed: () {
+              Navigator.pop(context);
+              exportService.exportToText(noteProvider.notes, taskProvider.tasks);
+            },
+          ),
+          TextButton(
+            child: const Text('PDF'),
+            onPressed: () {
+              Navigator.pop(context);
+              exportService.exportToPDF(noteProvider.notes, taskProvider.tasks);
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        children: [
-          const _SettingsSection(title: 'General'),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: const Text('App Language'),
-            trailing: const Text('English'),
-            onTap: () {},
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.flash_on),
-            title: const Text('Autosave'),
-            value: true,
-            onChanged: (val) {},
-          ),
-          const Divider(),
-          const _SettingsSection(title: 'Security'),
-          SwitchListTile(
-            secondary: const Icon(Icons.security),
-            title: const Text('App Lock'),
-            subtitle: const Text('Require authentication to open app'),
-            value: _isAppLockEnabled,
-            onChanged: _toggleAppLock,
-          ),
-          const Divider(),
-          const _SettingsSection(title: 'Storage & Backup'),
-          ListTile(
-            leading: const Icon(Icons.cloud_upload),
-            title: const Text('Sync with Google Drive'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.file_download),
-            title: const Text('Export Data'),
-            onTap: _exportData,
-          ),
-        ],
+      body: Consumer<SettingsProvider>(
+        builder: (context, settings, child) {
+          return ListView(
+            children: [
+              const _SettingsSection(title: 'General'),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: const Text('App Language'),
+                trailing: const Text('English'),
+                onTap: () {},
+              ),
+              const Divider(),
+              const _SettingsSection(title: 'Appearance'),
+              ListTile(
+                leading: const Icon(Icons.brightness_4),
+                title: const Text('Theme Mode'),
+                trailing: DropdownButton<String>(
+                  value: settings.themeModeString,
+                  onChanged: (val) => settings.setThemeMode(val!),
+                  items: const [
+                    DropdownMenuItem(value: 'system', child: Text('System')),
+                    DropdownMenuItem(value: 'light', child: Text('Light')),
+                    DropdownMenuItem(value: 'dark', child: Text('Dark')),
+                  ],
+                ),
+              ),
+              const Divider(),
+              const _SettingsSection(title: 'Security'),
+              SwitchListTile(
+                secondary: const Icon(Icons.security),
+                title: const Text('App Lock'),
+                subtitle: const Text('Require authentication to open app'),
+                value: settings.isAppLockEnabled,
+                onChanged: settings.toggleAppLock,
+              ),
+              const Divider(),
+              const _SettingsSection(title: 'Storage & Backup'),
+              ListTile(
+                leading: const Icon(Icons.cloud_upload),
+                title: const Text('Sync with Google Drive Backup'),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.file_download),
+                title: const Text('Export Data'),
+                onTap: _showExportOptions,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

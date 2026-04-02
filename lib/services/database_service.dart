@@ -39,6 +39,8 @@ class DatabaseService {
         isArchived INTEGER,
         isTrashed INTEGER,
         reminderTime TEXT,
+        isRecurring INTEGER,
+        recurringInterval INTEGER,
         createdAt TEXT,
         updatedAt TEXT,
         deletedAt TEXT
@@ -52,6 +54,7 @@ class DatabaseService {
         description TEXT,
         startTime TEXT,
         expiryTime TEXT,
+        reminderTime TEXT,
         priority INTEGER,
         status INTEGER,
         isRecurring INTEGER,
