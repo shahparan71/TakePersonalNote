@@ -50,8 +50,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 },
                 eventLoader: (day) {
                   return tasks.where((task) {
-                    if (task.startTime == null) return false;
-                    return isSameDay(task.startTime, day);
+                    if (task.reminderTime == null) return false;
+                    return isSameDay(task.reminderTime, day);
                   }).toList();
                 },
                 calendarStyle: const CalendarStyle(
@@ -75,8 +75,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildTaskList(DateTime day, List<Task> tasks) {
     final dayTasks = tasks.where((task) {
-      if (task.startTime == null) return false;
-      return isSameDay(task.startTime, day);
+      if (task.reminderTime == null) return false;
+      return isSameDay(task.reminderTime, day);
     }).toList();
 
     if (dayTasks.isEmpty) {

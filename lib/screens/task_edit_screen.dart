@@ -18,8 +18,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
   TaskPriority _priority = TaskPriority.low;
-  DateTime? _startTime;
-  DateTime? _expiryTime;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
@@ -30,8 +28,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _descController = TextEditingController(text: widget.task?.description ?? '');
     _priority = widget.task?.priority ?? TaskPriority.low;
-    _startTime = widget.task?.startTime;
-    _expiryTime = widget.task?.expiryTime;
     _reminderTime = widget.task?.reminderTime;
     _isRecurring = widget.task?.isRecurring ?? false;
     _recurringInterval = widget.task?.recurringInterval ?? RecurringInterval.none;
@@ -61,8 +57,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       title: _titleController.text,
       description: _descController.text,
       priority: _priority,
-      startTime: _startTime,
-      expiryTime: _expiryTime,
       reminderTime: _reminderTime,
       isRecurring: _isRecurring,
       recurringInterval: _recurringInterval,
@@ -120,8 +114,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           const SizedBox(height: 16),
           _buildPrioritySelector(),
           const SizedBox(height: 16),
-          _buildDateTimePicker('Start Time', _startTime, (val) => setState(() => _startTime = val)),
-          _buildDateTimePicker('Expiry Time', _expiryTime, (val) => setState(() => _expiryTime = val)),
           _buildDateTimePicker('Reminder Time', _reminderTime, (val) => setState(() => _reminderTime = val)),
           if (_reminderTime != null)
             _buildRecurrenceSelector(),
@@ -162,15 +154,13 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Priority'),
-        Row(
+        Column(
           children: TaskPriority.values.map((p) {
-            return Expanded(
-              child: RadioListTile<TaskPriority>(
-                title: Text(p.name, style: const TextStyle(fontSize: 12)),
-                value: p,
-                groupValue: _priority,
-                onChanged: (val) => setState(() => _priority = val!),
-              ),
+            return RadioListTile<TaskPriority>(
+              title: Text(p.name.toUpperCase(), style: const TextStyle(fontSize: 14)),
+              value: p,
+              groupValue: _priority,
+              onChanged: (val) => setState(() => _priority = val!),
             );
           }).toList(),
         ),

@@ -157,7 +157,7 @@ class DatabaseService {
       'tasks',
       where: where,
       whereArgs: whereArgs,
-      orderBy: orderBy ?? 'priority DESC, expiryTime ASC',
+      orderBy: orderBy ?? 'priority DESC, updatedAt DESC',
     );
     return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
   }

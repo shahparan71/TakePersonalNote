@@ -1,5 +1,21 @@
 package com.paran.bd.take.personal.note.take_personal_note
 
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.util.TimeZone
 
-class MainActivity : FlutterFragmentActivity()
+class MainActivity : FlutterFragmentActivity() {
+    private val CHANNEL = "com.take_personal_note/timezone"
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+            if (call.method == "getDeviceTimezone") {
+                result.success(TimeZone.getDefault().id)
+            } else {
+                result.notImplemented()
+            }
+        }
+    }
+}

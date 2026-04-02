@@ -22,15 +22,27 @@ class DashboardScreen extends StatelessWidget {
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: const Text('Dashboard', 
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.withOpacity(0.1), Colors.white],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800)),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              background: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.withOpacity(0.05), Colors.white],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    right: -20,
+                    top: -20,
+                    child: Icon(Icons.dashboard_rounded, size: 120, color: Colors.blue.withOpacity(0.03)),
+                  ),
+                ],
               ),
             ),
             actions: [
@@ -62,10 +74,10 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 const Text(
                   'Upcoming Tasks',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
                 ),
-                const SizedBox(height: 8),
-                // TODO: Add upcoming tasks list
+                const SizedBox(height: 12),
+                _buildUpcomingTasks(context),
               ]),
             ),
           ),
@@ -83,7 +95,7 @@ class DashboardScreen extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+          childAspectRatio: 1.0,
           children: [
             _buildStatCard('Total Notes', noteProvider.notes.length.toString(), Colors.blue),
             _buildStatCard('Pending Tasks', taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(), Colors.orange),
@@ -122,12 +134,52 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildUpcomingTasks(BuildContext context) {
+    return Consumer<TaskProvider>(
+      builder: (context, provider, child) {
+        final upcoming = provider.tasks
+            .where((t) => t.status != TaskStatus.completed && t.reminderTime != null)
+            .toList()
+          ..sort((a, b) => a.reminderTime!.compareTo(b.reminderTime!));
+
+        if (upcoming.isEmpty) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('No upcoming reminders', style: TextStyle(color: Colors.grey)),
+            ),
+          );
+        }
+
+        return Column(
+          children: upcoming.take(3).map((task) => Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w500)),
+              subtitle: Text(task.reminderTime != null 
+                ? 'Remind at ${task.reminderTime!.hour}:${task.reminderTime!.minute.toString().padLeft(2, '0')}' 
+                : ''),
+              trailing: Icon(Icons.chevron_right, size: 16, color: Colors.grey[400]),
+            ),
+          )).toList(),
+        );
+      },
+    );
+  }
+
   Widget _buildStatCard(String label, String value, Color color) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -137,14 +189,14 @@ class DashboardScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.analytics_outlined, color: color, size: 20),
           ),
           const Spacer(),
-          Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color)),
-          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w500)),
+          Text(value, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color, letterSpacing: -1)),
+          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500)),
         ],
       ),
     );
