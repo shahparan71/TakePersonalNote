@@ -221,11 +221,17 @@ class DashboardScreen extends StatelessWidget {
                 child: const Icon(Icons.alarm, color: Colors.blue, size: 20),
               ),
               title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16)),
-              subtitle: Text(
-                task.reminderTime != null 
-                  ? AppDateUtils.formatReminder(task.reminderTime!)
-                  : '',
-                style: const TextStyle(fontSize: 12),
+              subtitle: Builder(
+                builder: (context) {
+                  DateTime? displayTime = task.reminderTime;
+                  if (task.reminderTime != null && task.isRecurring && task.reminderTime!.isBefore(DateTime.now())) {
+                    displayTime = AppDateUtils.calculateNextOccurrence(task.reminderTime, task.recurringInterval) ?? task.reminderTime;
+                  }
+                  return Text(
+                    displayTime != null ? AppDateUtils.formatReminder(displayTime) : '',
+                    style: const TextStyle(fontSize: 12),
+                  );
+                },
               ),
               trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
             ),

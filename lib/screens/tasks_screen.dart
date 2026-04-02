@@ -103,18 +103,25 @@ class _TasksScreenState extends State<TasksScreen> {
                     Icon(
                       Icons.alarm,
                       size: 14,
-                      color: task.reminderTime!.isBefore(DateTime.now()) ? Colors.red : Colors.blue,
+                      color: (task.reminderTime != null && task.reminderTime!.isBefore(DateTime.now()) && !task.isRecurring) ? Colors.red : Colors.blue,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      task.reminderTime!.isBefore(DateTime.now())
-                          ? 'Expired'
-                          : 'Reminder: ${AppDateUtils.formatReminder(task.reminderTime!)}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: task.reminderTime!.isBefore(DateTime.now()) ? Colors.red : Colors.blue,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final bool isExpired = task.reminderTime != null && task.reminderTime!.isBefore(DateTime.now()) && !task.isRecurring;
+                        DateTime? displayTime = task.reminderTime;
+                        if (task.reminderTime != null && task.isRecurring && task.reminderTime!.isBefore(DateTime.now())) {
+                          displayTime = AppDateUtils.calculateNextOccurrence(task.reminderTime, task.recurringInterval) ?? task.reminderTime;
+                        }
+                        return Text(
+                          isExpired ? 'Expired' : 'Reminder: ${displayTime != null ? AppDateUtils.formatReminder(displayTime) : ''}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isExpired ? Colors.red : Colors.blue,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
