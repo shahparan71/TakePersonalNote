@@ -72,6 +72,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             title: 'Note Reminder',
             body: _titleController.text,
             scheduledDate: _reminderTime!,
+            payload: 'note_$id',
           );
         }
       });
@@ -94,6 +95,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             title: 'Note Reminder',
             body: _titleController.text,
             scheduledDate: _reminderTime!,
+            payload: 'note_${widget.note!.id!}',
           );
         } else if (widget.note!.reminderTime != null) {
           NotificationService().cancelNotification(widget.note!.id!);

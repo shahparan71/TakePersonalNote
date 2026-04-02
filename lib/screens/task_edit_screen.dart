@@ -16,7 +16,6 @@ class TaskEditScreen extends StatefulWidget {
 }
 
 class _TaskEditScreenState extends State<TaskEditScreen> {
-  late TextEditingController _titleController;
   late TextEditingController _descController;
   TaskPriority _priority = TaskPriority.low;
   DateTime? _reminderTime;
@@ -26,41 +25,45 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.task?.title ?? '');
     _descController = TextEditingController(text: widget.task?.description ?? widget.initialText ?? '');
     _priority = widget.task?.priority ?? TaskPriority.low;
     _reminderTime = widget.task?.reminderTime;
     _isRecurring = widget.task?.isRecurring ?? false;
     _recurringInterval = widget.task?.recurringInterval ?? RecurringInterval.none;
-    // Note: Task model currently doesn't have a specific reminderTime field separate from startTime
-    // but the FRD mentions reminders as a feature of tasks. I'll use startTime as reminder time for now
-    // or add a separate field if needed. For now, I'll use a local state.
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
     _descController.dispose();
     super.dispose();
   }
 
   void _saveTask() {
-    if (_titleController.text.isEmpty) return;
+    if (_descController.text.trim().isEmpty) return;
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
     final now = DateTime.now();
 
+    // Generate title from description
+    String generatedTitle = _descController.text.trim();
+    if (generatedTitle.contains('\n')) {
+      generatedTitle = generatedTitle.split('\n').first;
+    }
+    if (generatedTitle.length > 50) {
+      generatedTitle = '${generatedTitle.substring(0, 47)}...';
+    }
+
     final task = (widget.task ?? Task(
-      title: _titleController.text,
+      title: generatedTitle,
       createdAt: now,
       updatedAt: now,
     )).copyWith(
-      title: _titleController.text,
+      title: generatedTitle,
       description: _descController.text,
       priority: _priority,
       reminderTime: _reminderTime,
-      isRecurring: _isRecurring,
-      recurringInterval: _recurringInterval,
+      isRecurring: _reminderTime == null ? false : _isRecurring,
+      recurringInterval: _reminderTime == null ? RecurringInterval.none : _recurringInterval,
       updatedAt: now,
     );
 
@@ -70,8 +73,9 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           final success = await NotificationService().scheduleNotification(
             id: (id ?? 0) + 10000,
             title: 'Task Reminder',
-            body: _titleController.text,
+            body: generatedTitle,
             scheduledDate: _reminderTime!,
+            payload: 'task_$id',
           );
           if (mounted) {
             _showSchedulingFeedback(success);
@@ -84,8 +88,9 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           final success = await NotificationService().scheduleNotification(
             id: widget.task!.id! + 10000,
             title: 'Task Reminder',
-            body: _titleController.text,
+            body: generatedTitle,
             scheduledDate: _reminderTime!,
+            payload: 'task_${widget.task!.id!}',
           );
           if (mounted) {
             _showSchedulingFeedback(success);
@@ -114,103 +119,154 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.task == null ? 'New Task' : 'Edit Task'),
+        title: Text(widget.task == null ? 'Task' : 'Edit Task'),
         actions: [
+          IconButton(
+            icon: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active, color: _reminderTime == null ? null : Colors.blue),
+            onPressed: () => _selectReminder(context),
+            tooltip: 'Set Reminder',
+          ),
           IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
+          if (_reminderTime != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.alarm, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('MMM d, h:mm a').format(_reminderTime!),
+                    style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                    onPressed: () => setState(() {
+                      _reminderTime = null;
+                      _isRecurring = false;
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _descController,
+                  autofocus: widget.task == null,
+                  decoration: const InputDecoration(
+                    hintText: 'What needs to be done?',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(fontSize: 18),
+                  ),
+                  style: const TextStyle(fontSize: 18),
+                  maxLines: null,
+                ),
+              ),
+              if (_reminderTime != null) ...[
+                const SizedBox(width: 8),
+                _buildRecurrenceToggle(),
+              ],
+            ],
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _descController,
-            decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
-            maxLines: 3,
-          ),
+          if (_isRecurring)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: _buildRecurrenceIntervalSelector(),
+            ),
+          const Divider(),
           const SizedBox(height: 16),
           _buildPrioritySelector(),
-          const SizedBox(height: 16),
-          _buildDateTimePicker('Reminder Time', _reminderTime, (val) => setState(() => _reminderTime = val)),
-          if (_reminderTime != null)
-            _buildRecurrenceSelector(),
         ],
       ),
     );
   }
 
-  Widget _buildRecurrenceSelector() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children: [
-          const Text('Repeat Task'),
-          Switch(
-            value: _isRecurring,
-            onChanged: (val) => setState(() => _isRecurring = val),
-          ),
-          if (_isRecurring)
-            Expanded(
-              child: DropdownButton<RecurringInterval>(
-                isExpanded: true,
-                value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
-                items: RecurringInterval.values
-                    .where((v) => v != RecurringInterval.none)
-                    .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase())))
-                    .toList(),
-                onChanged: (val) => setState(() => _recurringInterval = val!),
-              ),
-            ),
-        ],
+  Widget _buildRecurrenceToggle() {
+    return Column(
+      children: [
+        const Text('Repeat', style: TextStyle(fontSize: 10, color: Colors.grey)),
+        Switch.adaptive(
+          value: _isRecurring,
+          onChanged: (val) => setState(() => _isRecurring = val),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecurrenceIntervalSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<RecurringInterval>(
+          value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
+          items: RecurringInterval.values
+              .where((v) => v != RecurringInterval.none)
+              .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase(), style: const TextStyle(fontSize: 12))))
+              .toList(),
+          onChanged: (val) => setState(() => _recurringInterval = val!),
+        ),
       ),
     );
+  }
+
+  Future<void> _selectReminder(BuildContext context) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _reminderTime ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+    );
+    if (date != null) {
+      if (!context.mounted) return;
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()),
+      );
+      if (time != null) {
+        setState(() {
+          _reminderTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+        });
+      }
+    }
   }
 
   Widget _buildPrioritySelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Priority'),
-        Column(
+        const Text('Priority', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: TaskPriority.values.map((p) {
-            return RadioListTile<TaskPriority>(
-              title: Text(p.name.toUpperCase(), style: const TextStyle(fontSize: 14)),
-              value: p,
-              groupValue: _priority,
-              onChanged: (val) => setState(() => _priority = val!),
+            final isSelected = _priority == p;
+            Color color;
+            switch (p) {
+              case TaskPriority.low: color = Colors.green; break;
+              case TaskPriority.medium: color = Colors.orange; break;
+              case TaskPriority.high: color = Colors.red; break;
+            }
+            return ChoiceChip(
+              label: Text(p.name.toUpperCase(), style: TextStyle(color: isSelected ? Colors.white : color, fontSize: 12)),
+              selected: isSelected,
+              selectedColor: color,
+              onSelected: (val) => setState(() => _priority = p),
             );
           }).toList(),
         ),
       ],
-    );
-  }
-
-  Widget _buildDateTimePicker(String label, DateTime? value, Function(DateTime) onSelected) {
-    return ListTile(
-      title: Text(label),
-      subtitle: Text(value != null ? DateFormat('MMM d, h:mm a').format(value) : 'Not set'),
-      trailing: const Icon(Icons.calendar_today),
-      onTap: () async {
-        final date = await showDatePicker(
-          context: context,
-          initialDate: value ?? DateTime.now(),
-          firstDate: DateTime.now(),
-          lastDate: DateTime(2030),
-        );
-        if (date != null) {
-          final time = await showTimePicker(
-            context: context,
-            initialTime: TimeOfDay.fromDateTime(value ?? DateTime.now()),
-          );
-          if (time != null) {
-            onSelected(DateTime(date.year, date.month, date.day, time.hour, time.minute));
-          }
-        }
-      },
     );
   }
 }

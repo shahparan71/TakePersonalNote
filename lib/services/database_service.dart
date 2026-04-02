@@ -129,6 +129,13 @@ class DatabaseService {
     );
   }
 
+  Future<Note?> getNoteById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('notes', where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) return Note.fromMap(maps.first);
+    return null;
+  }
+
   // Task CRUD
   Future<int> insertTask(Task task) async {
     final db = await database;
@@ -179,6 +186,13 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<Task?> getTaskById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('tasks', where: 'id = ?', whereArgs: [id]);
+    if (maps.isNotEmpty) return Task.fromMap(maps.first);
+    return null;
   }
 
   Future<void> close() async {

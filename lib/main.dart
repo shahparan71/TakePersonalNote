@@ -11,6 +11,8 @@ import 'screens/lock_screen.dart';
 import 'screens/home_screen.dart';
 import 'services/preference_service.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService().init();
@@ -32,7 +34,8 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'Personal Notes & Tasks',
+            title: 'TakeNote',
+            navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

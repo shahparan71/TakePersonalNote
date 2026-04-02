@@ -1,8 +1,13 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
+import '../main.dart';
+import '../screens/note_edit_screen.dart';
+import '../screens/task_edit_screen.dart';
+import 'database_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -33,8 +38,32 @@ class NotificationService {
 
     await _notificationsPlugin.initialize(
       settings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        final payload = response.payload;
+        if (payload != null && payload.isNotEmpty) {
+          final parts = payload.split('_');
+          if (parts.length == 2) {
+            final type = parts[0];
+            final id = int.tryParse(parts[1]);
+            if (id != null) {
+              if (type == 'note') {
+                final note = await DatabaseService().getNoteById(id);
+                if (note != null) {
+                  navigatorKey.currentState?.push(
+                    MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
+                  );
+                }
+              } else if (type == 'task') {
+                final task = await DatabaseService().getTaskById(id);
+                if (task != null) {
+                  navigatorKey.currentState?.push(
+                    MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
+                  );
+                }
+              }
+            }
+          }
+        }
       },
     );
 
@@ -53,6 +82,7 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledDate,
+    String? payload,
   }) async {
     if (scheduledDate.isBefore(DateTime.now())) {
       // Don't schedule notifications in the past
@@ -83,6 +113,7 @@ class NotificationService {
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        payload: payload,
       );
       return true;
     } catch (e) {
