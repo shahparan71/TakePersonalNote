@@ -5,6 +5,7 @@ import 'package:take_personal_note/models/recurring_interval.dart';
 import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
+import '../utils/date_utils.dart';
 
 class TaskEditScreen extends StatefulWidget {
   final Task? task;
@@ -139,9 +140,12 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 children: [
                   const Icon(Icons.alarm, size: 16, color: Colors.blue),
                   const SizedBox(width: 8),
-                  Text(
-                    DateFormat('MMM d, h:mm a').format(_reminderTime!),
-                    style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+                  InkWell(
+                    onTap: () => _selectReminder(context),
+                    child: Text(
+                      AppDateUtils.formatReminder(_reminderTime!),
+                      style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
                   ),
                   const Spacer(),
                   IconButton(
@@ -222,10 +226,18 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   }
 
   Future<void> _selectReminder(BuildContext context) async {
+    final now = DateTime.now();
+    // Use the existing reminder time if available, otherwise now.
+    // Ensure initialDate is not before firstDate.
+    DateTime initialDate = _reminderTime ?? now;
+    if (initialDate.isBefore(now)) {
+      initialDate = now;
+    }
+
     final date = await showDatePicker(
       context: context,
-      initialDate: _reminderTime ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: _reminderTime != null && _reminderTime!.isBefore(now) ? _reminderTime! : now,
       lastDate: DateTime(2030),
     );
     if (date != null) {

@@ -5,6 +5,7 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:take_personal_note/services/tab_provider.dart';
+import 'package:take_personal_note/utils/date_utils.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
@@ -222,7 +223,7 @@ class DashboardScreen extends StatelessWidget {
               title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16)),
               subtitle: Text(
                 task.reminderTime != null 
-                  ? DateFormat('MMM d, h:mm a').format(task.reminderTime!)
+                  ? AppDateUtils.formatReminder(task.reminderTime!)
                   : '',
                 style: const TextStyle(fontSize: 12),
               ),

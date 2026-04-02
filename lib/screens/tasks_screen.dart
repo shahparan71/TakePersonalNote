@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/services/task_provider.dart';
+import 'package:take_personal_note/utils/date_utils.dart';
 
 import '../models/task.dart';
 import 'task_edit_screen.dart';
@@ -108,7 +109,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     Text(
                       task.reminderTime!.isBefore(DateTime.now())
                           ? 'Expired'
-                          : 'Reminder: ${DateFormat('MMM d, h:mm a').format(task.reminderTime!)}',
+                          : 'Reminder: ${AppDateUtils.formatReminder(task.reminderTime!)}',
                       style: TextStyle(
                         fontSize: 11,
                         color: task.reminderTime!.isBefore(DateTime.now()) ? Colors.red : Colors.blue,
