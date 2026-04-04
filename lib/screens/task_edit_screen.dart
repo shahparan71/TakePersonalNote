@@ -126,8 +126,18 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         actions: [
           IconButton(
             icon: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active, color: _reminderTime == null ? null : Colors.blue),
-            onPressed: () => _selectReminder(context),
-            tooltip: 'Set Reminder',
+            onPressed: () {
+              if (_reminderTime == null) {
+                _selectReminder(context);
+              } else {
+                setState(() {
+                  _reminderTime = null;
+                  _isRecurring = false;
+                  _recurringInterval = RecurringInterval.none;
+                });
+              }
+            },
+            tooltip: _reminderTime == null ? 'Set Reminder' : 'Remove Reminder',
           ),
           IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
         ],
@@ -137,47 +147,42 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         children: [
           if (_reminderTime != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: Row(
-                children: [
-                  const Icon(Icons.alarm, size: 16, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _selectReminder(context),
-                    child: Text(
-                      AppDateUtils.formatReminder(_reminderTime!),
-                      style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: InkWell(
+                onTap: () => _selectReminder(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.alarm_rounded, size: 18, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        AppDateUtils.formatReminder(_reminderTime!),
+                        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ],
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 16, color: Colors.grey),
-                    onPressed: () => setState(() {
-                      _reminderTime = null;
-                      _isRecurring = false;
-                    }),
-                  ),
-                ],
-              ),
-            ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _descController,
-                  autofocus: widget.task == null,
-                  decoration: const InputDecoration(
-                    hintText: 'What needs to be done?',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(fontSize: 18),
-                  ),
-                  style: const TextStyle(fontSize: 18),
-                  maxLines: null,
                 ),
               ),
+            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _descController,
+                autofocus: widget.task == null,
+                decoration: const InputDecoration(
+                  hintText: 'What needs to be done?',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(fontSize: 22, color: Colors.grey),
+                ),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w400),
+                maxLines: null,
+              ),
               if (_reminderTime != null) ...[
-                const SizedBox(width: 8),
+                const SizedBox(height: 8),
                 _buildRecurrenceRow(),
               ],
             ],
@@ -195,26 +200,13 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
   }
 
-  Widget _buildRecurrenceRow() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildRecurrenceToggle(),
-        if (_isRecurring) ...[
-          const SizedBox(width: 12),
-          _buildRecurrenceIntervalSelector(),
-        ],
-      ],
-    );
-  }
-
   Widget _buildNextReminderInfo() {
     final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
     if (nextDate == null) return const SizedBox.shrink();
-    
+
     return Row(
       children: [
-        const Icon(Icons.update, size: 14, color: Colors.indigo),
+        const Icon(Icons.update_rounded, size: 14, color: Colors.indigo),
         const SizedBox(width: 6),
         Text(
           'Next occurrence: ${AppDateUtils.formatReminder(nextDate)}',
@@ -224,38 +216,49 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
   }
 
-  Widget _buildRecurrenceToggle() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text('Repeat', style: TextStyle(fontSize: 10, color: Colors.grey)),
-        SizedBox(
-          height: 32,
-          child: Switch.adaptive(
+  Widget _buildRecurrenceRow() {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.repeat_rounded, size: 20, color: Colors.grey),
+          const SizedBox(width: 12),
+          const Text('Repeat', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Spacer(),
+          if (_isRecurring) ...[
+            _buildRecurrenceIntervalSelector(),
+            const SizedBox(width: 8),
+          ],
+          Switch.adaptive(
             value: _isRecurring,
+            activeColor: Colors.blue,
             onChanged: (val) => setState(() => _isRecurring = val),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildRecurrenceIntervalSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<RecurringInterval>(
-          value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
-          items: RecurringInterval.values
-              .where((v) => v != RecurringInterval.none)
-              .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase(), style: const TextStyle(fontSize: 12))))
-              .toList(),
-          onChanged: (val) => setState(() => _recurringInterval = val!),
-        ),
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<RecurringInterval>(
+        value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
+        icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
+        items: RecurringInterval.values
+            .where((v) => v != RecurringInterval.none)
+            .map((v) => DropdownMenuItem(
+                  value: v,
+                  child: Text(v.name.substring(0, 1).toUpperCase() + v.name.substring(1)),
+                ))
+            .toList(),
+        onChanged: (val) => setState(() => _recurringInterval = val!),
       ),
     );
   }
@@ -296,7 +299,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         const Text('Priority', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
         const SizedBox(height: 8),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: TaskPriority.values.map((p) {
             final isSelected = _priority == p;
             Color color;
@@ -305,11 +307,22 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
               case TaskPriority.medium: color = Colors.orange; break;
               case TaskPriority.high: color = Colors.red; break;
             }
-            return ChoiceChip(
-              label: Text(p.name.toUpperCase(), style: TextStyle(color: isSelected ? Colors.white : color, fontSize: 12)),
-              selected: isSelected,
-              selectedColor: color,
-              onSelected: (val) => setState(() => _priority = p),
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ChoiceChip(
+                label: Text(
+                  p.name.substring(0, 1).toUpperCase() + p.name.substring(1),
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : color,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: color,
+                backgroundColor: color.withOpacity(0.1),
+                side: BorderSide(color: isSelected ? Colors.transparent : color.withOpacity(0.3)),
+                onSelected: (val) => setState(() => _priority = p),
+              ),
             );
           }).toList(),
         ),
