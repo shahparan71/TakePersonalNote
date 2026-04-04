@@ -7,6 +7,7 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
+import 'package:take_personal_note/utils/note_text_controller.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
@@ -20,9 +21,11 @@ class NoteEditScreen extends StatefulWidget {
 
 class _NoteEditScreenState extends State<NoteEditScreen> {
   late TextEditingController _titleController;
-  late TextEditingController _contentController;
+  late NoteTextController _contentController;
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
+  bool _isHighlighterActive = false;
+  double _fontSize = 18.0;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
@@ -32,7 +35,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
-    _contentController = TextEditingController(text: widget.note?.content ?? widget.initialText ?? '');
+    _contentController = NoteTextController(text: widget.note?.content ?? widget.initialText ?? '');
+    _contentController.addListener(_onContentChanged);
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
     _isPinned = widget.note?.isPinned ?? false;
     _reminderTime = widget.note?.reminderTime;
@@ -44,8 +48,13 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _contentController.removeListener(_onContentChanged);
     _contentController.dispose();
     super.dispose();
+  }
+
+  void _onContentChanged() {
+    setState(() {}); // Trigger rebuild for character count and undo state
   }
 
   void _saveNote() {
@@ -125,6 +134,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   void _formatText(String prefix, String suffix) {
+    if (MediaQuery.of(context).viewInsets.bottom <= 0) return; // Keyboard check
+    
     final text = _contentController.text;
     final selection = _contentController.selection;
     if (selection.isValid) {
@@ -137,14 +148,39 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
+  void _toggleHighlighter() {
+    setState(() {
+      _isHighlighterActive = !_isHighlighterActive;
+      _contentController.isHighlighterActive = _isHighlighterActive;
+    });
+  }
+
+  void _updateFontSize(bool increase) {
+    setState(() {
+      _fontSize = increase ? _fontSize + 2 : (_fontSize > 10 ? _fontSize - 2 : _fontSize);
+      _contentController.updateFontSize(_fontSize);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       backgroundColor: Color(_selectedColor),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          if (_contentController.canUndo)
+            IconButton(
+              icon: const Icon(Icons.undo, color: Colors.blue),
+              onPressed: () {
+                _contentController.undo();
+                setState(() {});
+              },
+              tooltip: 'Undo',
+            ),
           IconButton(icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined), onPressed: () => setState(() => _isPinned = !_isPinned)),
           IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _showColorPicker),
           IconButton(
@@ -156,33 +192,70 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              children: [
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    hintText: 'Title',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                hintText: 'Title',
+                border: InputBorder.none,
+                hintStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            _buildMetadataRow(),
+            _buildOptionsToolbar(),
+            _buildFormattingToolbar(keyboardVisible),
+            if (_reminderTime != null) _buildRecurrenceRow(),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1.0),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                _buildOptionsToolbar(),
-                const Divider(height: 1),
-                _buildFormattingToolbar(),
-                const SizedBox(height: 8),
-                _buildRecurrenceRow(),
-                TextField(
+                child: TextField(
                   controller: _contentController,
                   maxLines: null,
-                  decoration: InputDecoration(hintText: _type == NoteType.text ? 'Start typing...' : '- [ ] New item', border: InputBorder.none),
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  decoration: InputDecoration(
+                    hintText: _type == NoteType.text ? 'Start typing...' : '- [ ] New item',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                  style: TextStyle(fontSize: _fontSize),
+                  onChanged: (val) {
+                    if (_isHighlighterActive && val.length > _contentController.text.length) {
+                      // Logic for when pen is enabled - we insert tags as they type
+                      // This is a simplified approach, real custom painting is better
+                      // But for this, inserting == == tags works well with our controller
+                    }
+                  },
                 ),
-              ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetadataRow() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            DateFormat('MMMM d, yyyy h:mm a').format(DateTime.now()),
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+          Text(
+            '${_contentController.text.length} characters',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
@@ -311,22 +384,32 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     );
   }
 
-  Widget _buildFormattingToolbar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(color: Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        children: [
-          IconButton(icon: const Icon(Icons.format_bold, size: 20), onPressed: () => _formatText('**', '**'), tooltip: 'Bold'),
-          IconButton(icon: const Icon(Icons.format_italic, size: 20), onPressed: () => _formatText('_', '_'), tooltip: 'Italic'),
-          IconButton(icon: const Icon(Icons.format_list_bulleted, size: 20), onPressed: () => _formatText('\n- ', ''), tooltip: 'Bullet List'),
-          const Spacer(),
-          IconButton(
-            icon: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields, size: 20),
-            onPressed: () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text),
-            tooltip: 'Toggle Type',
-          ),
-        ],
+  Widget _buildFormattingToolbar(bool enabled) {
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.4,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(color: Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+        child: Row(
+          children: [
+            IconButton(icon: const Icon(Icons.format_bold, size: 20), onPressed: enabled ? () => _formatText('**', '**') : null, tooltip: 'Bold'),
+            IconButton(icon: const Icon(Icons.format_italic, size: 20), onPressed: enabled ? () => _formatText('__', '__') : null, tooltip: 'Italic'),
+            IconButton(icon: const Icon(Icons.format_list_bulleted, size: 20), onPressed: enabled ? () => _formatText('\n- ', '') : null, tooltip: 'Bullet List'),
+            IconButton(
+              icon: Icon(Icons.edit, size: 20, color: _isHighlighterActive ? Colors.blue : null),
+              onPressed: enabled ? _toggleHighlighter : null,
+              tooltip: 'Highlighter Pen',
+            ),
+            const Spacer(),
+            IconButton(icon: const Icon(Icons.add, size: 20), onPressed: enabled ? () => _updateFontSize(true) : null, tooltip: 'Increase Font'),
+            IconButton(icon: const Icon(Icons.remove, size: 20), onPressed: enabled ? () => _updateFontSize(false) : null, tooltip: 'Decrease Font'),
+            IconButton(
+              icon: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields, size: 20),
+              onPressed: enabled ? () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text) : null,
+              tooltip: 'Toggle Type',
+            ),
+          ],
+        ),
       ),
     );
   }
