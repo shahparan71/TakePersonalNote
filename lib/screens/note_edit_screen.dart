@@ -206,8 +206,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             _buildMetadataRow(),
-            _buildOptionsToolbar(),
-            _buildFormattingToolbar(keyboardVisible),
+            /*_buildOptionsToolbar(),*/
+            /*_buildFormattingToolbar(keyboardVisible),*/
             if (_reminderTime != null) _buildRecurrenceRow(),
             Expanded(
               child: Container(
@@ -237,6 +237,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 ),
               ),
             ),
+            SizedBox(height: keyboardVisible ? 0 : 50),
           ],
         ),
       ),
