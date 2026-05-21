@@ -39,41 +39,43 @@ class Note {
     this.deletedAt,
   });
 
+  static const Object _unset = Object();
+
   Note copyWith({
     int? id,
     String? title,
     String? content,
     NoteType? type,
-    String? category,
+    Object? category = _unset,
     int? color,
     bool? isPinned,
     bool? isArchived,
     bool? isTrashed,
     bool? isHidden,
-    DateTime? reminderTime,
+    Object? reminderTime = _unset,
     bool? isRecurring,
     RecurringInterval? recurringInterval,
     DateTime? createdAt,
     DateTime? updatedAt,
-    DateTime? deletedAt,
+    Object? deletedAt = _unset,
   }) {
     return Note(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
       type: type ?? this.type,
-      category: category ?? this.category,
+      category: category == _unset ? this.category : category as String?,
       color: color ?? this.color,
       isPinned: isPinned ?? this.isPinned,
       isArchived: isArchived ?? this.isArchived,
       isTrashed: isTrashed ?? this.isTrashed,
       isHidden: isHidden ?? this.isHidden,
-      reminderTime: reminderTime ?? this.reminderTime,
+      reminderTime: reminderTime == _unset ? this.reminderTime : reminderTime as DateTime?,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
+      deletedAt: deletedAt == _unset ? this.deletedAt : deletedAt as DateTime?,
     );
   }
 

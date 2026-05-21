@@ -174,19 +174,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       lastDate: DateTime(2030),
     );
     if (pickedDate != null && mounted) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()),
-      );
+      final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
       if (pickedTime != null) {
         setState(() {
-          _reminderTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
+          _reminderTime = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
         });
       }
     }
@@ -197,16 +188,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final selection = _contentController.selection;
     if (!selection.isValid) return;
     final selectedText = selection.textInside(text);
-    final newText = text.replaceRange(
-      selection.start,
-      selection.end,
-      '$prefix$selectedText$suffix',
-    );
+    final newText = text.replaceRange(selection.start, selection.end, '$prefix$selectedText$suffix');
     _contentController.value = TextEditingValue(
       text: newText,
-      selection: TextSelection.collapsed(
-        offset: selection.start + prefix.length + selectedText.length + suffix.length,
-      ),
+      selection: TextSelection.collapsed(offset: selection.start + prefix.length + selectedText.length + suffix.length),
     );
   }
 
@@ -276,10 +261,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             },
             tooltip: _reminderTime == null ? 'Set Reminder' : 'Remove Reminder',
           ),
-          IconButton(
-            icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
-            onPressed: () => setState(() => _isPinned = !_isPinned),
-          ),
+          IconButton(icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined), onPressed: () => setState(() => _isPinned = !_isPinned)),
           IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _showColorPicker),
           IconButton(
             icon: const Icon(Icons.check),
@@ -295,11 +277,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           fit: StackFit.expand,
           children: [
             Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                bottom: contentBottomPadding,
-              ),
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: contentBottomPadding),
               child: Column(
                 children: [
                   TextField(
@@ -313,10 +291,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   ),
                   _buildMetadataRow(),
                   _buildModeSelector(),
-                  if (_reminderTime != null) ...[
-                    _buildReminderBanner(),
-                    _buildRecurrenceRow(),
-                  ],
+                  if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
                   Expanded(child: _type == NoteType.text ? _buildTextEditor() : _buildChecklistEditor(keyboardHeight)),
                 ],
               ),
@@ -327,11 +302,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 right: 0,
                 bottom: keyboardHeight,
                 height: _formattingToolbarHeight,
-                child: Material(
-                  elevation: 8,
-                  color: Theme.of(context).colorScheme.surface,
-                  child: _buildFormattingToolbar(),
-                ),
+                child: Material(elevation: 8, color: Theme.of(context).colorScheme.surface, child: _buildFormattingToolbar()),
               ),
           ],
         ),
@@ -418,12 +389,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               ),
             ],
           ),
-          if (_isRecurring) ...[
-            const SizedBox(height: 8),
-            _buildRecurrenceChips(),
-            const SizedBox(height: 4),
-            _buildNextOccurrenceDisplay(),
-          ],
+          if (_isRecurring) ...[const SizedBox(height: 8), _buildRecurrenceChips(), const SizedBox(height: 4), _buildNextOccurrenceDisplay()],
         ],
       ),
     );
@@ -455,10 +421,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget _buildNextOccurrenceDisplay() {
     final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
     if (nextDate == null) return const SizedBox.shrink();
-    return Text(
-      'Next: ${AppDateUtils.formatReminder(nextDate)}',
-      style: const TextStyle(fontSize: 11, color: Colors.indigo),
-    );
+    return Text('Next: ${AppDateUtils.formatReminder(nextDate)}', style: const TextStyle(fontSize: 11, color: Colors.indigo));
   }
 
   Widget _buildTextEditor() {
@@ -469,11 +432,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       expands: true,
       textAlignVertical: TextAlignVertical.top,
       keyboardType: TextInputType.multiline,
-      decoration: const InputDecoration(
-        hintText: 'Start typing...',
-        border: InputBorder.none,
-        contentPadding: EdgeInsets.all(4),
-      ),
+      decoration: const InputDecoration(hintText: 'Start typing...', border: InputBorder.none, contentPadding: EdgeInsets.all(4)),
       style: TextStyle(fontSize: _fontSize),
     );
   }
@@ -509,11 +468,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               Expanded(
                 child: TextField(
                   controller: _checklistControllers[index],
-                  decoration: const InputDecoration(
-                    hintText: 'List item',
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
+                  decoration: const InputDecoration(hintText: 'List item', border: InputBorder.none, isDense: true),
                   style: TextStyle(
                     fontSize: 16,
                     decoration: item.checked ? TextDecoration.lineThrough : null,
@@ -542,31 +497,19 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Widget _buildFormattingToolbar() {
     return Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.format_bold, size: 22),
-            onPressed: () => _formatText('**', '**'),
-            tooltip: 'Bold',
-          ),
-          IconButton(
-            icon: const Icon(Icons.format_italic, size: 22),
-            onPressed: () => _formatText('__', '__'),
-            tooltip: 'Italic',
-          ),
-          IconButton(
-            icon: const Icon(Icons.format_list_bulleted, size: 22),
-            onPressed: () => _formatText('\n- ', ''),
-            tooltip: 'Bullet',
-          ),
-          IconButton(
-            icon: Icon(Icons.border_color, size: 22, color: _isHighlighterActive ? Colors.blue : null),
-            onPressed: _toggleHighlighter,
-            tooltip: 'Highlight',
-          ),
-          const Spacer(),
-          IconButton(icon: const Icon(Icons.text_increase, size: 22), onPressed: () => _updateFontSize(true)),
-          IconButton(icon: const Icon(Icons.text_decrease, size: 22), onPressed: () => _updateFontSize(false)),
-        ],
+      children: [
+        IconButton(icon: const Icon(Icons.format_bold, size: 22), onPressed: () => _formatText('**', '**'), tooltip: 'Bold'),
+        IconButton(icon: const Icon(Icons.format_italic, size: 22), onPressed: () => _formatText('__', '__'), tooltip: 'Italic'),
+        IconButton(icon: const Icon(Icons.format_list_bulleted, size: 22), onPressed: () => _formatText('\n- ', ''), tooltip: 'Bullet'),
+        IconButton(
+          icon: Icon(Icons.border_color, size: 22, color: _isHighlighterActive ? Colors.blue : null),
+          onPressed: _toggleHighlighter,
+          tooltip: 'Highlight',
+        ),
+        const Spacer(),
+        IconButton(icon: const Icon(Icons.text_increase, size: 22), onPressed: () => _updateFontSize(true)),
+        IconButton(icon: const Icon(Icons.text_decrease, size: 22), onPressed: () => _updateFontSize(false)),
+      ],
     );
   }
 
@@ -596,11 +539,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             padding: const EdgeInsets.all(16),
             height: 200,
             child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 6,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
               itemCount: colors.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
