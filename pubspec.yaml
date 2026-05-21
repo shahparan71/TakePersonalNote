@@ -49,6 +49,10 @@ dependencies:
   pdf: ^3.10.7
   printing: ^5.11.1
   receive_sharing_intent: ^1.8.1
+  google_sign_in: ^6.2.2
+  googleapis: ^13.2.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.13
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

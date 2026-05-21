@@ -221,6 +221,42 @@ class DatabaseService {
     return null;
   }
 
+  Future<List<Note>> getAllNotes() async {
+    final db = await database;
+    final maps = await db.query('notes', orderBy: 'updatedAt DESC');
+    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+  }
+
+  Future<List<Task>> getAllTasks() async {
+    final db = await database;
+    final maps = await db.query('tasks', orderBy: 'updatedAt DESC');
+    return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
+  }
+
+  Future<void> importBackupData({
+    required List<Map<String, dynamic>> notes,
+    required List<Map<String, dynamic>> tasks,
+    bool merge = true,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      if (!merge) {
+        await txn.delete('notes');
+        await txn.delete('tasks');
+      }
+      for (final map in notes) {
+        final data = Map<String, dynamic>.from(map);
+        data.remove('id');
+        await txn.insert('notes', data, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final map in tasks) {
+        final data = Map<String, dynamic>.from(map);
+        data.remove('id');
+        await txn.insert('tasks', data, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+  }
+
   Future<void> close() async {
     final db = await database;
     db.close();

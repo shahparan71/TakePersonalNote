@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'dart:convert';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/note_provider.dart';
 import '../services/task_provider.dart';
+import '../services/folder_provider.dart';
 import '../services/settings_provider.dart';
 import '../services/export_service.dart';
 import '../services/notification_service.dart';
+import '../services/google_drive_sync_service.dart';
+import '../theme/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,6 +18,127 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  bool _driveBusy = false;
+  String? _driveUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _driveUser = GoogleDriveSyncService().currentUser?.email;
+  }
+
+  Future<void> _runDriveAction(Future<GoogleDriveSyncResult> Function() action) async {
+    setState(() => _driveBusy = true);
+    final result = await action();
+    if (!mounted) return;
+    setState(() {
+      _driveBusy = false;
+      _driveUser = GoogleDriveSyncService().currentUser?.email;
+    });
+    if (result.success) {
+      await Provider.of<NoteProvider>(context, listen: false).refreshAll();
+      await Provider.of<TaskProvider>(context, listen: false).refreshAll();
+      for (final f in result.folders) {
+        await Provider.of<FolderProvider>(context, listen: false).addFolder(f);
+      }
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
+  }
+
+  void _openDriveBackupSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(
+              _driveUser ?? 'Not signed in',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: _driveBusy
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      final folders = Provider.of<FolderProvider>(context, listen: false).folders;
+                      _runDriveAction(() => GoogleDriveSyncService().syncToDrive(folders: folders));
+                    },
+              icon: const Icon(Icons.cloud_upload_outlined),
+              label: const Text('Sync to Drive'),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _driveBusy
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      _showFetchConfirm(merge: true);
+                    },
+              icon: const Icon(Icons.cloud_download_outlined),
+              label: const Text('Fetch from Drive (merge)'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _driveBusy
+                  ? null
+                  : () {
+                      Navigator.pop(ctx);
+                      _showFetchConfirm(merge: false);
+                    },
+              icon: const Icon(Icons.restore),
+              label: const Text('Fetch from Drive (replace)'),
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.actionDelete),
+            ),
+            if (_driveUser != null) ...[
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () async {
+                  await GoogleDriveSyncService().signOut();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  setState(() => _driveUser = null);
+                },
+                child: const Text('Sign out'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFetchConfirm({required bool merge}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(merge ? 'Merge backup?' : 'Replace all data?'),
+        content: Text(
+          merge
+              ? 'Notes and tasks from Drive will be added to your existing data.'
+              : 'This will replace all local notes and tasks with the Drive backup.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _runDriveAction(() => GoogleDriveSyncService().fetchFromDrive(merge: merge));
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showExportOptions() {
     final noteProvider = Provider.of<NoteProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
@@ -56,7 +179,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: AppColors.scaffoldBg,
+      appBar: AppBar(
+        backgroundColor: AppColors.scaffoldBg,
+        title: Text('Settings', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+      ),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return ListView(
@@ -68,7 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: const Text('English'),
                 onTap: () {},
               ),
-              const Divider(),
+              const Divider(height: 1),
               const _SettingsSection(title: 'Appearance'),
               ListTile(
                 leading: const Icon(Icons.brightness_4),
@@ -99,7 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 },
               ),
-              const Divider(),
+              const Divider(height: 1),
               const _SettingsSection(title: 'Security'),
               SwitchListTile(
                 secondary: const Icon(Icons.security),
@@ -108,12 +235,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: settings.isAppLockEnabled,
                 onChanged: settings.toggleAppLock,
               ),
-              const Divider(),
+              const Divider(height: 1),
               const _SettingsSection(title: 'Storage & Backup'),
               ListTile(
-                leading: const Icon(Icons.cloud_upload),
+                leading: Icon(Icons.cloud, color: AppColors.fabDark),
                 title: const Text('Sync with Google Drive Backup'),
-                onTap: () {},
+                subtitle: Text(
+                  _driveBusy
+                      ? 'Working...'
+                      : (_driveUser ?? 'Sign in to backup or restore'),
+                  style: const TextStyle(fontSize: 12),
+                ),
+                trailing: _driveBusy ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
+                onTap: _driveBusy ? null : _openDriveBackupSheet,
               ),
               ListTile(
                 leading: const Icon(Icons.file_download),
@@ -135,13 +269,10 @@ class _SettingsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         title,
-        style: TextStyle(
-          color: Theme.of(context).primaryColor,
-          fontWeight: FontWeight.bold,
-        ),
+        style: GoogleFonts.outfit(color: AppColors.fabDark, fontWeight: FontWeight.w600, fontSize: 13),
       ),
     );
   }

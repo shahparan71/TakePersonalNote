@@ -9,6 +9,9 @@ import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/utils/note_text_controller.dart';
 import 'package:take_personal_note/utils/checklist_utils.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
+import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
@@ -233,42 +236,67 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: widget.note != null
+            ? Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: CircleActionButton(
+                  icon: Icons.delete_outline,
+                  color: AppColors.actionDelete,
+                  size: 40,
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete note?'),
+                        content: const Text('Move this note to trash?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                        ],
+                      ),
+                    );
+                    if (confirm == true && mounted) {
+                      await Provider.of<NoteProvider>(context, listen: false).trashNote(widget.note!);
+                      if (mounted) Navigator.pop(context);
+                    }
+                  },
+                ),
+              )
+            : null,
         actions: [
           if (_contentController.canUndo)
             IconButton(
-              icon: const Icon(Icons.undo, color: Colors.blue),
+              icon: const Icon(Icons.undo, color: AppColors.actionEdit),
               onPressed: () {
                 _contentController.undo();
                 setState(() {});
               },
-              tooltip: 'Undo',
             ),
-          IconButton(
-            icon: Icon(
-              _reminderTime == null ? Icons.notifications_none : Icons.notifications_active,
-              color: _reminderTime == null ? null : Colors.blue,
-            ),
-            onPressed: () {
-              if (_reminderTime == null) {
-                _selectReminder();
-              } else {
-                setState(() {
-                  _reminderTime = null;
-                  _isRecurring = false;
-                  _recurringInterval = RecurringInterval.none;
-                });
-              }
-            },
-            tooltip: _reminderTime == null ? 'Set Reminder' : 'Remove Reminder',
+          CircleActionButton(
+            icon: _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+            color: AppColors.actionPin,
+            size: 40,
+            onPressed: () => setState(() => _isPinned = !_isPinned),
           ),
-          IconButton(icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined), onPressed: () => setState(() => _isPinned = !_isPinned)),
-          IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _showColorPicker),
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () {
-              _saveNote();
-              Navigator.pop(context);
-            },
+          const SizedBox(width: 6),
+          CircleActionButton(
+            icon: Icons.palette_outlined,
+            color: AppColors.actionEdit,
+            size: 40,
+            onPressed: _showColorPicker,
+          ),
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CircleActionButton(
+              icon: Icons.check,
+              color: AppColors.actionSave,
+              size: 40,
+              onPressed: () {
+                _saveNote();
+                Navigator.pop(context);
+              },
+            ),
           ),
         ],
       ),
@@ -282,13 +310,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 children: [
                   TextField(
                     controller: _titleController,
-                    decoration: const InputDecoration(
-                      hintText: 'Title',
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      hintText: 'Add Title',
+                      filled: true,
+                      fillColor: AppColors.cardWhite.withOpacity(0.7),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      hintStyle: GoogleFonts.outfit(fontSize: 20, color: AppColors.textSecondary),
                     ),
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
+                  const SizedBox(height: 8),
                   _buildMetadataRow(),
                   _buildModeSelector(),
                   if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
@@ -302,7 +333,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 right: 0,
                 bottom: keyboardHeight,
                 height: _formattingToolbarHeight,
-                child: Material(elevation: 8, color: Theme.of(context).colorScheme.surface, child: _buildFormattingToolbar()),
+                child: Material(
+                  elevation: 8,
+                  color: AppColors.toolbarDark,
+                  child: _buildFormattingToolbar(),
+                ),
               ),
           ],
         ),
@@ -498,18 +533,21 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget _buildFormattingToolbar() {
     return Row(
       children: [
-        IconButton(icon: const Icon(Icons.format_bold, size: 22), onPressed: () => _formatText('**', '**'), tooltip: 'Bold'),
-        IconButton(icon: const Icon(Icons.format_italic, size: 22), onPressed: () => _formatText('__', '__'), tooltip: 'Italic'),
-        IconButton(icon: const Icon(Icons.format_list_bulleted, size: 22), onPressed: () => _formatText('\n- ', ''), tooltip: 'Bullet'),
-        IconButton(
-          icon: Icon(Icons.border_color, size: 22, color: _isHighlighterActive ? Colors.blue : null),
-          onPressed: _toggleHighlighter,
-          tooltip: 'Highlight',
-        ),
+        _toolbarBtn(Icons.format_bold, () => _formatText('**', '**')),
+        _toolbarBtn(Icons.format_italic, () => _formatText('__', '__')),
+        _toolbarBtn(Icons.format_list_bulleted, () => _formatText('\n- ', '')),
+        _toolbarBtn(Icons.border_color, _toggleHighlighter, highlighted: _isHighlighterActive),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.text_increase, size: 22), onPressed: () => _updateFontSize(true)),
-        IconButton(icon: const Icon(Icons.text_decrease, size: 22), onPressed: () => _updateFontSize(false)),
+        _toolbarBtn(Icons.text_increase, () => _updateFontSize(true)),
+        _toolbarBtn(Icons.text_decrease, () => _updateFontSize(false)),
       ],
+    );
+  }
+
+  Widget _toolbarBtn(IconData icon, VoidCallback onPressed, {bool highlighted = false}) {
+    return IconButton(
+      icon: Icon(icon, size: 22, color: highlighted ? AppColors.accentTeal : Colors.white),
+      onPressed: onPressed,
     );
   }
 

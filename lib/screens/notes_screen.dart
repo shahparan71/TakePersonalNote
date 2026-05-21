@@ -7,6 +7,8 @@ import '../services/folder_provider.dart';
 import '../services/preference_service.dart';
 import '../models/note.dart';
 import '../widgets/sheet_safe_area.dart';
+import '../widgets/design_widgets.dart';
+import '../theme/app_colors.dart';
 import 'note_edit_screen.dart';
 
 class NotesScreen extends StatefulWidget {
@@ -87,14 +89,14 @@ class _NotesScreenState extends State<NotesScreen> {
     final bottomBarHeight = _selectionMode ? 72.0 : 0.0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: AppColors.scaffoldBg,
         leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
         title: _selectionMode
             ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
-            : Text('Notes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 22)),
+            : Text('Notes', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         actions: [
           if (!_selectionMode) ...[
             IconButton(
@@ -157,10 +159,9 @@ class _NotesScreenState extends State<NotesScreen> {
       ),
       floatingActionButton: _selectionMode
           ? null
-          : FloatingActionButton(
+          : DesignFab(
               heroTag: 'notes_fab',
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NoteEditScreen())).then((_) => _refreshNotes()),
-              child: const Icon(Icons.add),
             ),
     );
   }
@@ -297,10 +298,9 @@ class _NotesScreenState extends State<NotesScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isCard ? 16 : 12),
-        border: isSelected ? Border.all(color: Colors.blue, width: 2) : Border.all(color: Colors.grey.withOpacity(0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        color: AppColors.noteCardTint(note.color),
+        borderRadius: BorderRadius.circular(isCard ? 20 : 14),
+        border: isSelected ? Border.all(color: AppColors.fabDark, width: 2) : Border.all(color: Colors.grey.shade200),
       ),
       child: Material(
         color: Colors.transparent,
@@ -409,6 +409,7 @@ class _NotesScreenState extends State<NotesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _actionButton(Icons.drive_file_move_outline, 'Move', _moveToFolder),
+                _actionButton(Icons.archive_outlined, 'Archive', _archiveSelected),
                 _actionButton(Icons.push_pin_outlined, 'Pin', _pinSelected),
                 _actionButton(Icons.visibility_off_outlined, 'Hide', _hideSelected),
                 _actionButton(Icons.delete_outline, 'Delete', _deleteSelected, color: Colors.red),
@@ -479,6 +480,14 @@ class _NotesScreenState extends State<NotesScreen> {
     }
     _exitSelectionMode();
     _refreshNotes();
+  }
+
+  Future<void> _archiveSelected() async {
+    final provider = Provider.of<NoteProvider>(context, listen: false);
+    for (final note in _getSelectedNotes(provider)) {
+      await provider.archiveNote(note);
+    }
+    _exitSelectionMode();
   }
 
   Future<void> _pinSelected() async {

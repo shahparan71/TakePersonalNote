@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
+import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
 
 import '../models/task.dart';
 import 'task_edit_screen.dart';
@@ -27,11 +29,11 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: const Color(0xFFF8F9FA),
-        title: Text('Tasks', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 22)),
+        backgroundColor: AppColors.scaffoldBg,
+        title: Text('Tasks', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -103,14 +105,12 @@ class _TasksScreenState extends State<TasksScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: DesignFab(
         heroTag: 'tasks_fab',
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const TaskEditScreen()),
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Task'),
       ),
     );
   }
@@ -122,11 +122,9 @@ class _TasksScreenState extends State<TasksScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Material(
         color: Colors.transparent,

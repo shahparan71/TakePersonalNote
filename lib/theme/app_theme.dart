@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_colors.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color primaryColor = Color(0xFF6200EE);
-  static const Color secondaryColor = Color(0xFF03DAC6);
+  static const Color primaryColor = AppColors.fabDark;
+  static const Color secondaryColor = AppColors.accentTeal;
   
   // Priority Colors
   static const Color lowPriority = Color(0xFF4CAF50);
@@ -14,11 +14,13 @@ class AppTheme {
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
+    scaffoldBackgroundColor: AppColors.scaffoldBg,
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryColor,
       brightness: Brightness.light,
+      surface: AppColors.scaffoldBg,
     ),
-    textTheme: GoogleFonts.interTextTheme(),
+    textTheme: GoogleFonts.outfitTextTheme(),
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,

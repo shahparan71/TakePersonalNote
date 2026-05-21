@@ -76,6 +76,10 @@ class NoteProvider with ChangeNotifier {
     await updateNote(note.copyWith(isHidden: false));
   }
 
+  Future<void> refreshAll() async {
+    await fetchNotes();
+  }
+
   Future<void> cleanOldTrash() async {
     final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
     _trashedNotes.where((n) => n.deletedAt != null && n.deletedAt!.isBefore(thirtyDaysAgo)).forEach((n) async {

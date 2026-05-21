@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../services/note_provider.dart';
 import '../models/note.dart';
+import '../theme/app_colors.dart';
 import 'note_edit_screen.dart';
 
 class ArchiveScreen extends StatelessWidget {
@@ -10,34 +13,112 @@ class ArchiveScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Archive')),
+      backgroundColor: AppColors.scaffoldBg,
+      appBar: AppBar(
+        backgroundColor: AppColors.scaffoldBg,
+        title: Text('Archive', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+      ),
       body: Consumer<NoteProvider>(
         builder: (context, provider, child) {
           if (provider.archivedNotes.isEmpty) {
-            return const Center(child: Text('No archived notes'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.archive_outlined, size: 64, color: Colors.grey[300]),
+                  const SizedBox(height: 12),
+                  Text('No archived notes', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Long-press a note and archive it from Notes',
+                    style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            );
           }
-          return ListView.builder(
+          return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: provider.archivedNotes.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final note = provider.archivedNotes[index];
-              return Card(
-                child: ListTile(
-                  title: Text(note.title),
-                  subtitle: Text(note.content, maxLines: 1),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.unarchive),
-                    onPressed: () => provider.unarchiveNote(note),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
-                  ),
+              return _ArchiveCard(
+                note: note,
+                onUnarchive: () => provider.unarchiveNote(note),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _ArchiveCard extends StatelessWidget {
+  final Note note;
+  final VoidCallback onUnarchive;
+  final VoidCallback onTap;
+
+  const _ArchiveCard({required this.note, required this.onUnarchive, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.cardWhite,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Color(note.color),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(note.title.isEmpty ? 'Untitled' : note.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(
+                      note.content,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat('MMM d, yyyy').format(note.updatedAt),
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.unarchive_outlined, color: AppColors.fabDark),
+                tooltip: 'Restore',
+                onPressed: onUnarchive,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

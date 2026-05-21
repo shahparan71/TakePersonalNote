@@ -6,6 +6,9 @@ import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
 import '../utils/date_utils.dart';
+import '../theme/app_colors.dart';
+import '../widgets/design_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TaskEditScreen extends StatefulWidget {
   final Task? task;
@@ -125,13 +128,18 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
-        title: Text(widget.task == null ? 'New Task' : 'Edit Task'),
+        backgroundColor: AppColors.scaffoldBg,
+        title: Text(
+          widget.task == null ? 'New Task' : 'Edit Task',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
             icon: Icon(
               _reminderTime == null ? Icons.notifications_none_outlined : Icons.notifications_active,
-              color: _reminderTime == null ? null : Colors.blue,
+              color: _reminderTime == null ? AppColors.textSecondary : AppColors.fabDark,
             ),
             onPressed: () {
               if (_reminderTime == null) {
@@ -144,9 +152,16 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 });
               }
             },
-            tooltip: _reminderTime == null ? 'Set Reminder' : 'Remove Reminder',
           ),
-          IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CircleActionButton(
+              icon: Icons.check,
+              color: AppColors.actionSave,
+              size: 40,
+              onPressed: _saveTask,
+            ),
+          ),
         ],
       ),
       body: ListView(
@@ -165,12 +180,14 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           TextField(
             controller: _descController,
             autofocus: widget.task == null,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'What needs to be done?',
-              border: InputBorder.none,
-              hintStyle: TextStyle(fontSize: 20, color: Colors.grey),
+              filled: true,
+              fillColor: AppColors.cardWhite,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              hintStyle: GoogleFonts.outfit(fontSize: 18, color: AppColors.textSecondary),
             ),
-            style: const TextStyle(fontSize: 20, height: 1.4),
+            style: GoogleFonts.outfit(fontSize: 20, height: 1.4),
             maxLines: null,
           ),
           const SizedBox(height: 32),
