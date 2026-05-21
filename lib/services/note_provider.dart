@@ -64,6 +64,18 @@ class NoteProvider with ChangeNotifier {
     await fetchNotes();
   }
 
+  Future<List<String>> getCategories() async {
+    return _dbService.getNoteCategories();
+  }
+
+  Future<void> hideNote(Note note) async {
+    await updateNote(note.copyWith(isHidden: true, isPinned: false));
+  }
+
+  Future<void> unhideNote(Note note) async {
+    await updateNote(note.copyWith(isHidden: false));
+  }
+
   Future<void> cleanOldTrash() async {
     final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
     _trashedNotes.where((n) => n.deletedAt != null && n.deletedAt!.isBefore(thirtyDaysAgo)).forEach((n) async {

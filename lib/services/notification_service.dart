@@ -86,8 +86,10 @@ class NotificationService {
     String? payload,
     RecurringInterval? recurrence,
   }) async {
-    if (scheduledDate.isBefore(DateTime.now())) {
-      // Don't schedule notifications in the past
+    await cancelNotification(id);
+
+    final isRecurring = recurrence != null && recurrence != RecurringInterval.none;
+    if (!isRecurring && scheduledDate.isBefore(DateTime.now())) {
       return false;
     }
 

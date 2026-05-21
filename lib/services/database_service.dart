@@ -21,9 +21,16 @@ class DatabaseService {
     String path = join(await getDatabasesPath(), 'personal_notes_tasks.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE notes ADD COLUMN isHidden INTEGER DEFAULT 0');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -38,6 +45,7 @@ class DatabaseService {
         isPinned INTEGER,
         isArchived INTEGER,
         isTrashed INTEGER,
+        isHidden INTEGER DEFAULT 0,
         reminderTime TEXT,
         isRecurring INTEGER,
         recurringInterval INTEGER,
@@ -73,7 +81,7 @@ class DatabaseService {
 
   Future<List<Note>> getNotes({String? query, String? category, int? color, String? orderBy}) async {
     final db = await database;
-    String where = 'isTrashed = 0 AND isArchived = 0';
+    String where = 'isTrashed = 0 AND isArchived = 0 AND isHidden = 0';
     List<dynamic> whereArgs = [];
 
     if (query != null && query.isNotEmpty) {
@@ -126,6 +134,24 @@ class DatabaseService {
       'notes',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  Future<List<String>> getNoteCategories() async {
+    final db = await database;
+    final maps = await db.rawQuery(
+      "SELECT DISTINCT category FROM notes WHERE isTrashed = 0 AND isArchived = 0 AND category IS NOT NULL AND category != ''",
+    );
+    return maps.map((m) => m['category'] as String).toList();
+  }
+
+  Future<void> clearCategoryFromNotes(String category) async {
+    final db = await database;
+    await db.update(
+      'notes',
+      {'category': null},
+      where: 'category = ?',
+      whereArgs: [category],
     );
   }
 

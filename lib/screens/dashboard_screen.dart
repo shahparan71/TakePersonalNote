@@ -11,6 +11,7 @@ import '../services/task_provider.dart';
 import 'archive_screen.dart';
 import 'trash_screen.dart';
 import 'settings_screen.dart';
+import 'task_edit_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -27,16 +28,17 @@ class DashboardScreen extends StatelessWidget {
     final now = DateTime.now();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 200,
             floating: false,
             pinned: true,
             elevation: 0,
             backgroundColor: const Color(0xFF54BF8F),
             flexibleSpace: FlexibleSpaceBar(
-              expandedTitleScale: 1.1,
+              expandedTitleScale: 1.0,
               titlePadding: const EdgeInsets.only(left: 20, bottom: 20, right: 20),
               title: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -45,19 +47,11 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   Text(
                     _getGreeting(),
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black87,
-                    ),
+                    style: GoogleFonts.outfit(fontSize: 13, color: Colors.black87),
                   ),
                   Text(
                     'Welcome back!',
-                    style: GoogleFonts.outfit(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                    style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
                   ),
                 ],
               ),
@@ -72,24 +66,16 @@ class DashboardScreen extends StatelessWidget {
                 child: Stack(
                   children: [
                     Positioned(
-                      right: -30,
-                      top: 40,
-                      child: Icon(
-                        Icons.auto_awesome_mosaic_rounded,
-                        size: 200,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
+                      right: -20,
+                      top: 30,
+                      child: Icon(Icons.auto_awesome_mosaic_rounded, size: 160, color: Colors.white.withOpacity(0.06)),
                     ),
                     Positioned(
                       left: 20,
-                      top: 60,
+                      top: 56,
                       child: Text(
                         DateFormat('EEEE, MMMM d').format(now),
-                        style: GoogleFonts.outfit(
-                          color: Colors.black87,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: GoogleFonts.outfit(color: Colors.black87, fontSize: 15, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -98,47 +84,32 @@ class DashboardScreen extends StatelessWidget {
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.archive_outlined, color: Colors.black87, size: 20),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-                ),
+                icon: const Icon(Icons.archive_outlined, color: Colors.black87, size: 22),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchiveScreen())),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.black87, size: 20),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TrashScreen()),
-                ),
+                icon: const Icon(Icons.delete_outline, color: Colors.black87, size: 22),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrashScreen())),
               ),
               Padding(
-                padding: const EdgeInsets.only(right: 8.0),
+                padding: const EdgeInsets.only(right: 8),
                 child: IconButton(
-                  icon: const Icon(Icons.settings_outlined, color: Colors.black87, size: 20),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
+                  icon: const Icon(Icons.settings_outlined, color: Colors.black87, size: 22),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
                 ),
               ),
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                Text(
-                  'Overview',
-                  style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const SizedBox(height: 16),
+                Text('Overview', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 14),
                 _buildStatsGrid(context),
-                const SizedBox(height: 32),
-                Text(
-                  'Upcoming Tasks',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 28),
+                Text('Upcoming Tasks', style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 10),
                 _buildUpcomingTasks(context),
               ]),
             ),
@@ -155,27 +126,43 @@ class DashboardScreen extends StatelessWidget {
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.0,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.15,
           children: [
-            InkWell(
-              onTap: () => tabProvider.setIndex(1), // Notes tab
-              child: _buildStatCard('Total Notes', noteProvider.notes.length.toString(), Colors.indigo, Icons.description_outlined),
+            _StatTile(
+              label: 'Total Notes',
+              value: noteProvider.notes.length.toString(),
+              color: Colors.indigo,
+              icon: Icons.description_outlined,
+              onTap: () => tabProvider.setIndex(1),
             ),
-            InkWell(
-              onTap: () => tabProvider.setIndex(2), // Tasks tab
-              child: _buildStatCard('Pending Tasks', taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(), Colors.orange, Icons.assignment_late_outlined),
+            _StatTile(
+              label: 'Pending Tasks',
+              value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
+              color: Colors.orange,
+              icon: Icons.assignment_late_outlined,
+              onTap: () => tabProvider.setIndex(2),
             ),
-            _buildStatCard('Pinned Notes', noteProvider.notes.where((n) => n.isPinned).length.toString(), Colors.pink, Icons.push_pin_outlined),
-            _buildStatCard('Completed', taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(), Colors.green, Icons.task_alt_outlined),
+            _StatTile(
+              label: 'Pinned Notes',
+              value: noteProvider.notes.where((n) => n.isPinned).length.toString(),
+              color: Colors.pink,
+              icon: Icons.push_pin_outlined,
+              onTap: () => tabProvider.setIndex(1),
+            ),
+            _StatTile(
+              label: 'Completed',
+              value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
+              color: Colors.green,
+              icon: Icons.task_alt_outlined,
+              onTap: () => tabProvider.setIndex(2),
+            ),
           ],
         );
       },
     );
   }
-
-
 
   Widget _buildUpcomingTasks(BuildContext context) {
     final now = DateTime.now();
@@ -188,94 +175,105 @@ class DashboardScreen extends StatelessWidget {
 
         if (upcoming.isEmpty) {
           return Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.grey.withOpacity(0.1)),
             ),
-            child: const Center(
-              child: Text('No upcoming reminders', style: TextStyle(color: Colors.grey)),
+            child: Center(
+              child: Text('No upcoming reminders', style: GoogleFonts.outfit(color: Colors.grey[500])),
             ),
           );
         }
 
         return Column(
-          children: upcoming.take(3).map((task) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  shape: BoxShape.circle,
+          children: upcoming.take(3).map((task) {
+            DateTime? displayTime = task.reminderTime;
+            if (task.reminderTime != null && task.isRecurring && task.reminderTime!.isBefore(DateTime.now())) {
+              displayTime = AppDateUtils.calculateNextOccurrence(task.reminderTime, task.recurringInterval) ??
+                  task.reminderTime;
+            }
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.alarm, color: Colors.blue, size: 20),
                 ),
-                child: const Icon(Icons.alarm, color: Colors.blue, size: 20),
+                title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15)),
+                subtitle: Text(
+                  displayTime != null ? AppDateUtils.formatReminder(displayTime) : '',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
+                ),
               ),
-              title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16)),
-              subtitle: Builder(
-                builder: (context) {
-                  DateTime? displayTime = task.reminderTime;
-                  if (task.reminderTime != null && task.isRecurring && task.reminderTime!.isBefore(DateTime.now())) {
-                    displayTime = AppDateUtils.calculateNextOccurrence(task.reminderTime, task.recurringInterval) ?? task.reminderTime;
-                  }
-                  return Text(
-                    displayTime != null ? AppDateUtils.formatReminder(displayTime) : '',
-                    style: const TextStyle(fontSize: 12),
-                  );
-                },
-              ),
-              trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
-            ),
-          )).toList(),
+            );
+          }).toList(),
         );
       },
     );
   }
+}
 
-  Widget _buildStatCard(String label, String value, Color color, IconData icon) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      elevation: 0,
+      shadowColor: Colors.black26,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(icon, color: color, size: 22),
                 ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              Icon(Icons.more_horiz, color: Colors.grey[300], size: 18),
-            ],
+                const Spacer(),
+                Text(value, style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
+                Text(label, style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+              ],
+            ),
           ),
-          const Spacer(),
-          Text(value, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: -1)),
-          Text(label, style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
-        ],
+        ),
       ),
     );
   }

@@ -12,6 +12,7 @@ class Note {
   final bool isPinned;
   final bool isArchived;
   final bool isTrashed;
+  final bool isHidden;
   final DateTime? reminderTime;
   final bool isRecurring;
   final RecurringInterval recurringInterval; 
@@ -29,6 +30,7 @@ class Note {
     this.isPinned = false,
     this.isArchived = false,
     this.isTrashed = false,
+    this.isHidden = false,
     this.reminderTime,
     this.isRecurring = false,
     this.recurringInterval = RecurringInterval.none,
@@ -47,6 +49,7 @@ class Note {
     bool? isPinned,
     bool? isArchived,
     bool? isTrashed,
+    bool? isHidden,
     DateTime? reminderTime,
     bool? isRecurring,
     RecurringInterval? recurringInterval,
@@ -64,6 +67,7 @@ class Note {
       isPinned: isPinned ?? this.isPinned,
       isArchived: isArchived ?? this.isArchived,
       isTrashed: isTrashed ?? this.isTrashed,
+      isHidden: isHidden ?? this.isHidden,
       reminderTime: reminderTime ?? this.reminderTime,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
@@ -84,6 +88,7 @@ class Note {
       'isPinned': isPinned ? 1 : 0,
       'isArchived': isArchived ? 1 : 0,
       'isTrashed': isTrashed ? 1 : 0,
+      'isHidden': isHidden ? 1 : 0,
       'reminderTime': reminderTime?.toIso8601String(),
       'isRecurring': isRecurring ? 1 : 0,
       'recurringInterval': recurringInterval.index,
@@ -104,6 +109,7 @@ class Note {
       isPinned: map['isPinned'] == 1,
       isArchived: map['isArchived'] == 1,
       isTrashed: map['isTrashed'] == 1,
+      isHidden: (map['isHidden'] ?? 0) == 1,
       reminderTime: map['reminderTime'] != null ? DateTime.parse(map['reminderTime']) : null,
       isRecurring: map['isRecurring'] == 1,
       recurringInterval: RecurringInterval.values[map['recurringInterval']],
