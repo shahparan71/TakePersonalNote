@@ -10,6 +10,7 @@ import '../widgets/sheet_safe_area.dart';
 import '../widgets/design_widgets.dart';
 import '../theme/app_colors.dart';
 import 'note_edit_screen.dart';
+import 'hidden_notes_screen.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -99,6 +100,23 @@ class _NotesScreenState extends State<NotesScreen> {
             : Text('Notes', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         actions: [
           if (!_selectionMode) ...[
+            Consumer<NoteProvider>(
+              builder: (context, provider, _) {
+                final count = provider.hiddenNotes.length;
+                return IconButton(
+                  icon: Badge(
+                    isLabelVisible: count > 0,
+                    label: Text('$count'),
+                    child: const Icon(Icons.visibility_off_outlined),
+                  ),
+                  tooltip: 'Hidden notes',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HiddenNotesScreen()),
+                  ).then((_) => _refreshNotes()),
+                );
+              },
+            ),
             IconButton(
               icon: Icon(_isListView ? Icons.grid_view : Icons.view_list),
               onPressed: _toggleViewMode,
@@ -500,10 +518,29 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Future<void> _hideSelected() async {
     final provider = Provider.of<NoteProvider>(context, listen: false);
-    for (final note in _getSelectedNotes(provider)) {
+    final notes = _getSelectedNotes(provider);
+    if (notes.isEmpty) return;
+    for (final note in notes) {
       await provider.hideNote(note);
     }
     _exitSelectionMode();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          notes.length == 1
+              ? 'Note hidden. Tap the hidden icon in the app bar to view it.'
+              : '${notes.length} notes hidden. Tap the hidden icon in the app bar to view them.',
+        ),
+        action: SnackBarAction(
+          label: 'View',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HiddenNotesScreen()),
+          ).then((_) => _refreshNotes()),
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteSelected() async {

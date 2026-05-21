@@ -7,15 +7,18 @@ class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
   List<Note> _archivedNotes = [];
   List<Note> _trashedNotes = [];
+  List<Note> _hiddenNotes = [];
 
   List<Note> get notes => _notes;
   List<Note> get archivedNotes => _archivedNotes;
   List<Note> get trashedNotes => _trashedNotes;
+  List<Note> get hiddenNotes => _hiddenNotes;
 
   Future<void> fetchNotes({String? query, String? category, int? color, String? orderBy}) async {
     _notes = await _dbService.getNotes(query: query, category: category, color: color, orderBy: orderBy);
     _archivedNotes = await _dbService.getArchivedNotes();
     _trashedNotes = await _dbService.getTrashedNotes();
+    _hiddenNotes = await _dbService.getHiddenNotes();
     notifyListeners();
   }
 

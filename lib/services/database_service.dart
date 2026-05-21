@@ -106,6 +106,16 @@ class DatabaseService {
     return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
   }
 
+  Future<List<Note>> getHiddenNotes() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'notes',
+      where: 'isHidden = 1 AND isTrashed = 0 AND isArchived = 0',
+      orderBy: 'updatedAt DESC',
+    );
+    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+  }
+
   Future<List<Note>> getArchivedNotes() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('notes', where: 'isArchived = 1 AND isTrashed = 0');
