@@ -9,6 +9,7 @@ import '../services/export_service.dart';
 import '../services/notification_service.dart';
 import '../services/google_drive_sync_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/sheet_safe_area.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -49,13 +50,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _openDriveBackupSheet() {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      builder: (ctx) => SheetSafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
@@ -109,7 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: const Text('Sign out'),
               ),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );
