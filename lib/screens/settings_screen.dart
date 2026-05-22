@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -187,22 +188,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.notifications_active_outlined),
-                title: const Text('Test Notification'),
-                subtitle: const Text('Check if reminders are working'),
-                onTap: () async {
-                  await NotificationService().showTestNotification(
-                    title: 'Test Reminder',
-                    body: 'If you see this, notifications are correctly configured!',
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Test notification sent!')),
+              if (kDebugMode)
+                ListTile(
+                  leading: const Icon(Icons.notifications_active_outlined),
+                  title: const Text('Test Notification'),
+                  subtitle: const Text('Check if reminders are working'),
+                  onTap: () async {
+                    await NotificationService().showTestNotification(
+                      title: 'Test Reminder',
+                      body: 'If you see this, notifications are correctly configured!',
                     );
-                  }
-                },
-              ),
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Test notification sent!')),
+                      );
+                    }
+                  },
+                ),
               const Divider(height: 1),
               const _SettingsSection(title: 'Security'),
               SwitchListTile(
