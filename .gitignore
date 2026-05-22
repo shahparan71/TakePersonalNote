@@ -48,3 +48,4 @@ app.*.map.json
 # FVM Version Cache
 .fvm/
 /firebase.json
+/android/.kotlin/sessions/kotlin-compiler-7473132809758628656.salive
