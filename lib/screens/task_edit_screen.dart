@@ -56,13 +56,15 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       await NotificationService().cancelNotification(notifId);
       return;
     }
-    final success = await NotificationService().scheduleNotification(
+    final success = await NotificationService().scheduleNotificationWithCustomInterval(
       id: notifId,
       title: 'Task Reminder',
       body: title,
       scheduledDate: _reminderTime!,
       payload: 'task_$taskId',
       recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
+      customIntervalValue: _customIntervalValue,
+      customIntervalUnit: _customIntervalUnit,
     );
     if (mounted) _showSchedulingFeedback(success);
   }

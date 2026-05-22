@@ -12,6 +12,7 @@ import '../services/google_drive_sync_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/sheet_safe_area.dart';
 import '../utils/drive_sync_utils.dart';
+import '../services/battery_optimization_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -213,6 +214,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: const Text('Require authentication to open app'),
                 value: settings.isAppLockEnabled,
                 onChanged: settings.toggleAppLock,
+              ),
+              ListTile(
+                leading: const Icon(Icons.battery_alert),
+                title: const Text('Battery Optimization'),
+                subtitle: const Text('Disable to ensure reliable reminders'),
+                onTap: () async {
+                  await BatteryOptimizationService.openBatteryOptimizationSettings();
+                },
               ),
               const Divider(height: 1),
               const _SettingsSection(title: 'Storage & Backup'),

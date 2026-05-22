@@ -6,15 +6,18 @@ class SettingsProvider extends ChangeNotifier {
   
   bool _isAppLockEnabled = false;
   bool _isDriveAutoSyncEnabled = false;
+  bool _isBatteryPromptShown = false;
   ThemeMode _themeMode = ThemeMode.system;
 
   bool get isAppLockEnabled => _isAppLockEnabled;
   bool get isDriveAutoSyncEnabled => _isDriveAutoSyncEnabled;
+  bool get isBatteryPromptShown => _isBatteryPromptShown;
   ThemeMode get themeMode => _themeMode;
 
   Future<void> loadSettings() async {
     _isAppLockEnabled = await _service.isAppLockEnabled();
     _isDriveAutoSyncEnabled = await _service.isDriveAutoSyncEnabled();
+    _isBatteryPromptShown = await _service.isBatteryPromptShown();
     final themeStr = await _service.getThemeMode();
     _themeMode = _parseThemeMode(themeStr);
     notifyListeners();
@@ -29,6 +32,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> toggleDriveAutoSync(bool value) async {
     await _service.setDriveAutoSyncEnabled(value);
     _isDriveAutoSyncEnabled = value;
+    notifyListeners();
+  }
+
+  Future<void> setBatteryPromptShown(bool value) async {
+    await _service.setBatteryPromptShown(value);
+    _isBatteryPromptShown = value;
     notifyListeners();
   }
 
