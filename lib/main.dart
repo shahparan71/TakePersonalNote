@@ -9,6 +9,8 @@ import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/theme/app_theme.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 
 import 'screens/lock_screen.dart';
 import 'screens/home_screen.dart';
@@ -47,6 +49,12 @@ class MyApp extends StatelessWidget {
             title: 'TakeNote',
             navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              FlutterQuillLocalizations.delegate,
+            ],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: settings.themeMode,

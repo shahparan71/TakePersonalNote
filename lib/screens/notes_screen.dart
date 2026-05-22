@@ -9,6 +9,7 @@ import '../models/note.dart';
 import '../widgets/sheet_safe_area.dart';
 import '../widgets/design_widgets.dart';
 import '../theme/app_colors.dart';
+import '../utils/note_utils.dart';
 import 'note_edit_screen.dart';
 import 'hidden_notes_screen.dart';
 
@@ -256,7 +257,7 @@ class _NotesScreenState extends State<NotesScreen> {
             const SizedBox(height: 6),
             Expanded(
               child: Text(
-                note.content,
+                NoteUtils.getPlainText(note.content),
                 style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.3),
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
@@ -290,7 +291,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   _buildNoteHeader(note),
                   const SizedBox(height: 4),
                   Text(
-                    note.content,
+                    NoteUtils.getPlainText(note.content),
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

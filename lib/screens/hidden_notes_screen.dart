@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../services/note_provider.dart';
 import '../models/note.dart';
 import '../theme/app_colors.dart';
+import '../utils/note_utils.dart';
 import 'note_edit_screen.dart';
 
 class HiddenNotesScreen extends StatelessWidget {
@@ -111,7 +112,7 @@ class _HiddenNoteCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      note.content,
+                      NoteUtils.getPlainText(note.content),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 13, color: colors.textSecondary),

@@ -1,13 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:image_picker/image_picker.dart';
 import 'package:take_personal_note/models/note.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
-import 'package:take_personal_note/utils/note_text_controller.dart';
-import 'package:take_personal_note/utils/checklist_utils.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -24,48 +27,52 @@ class NoteEditScreen extends StatefulWidget {
 }
 
 class _NoteEditScreenState extends State<NoteEditScreen> {
-  static const double _formattingToolbarHeight = 44;
-
   late TextEditingController _titleController;
-  late NoteTextController _contentController;
+  late quill.QuillController _contentController;
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
-  bool _isHighlighterActive = false;
-  double _fontSize = 18.0;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
-  NoteType _type = NoteType.text;
-  List<ChecklistItem> _checklistItems = [];
-  final List<TextEditingController> _checklistControllers = [];
   final FocusNode _contentFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
+    
     final initialContent = widget.note?.content ?? widget.initialText ?? '';
-    _contentController = NoteTextController(text: initialContent);
+    
+    quill.Document doc;
+    if (initialContent.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(initialContent);
+        if (decoded is List) {
+          doc = quill.Document.fromJson(decoded);
+        } else {
+          doc = quill.Document()..insert(0, initialContent);
+        }
+      } catch (e) {
+        doc = quill.Document()..insert(0, initialContent);
+      }
+    } else {
+      doc = quill.Document();
+    }
+
+    _contentController = quill.QuillController(
+      document: doc,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
     _isPinned = widget.note?.isPinned ?? false;
     _reminderTime = widget.note?.reminderTime;
     _isRecurring = widget.note?.isRecurring ?? false;
     _recurringInterval = widget.note?.recurringInterval ?? RecurringInterval.none;
-    _type = widget.note?.type ?? NoteType.text;
-    if (_type == NoteType.checklist) {
-      _checklistItems = ChecklistUtils.parse(initialContent);
-      _syncChecklistControllers();
-    }
-  }
-
-  void _syncChecklistControllers() {
-    for (final c in _checklistControllers) {
-      c.dispose();
-    }
-    _checklistControllers.clear();
-    for (final item in _checklistItems) {
-      _checklistControllers.add(TextEditingController(text: item.text));
-    }
+    
+    _contentController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -73,26 +80,19 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _titleController.dispose();
     _contentController.dispose();
     _contentFocusNode.dispose();
-    for (final c in _checklistControllers) {
-      c.dispose();
-    }
     super.dispose();
   }
 
   String get _currentContent {
-    if (_type == NoteType.checklist) {
-      for (var i = 0; i < _checklistItems.length; i++) {
-        if (i < _checklistControllers.length) {
-          _checklistItems[i].text = _checklistControllers[i].text;
-        }
-      }
-      return ChecklistUtils.serialize(_checklistItems);
-    }
-    return _contentController.text;
+    return jsonEncode(_contentController.document.toDelta().toJson());
+  }
+
+  bool get _isEmpty {
+    return _titleController.text.trim().isEmpty && _contentController.document.isEmpty();
   }
 
   void _saveNote() {
-    if (_titleController.text.isEmpty && _currentContent.trim().isEmpty) return;
+    if (_isEmpty) return;
 
     final provider = Provider.of<NoteProvider>(context, listen: false);
     final now = DateTime.now();
@@ -101,7 +101,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       final newNote = Note(
         title: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
         content: _currentContent,
-        type: _type,
+        type: NoteType.text, // Always text now
         color: _selectedColor,
         isPinned: _isPinned,
         reminderTime: _reminderTime,
@@ -128,7 +128,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         content: _currentContent,
         color: _selectedColor,
         isPinned: _isPinned,
-        type: _type,
+        type: NoteType.text,
         category: widget.note!.category,
         reminderTime: _reminderTime,
         isRecurring: _reminderTime == null ? false : _isRecurring,
@@ -153,22 +153,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
-  void _switchNoteType(NoteType newType) {
-    if (_type == newType) return;
-    setState(() {
-      if (newType == NoteType.checklist) {
-        _checklistItems = ChecklistUtils.parse(_contentController.text);
-        if (_checklistItems.isEmpty) {
-          _checklistItems = [ChecklistItem(checked: false, text: '')];
-        }
-        _syncChecklistControllers();
-      } else {
-        _contentController.text = ChecklistUtils.serialize(_checklistItems);
-      }
-      _type = newType;
-    });
-  }
-
   Future<void> _selectReminder() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -186,32 +170,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
-  void _formatText(String prefix, String suffix) {
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    if (!selection.isValid) return;
-    final selectedText = selection.textInside(text);
-    final newText = text.replaceRange(selection.start, selection.end, '$prefix$selectedText$suffix');
-    _contentController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: selection.start + prefix.length + selectedText.length + suffix.length),
-    );
-  }
-
-  void _toggleHighlighter() {
-    setState(() {
-      _isHighlighterActive = !_isHighlighterActive;
-      _contentController.isHighlighterActive = _isHighlighterActive;
-    });
-  }
-
-  void _updateFontSize(bool increase) {
-    setState(() {
-      _fontSize = increase ? _fontSize + 2 : (_fontSize > 10 ? _fontSize - 2 : _fontSize);
-      _contentController.updateFontSize(_fontSize);
-    });
-  }
-
   void _setRecurrenceInterval(RecurringInterval interval) {
     setState(() {
       _isRecurring = true;
@@ -219,20 +177,25 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     });
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final index = _contentController.selection.baseOffset;
+      final length = _contentController.selection.extentOffset - index;
+      _contentController.replaceText(
+        index,
+        length,
+        quill.BlockEmbed.image(pickedFile.path),
+        null,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // viewInsets.bottom is the keyboard height from the physical bottom edge.
-    // resizeToAvoidBottomInset must be false, otherwise the body is already
-    // lifted and applying bottomInset again doubles the offset.
-    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
-    final keyboardVisible = keyboardHeight > 0;
-    final contentBottomPadding = keyboardVisible && _type == NoteType.text
-        ? keyboardHeight + _formattingToolbarHeight
-        : (keyboardVisible ? keyboardHeight : 0.0);
-
     return Scaffold(
       backgroundColor: Color(_selectedColor),
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -264,12 +227,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               )
             : null,
         actions: [
-          if (_contentController.canUndo)
+          if (_contentController.hasUndo)
             IconButton(
               icon: const Icon(Icons.undo, color: AppColors.actionEdit),
               onPressed: () {
                 _contentController.undo();
-                setState(() {});
               },
             ),
           CircleActionButton(
@@ -301,44 +263,83 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         ],
       ),
       body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
+        child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.only(left: 16, right: 16, bottom: contentBottomPadding+10),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      hintText: 'Add Title',
-                      filled: true,
-                      fillColor: context.appColors.cardSurface.withOpacity(0.7),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                      hintStyle: GoogleFonts.outfit(fontSize: 20, color: context.appColors.textSecondary),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'Add Title',
+                        filled: true,
+                        fillColor: context.appColors.cardSurface.withOpacity(0.7),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: context.appColors.textSecondary),
+                      ),
+                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                    style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildMetadataRow(),
-                  _buildModeSelector(),
-                  if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
-                  Expanded(child: _type == NoteType.text ? _buildTextEditor() : _buildChecklistEditor(keyboardHeight)),
-                ],
-              ),
-            ),
-            if (keyboardVisible && _type == NoteType.text)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: keyboardHeight,
-                height: _formattingToolbarHeight,
-                child: Material(
-                  elevation: 8,
-                  color: context.appColors.toolbarDark,
-                  child: _buildFormattingToolbar(),
+                    const SizedBox(height: 8),
+                    _buildMetadataRow(),
+                    if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
+                    Expanded(
+                      child: quill.QuillEditor.basic(
+                        controller: _contentController,
+                        focusNode: _contentFocusNode,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
+            Container(
+              color: context.appColors.toolbarDark,
+              child: quill.QuillSimpleToolbar(
+                controller: _contentController,
+                config: quill.QuillSimpleToolbarConfig(
+                  showBoldButton: true,
+                  showItalicButton: true,
+                  showListBullets: true,
+                  showBackgroundColorButton: true,
+                  showFontSize: true,
+                  showUndo: false,
+                  showRedo: false,
+                  showFontFamily: false,
+                  showStrikeThrough: false,
+                  showInlineCode: false,
+                  showColorButton: false,
+                  showClearFormat: false,
+                  showAlignmentButtons: false,
+                  showLeftAlignment: false,
+                  showCenterAlignment: false,
+                  showRightAlignment: false,
+                  showJustifyAlignment: false,
+                  showHeaderStyle: false,
+                  showListNumbers: false,
+                  showListCheck: false,
+                  showCodeBlock: false,
+                  showQuote: false,
+                  showIndent: false,
+                  showLink: false,
+                  showDirection: false,
+                  showSearchButton: false,
+                  showSubscript: false,
+                  showSuperscript: false,
+                  showClipboardCopy: false,
+                  showClipboardCut: false,
+                  showClipboardPaste: false,
+                  customButtons: [
+                    quill.QuillToolbarCustomButtonOptions(
+                      icon: const Icon(Icons.image),
+                      onPressed: _pickImage,
+                      tooltip: 'Insert Image',
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -355,28 +356,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             DateFormat('MMMM d, yyyy h:mm a').format(widget.note?.updatedAt ?? DateTime.now()),
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _contentController,
-            builder: (context, value, _) {
-              final count = _type == NoteType.text ? value.text.length : _currentContent.length;
-              return Text('$count characters', style: const TextStyle(fontSize: 12, color: Colors.grey));
-            },
+          Text(
+            '${_contentController.document.toPlainText().trim().length} characters',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildModeSelector() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SegmentedButton<NoteType>(
-        segments: const [
-          ButtonSegment(value: NoteType.text, label: Text('Text'), icon: Icon(Icons.text_fields, size: 18)),
-          ButtonSegment(value: NoteType.checklist, label: Text('Checklist'), icon: Icon(Icons.checklist, size: 18)),
-        ],
-        selected: {_type},
-        onSelectionChanged: (s) => _switchNoteType(s.first),
       ),
     );
   }
@@ -457,98 +441,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
     if (nextDate == null) return const SizedBox.shrink();
     return Text('Next: ${AppDateUtils.formatReminder(nextDate)}', style: const TextStyle(fontSize: 11, color: Colors.indigo));
-  }
-
-  Widget _buildTextEditor() {
-    return TextField(
-      controller: _contentController,
-      focusNode: _contentFocusNode,
-      maxLines: null,
-      expands: true,
-      textAlignVertical: TextAlignVertical.top,
-      keyboardType: TextInputType.multiline,
-      decoration: const InputDecoration(hintText: 'Start typing...', border: InputBorder.none, contentPadding: EdgeInsets.all(4)),
-      style: TextStyle(fontSize: _fontSize),
-    );
-  }
-
-  Widget _buildChecklistEditor([double keyboardHeight = 0]) {
-    return ListView.builder(
-      padding: EdgeInsets.only(bottom: keyboardHeight + 16),
-      itemCount: _checklistItems.length + 1,
-      itemBuilder: (context, index) {
-        if (index == _checklistItems.length) {
-          return TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _checklistItems.add(ChecklistItem(checked: false, text: ''));
-                _checklistControllers.add(TextEditingController());
-              });
-            },
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add item'),
-          );
-        }
-        final item = _checklistItems[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Checkbox(
-                value: item.checked,
-                onChanged: (val) => setState(() => item.checked = val ?? false),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _checklistControllers[index],
-                  decoration: const InputDecoration(hintText: 'List item', border: InputBorder.none, isDense: true),
-                  style: TextStyle(
-                    fontSize: 16,
-                    decoration: item.checked ? TextDecoration.lineThrough : null,
-                    color: item.checked ? Colors.grey : null,
-                  ),
-                  onChanged: (val) => item.text = val,
-                ),
-              ),
-              if (_checklistItems.length > 1)
-                IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () {
-                    setState(() {
-                      _checklistControllers[index].dispose();
-                      _checklistControllers.removeAt(index);
-                      _checklistItems.removeAt(index);
-                    });
-                  },
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFormattingToolbar() {
-    return Row(
-      children: [
-        _toolbarBtn(Icons.format_bold, () => _formatText('**', '**')),
-        _toolbarBtn(Icons.format_italic, () => _formatText('__', '__')),
-        _toolbarBtn(Icons.format_list_bulleted, () => _formatText('\n- ', '')),
-        _toolbarBtn(Icons.border_color, _toggleHighlighter, highlighted: _isHighlighterActive),
-        const Spacer(),
-        _toolbarBtn(Icons.text_increase, () => _updateFontSize(true)),
-        _toolbarBtn(Icons.text_decrease, () => _updateFontSize(false)),
-      ],
-    );
-  }
-
-  Widget _toolbarBtn(IconData icon, VoidCallback onPressed, {bool highlighted = false}) {
-    return IconButton(
-      icon: Icon(icon, size: 22, color: highlighted ? AppColors.accentTeal : Colors.white),
-      onPressed: onPressed,
-    );
   }
 
   void _showColorPicker() {
