@@ -8,6 +8,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 
 import '../config/google_auth_config.dart';
 import 'backup_service.dart';
+import 'preference_service.dart';
 
 class GoogleDriveSyncResult {
   final bool success;
@@ -23,6 +24,7 @@ class GoogleDriveSyncResult {
 
 class GoogleDriveSyncService {
   static const String backupFileName = 'take_personal_note_backup.json';
+  static const Duration autoSyncMinInterval = Duration(minutes: 15);
 
   static final GoogleDriveSyncService _instance = GoogleDriveSyncService._internal();
   factory GoogleDriveSyncService() => _instance;
@@ -40,7 +42,17 @@ class GoogleDriveSyncService {
 
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
 
+  bool get isSignedIn => _googleSignIn.currentUser != null;
+
   String? get lastAuthError => _lastAuthError;
+
+  /// Signs in when needed (interactive). Use before manual sync/fetch.
+  Future<bool> ensureSignedIn() async {
+    if (_googleSignIn.currentUser != null) return true;
+    final silent = await _googleSignIn.signInSilently();
+    if (silent != null) return true;
+    return (await signIn()) != null;
+  }
 
   Future<GoogleSignInAccount?> signIn() async {
     _lastAuthError = null;
@@ -195,6 +207,32 @@ class GoogleDriveSyncService {
     } catch (e, st) {
       debugPrint('Drive fetch error: $e\n$st');
       return GoogleDriveSyncResult(success: false, message: 'Fetch failed: $e');
+    }
+  }
+
+  /// Background backup when auto-sync is on. Uses silent sign-in only (no login UI).
+  Future<void> runAutoSyncIfEnabled({
+    required bool enabled,
+    List<String>? folders,
+  }) async {
+    if (!enabled) return;
+
+    final prefs = PreferenceService();
+    final lastMs = await prefs.getDriveLastAutoSyncMs();
+    final elapsed = DateTime.now().millisecondsSinceEpoch - lastMs;
+    if (elapsed < autoSyncMinInterval.inMilliseconds) return;
+
+    if (_googleSignIn.currentUser == null) {
+      final silent = await _googleSignIn.signInSilently();
+      if (silent == null) return;
+    }
+
+    final result = await syncToDrive(folders: folders);
+    if (result.success) {
+      await prefs.setDriveLastAutoSyncMs(DateTime.now().millisecondsSinceEpoch);
+      debugPrint('Drive auto-sync completed.');
+    } else {
+      debugPrint('Drive auto-sync skipped: ${result.message}');
     }
   }
 }

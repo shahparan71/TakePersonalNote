@@ -10,6 +10,7 @@ import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/utils/drive_sync_utils.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
@@ -36,21 +37,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _fetchFromGoogleDrive() async {
     setState(() => _isFetching = true);
-    final result = await GoogleDriveSyncService().fetchFromDrive(merge: false);
+    final result = await GoogleDriveSyncService().fetchFromDrive(merge: true);
     if (!mounted) return;
     setState(() => _isFetching = false);
 
-    if (result.success) {
-      await Provider.of<NoteProvider>(context, listen: false).refreshAll();
-      await Provider.of<TaskProvider>(context, listen: false).refreshAll();
-      final folderProvider = Provider.of<FolderProvider>(context, listen: false);
-      for (final folder in result.folders) {
-        await folderProvider.addFolder(folder);
-      }
-    }
+    await applyDriveSyncResult(context, result);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
+    showDriveSyncSnackBar(context, result);
+  }
+
+  void _onFetchFromGoogleDrivePressed() {
+    confirmFetchFromDrive(
+      context,
+      onConfirm: _fetchFromGoogleDrive,
     );
   }
 
@@ -205,7 +204,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _isFetching ? null : _fetchFromGoogleDrive,
+                  onPressed: _isFetching ? null : _onFetchFromGoogleDrivePressed,
                   icon: _isFetching
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.cloud_download),

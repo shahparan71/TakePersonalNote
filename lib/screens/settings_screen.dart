@@ -10,6 +10,7 @@ import '../services/notification_service.dart';
 import '../services/google_drive_sync_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/sheet_safe_area.dart';
+import '../utils/drive_sync_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,6 +26,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _refreshDriveUser();
+  }
+
+  void _refreshDriveUser() {
     _driveUser = GoogleDriveSyncService().currentUser?.email;
   }
 
@@ -34,17 +39,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _driveBusy = false;
-      _driveUser = GoogleDriveSyncService().currentUser?.email;
+      _refreshDriveUser();
     });
-    if (result.success) {
-      await Provider.of<NoteProvider>(context, listen: false).refreshAll();
-      await Provider.of<TaskProvider>(context, listen: false).refreshAll();
-      for (final f in result.folders) {
-        await Provider.of<FolderProvider>(context, listen: false).addFolder(f);
-      }
-    }
+    await applyDriveSyncResult(context, result);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message)));
+    showDriveSyncSnackBar(context, result);
   }
 
   void _openDriveBackupSheet() {
@@ -60,111 +59,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text(
-              _driveUser ?? 'Not signed in',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 20),
-            if (_driveUser == null)
+              Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(
+                _driveUser ?? 'Not signed in — you will be asked to sign in when syncing',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: _driveBusy
                     ? null
-                    : () async {
-                        setState(() => _driveBusy = true);
-                        await GoogleDriveSyncService().signIn();
-                        if (!mounted) return;
-                        setState(() {
-                          _driveBusy = false;
-                          _driveUser = GoogleDriveSyncService().currentUser?.email;
-                        });
-                        final err = GoogleDriveSyncService().lastAuthError;
-                        if (_driveUser == null && err != null && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
-                        }
+                    : () {
+                        Navigator.pop(ctx);
+                        final folders = Provider.of<FolderProvider>(context, listen: false).folders;
+                        _runDriveAction(() => GoogleDriveSyncService().syncToDrive(folders: folders));
                       },
-                icon: const Icon(Icons.login),
-                label: const Text('Sign in with Google'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.fabDark,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
+                icon: const Icon(Icons.cloud_upload_outlined),
+                label: const Text('Sync to Drive'),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
               ),
-            if (_driveUser == null) const SizedBox(height: 10),
-            FilledButton.icon(
-              onPressed: _driveBusy
-                  ? null
-                  : () {
-                      Navigator.pop(ctx);
-                      final folders = Provider.of<FolderProvider>(context, listen: false).folders;
-                      _runDriveAction(() => GoogleDriveSyncService().syncToDrive(folders: folders));
-                    },
-              icon: const Icon(Icons.cloud_upload_outlined),
-              label: const Text('Sync to Drive'),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: _driveBusy
-                  ? null
-                  : () {
-                      Navigator.pop(ctx);
-                      _showFetchConfirm(merge: true);
-                    },
-              icon: const Icon(Icons.cloud_download_outlined),
-              label: const Text('Fetch from Drive (merge)'),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: _driveBusy
-                  ? null
-                  : () {
-                      Navigator.pop(ctx);
-                      _showFetchConfirm(merge: false);
-                    },
-              icon: const Icon(Icons.restore),
-              label: const Text('Fetch from Drive (replace)'),
-              style: OutlinedButton.styleFrom(foregroundColor: AppColors.actionDelete),
-            ),
-            if (_driveUser != null) ...[
               const SizedBox(height: 10),
-              TextButton(
-                onPressed: () async {
-                  await GoogleDriveSyncService().signOut();
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  setState(() => _driveUser = null);
-                },
-                child: const Text('Sign out'),
+              OutlinedButton.icon(
+                onPressed: _driveBusy
+                    ? null
+                    : () {
+                        Navigator.pop(ctx);
+                        confirmFetchFromDrive(
+                          context,
+                          onConfirm: () => _runDriveAction(
+                            () => GoogleDriveSyncService().fetchFromDrive(merge: true),
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.cloud_download_outlined),
+                label: const Text('Fetch from Drive'),
               ),
-            ],
+              if (_driveUser != null) ...[
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () async {
+                    await GoogleDriveSyncService().signOut();
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    setState(() => _driveUser = null);
+                  },
+                  child: const Text('Sign out'),
+                ),
+              ],
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showFetchConfirm({required bool merge}) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(merge ? 'Merge backup?' : 'Replace all data?'),
-        content: Text(
-          merge
-              ? 'Notes and tasks from Drive will be added to your existing data.'
-              : 'This will replace all local notes and tasks with the Drive backup.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _runDriveAction(() => GoogleDriveSyncService().fetchFromDrive(merge: merge));
-            },
-            child: const Text('Continue'),
-          ),
-        ],
       ),
     );
   }
@@ -273,11 +216,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 subtitle: Text(
                   _driveBusy
                       ? 'Working...'
-                      : (_driveUser ?? 'Sign in to backup or restore'),
+                      : (_driveUser ?? 'Tap to backup or restore'),
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: _driveBusy ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
                 onTap: _driveBusy ? null : _openDriveBackupSheet,
+              ),
+              SwitchListTile(
+                secondary: Icon(Icons.sync, color: AppColors.fabDark),
+                title: const Text('Auto-sync to Google Drive'),
+                subtitle: const Text(
+                  'Automatically backs up notes and tasks when the app opens or resumes (requires sign-in)',
+                ),
+                value: settings.isDriveAutoSyncEnabled,
+                onChanged: settings.toggleDriveAutoSync,
               ),
               ListTile(
                 leading: const Icon(Icons.file_download),
