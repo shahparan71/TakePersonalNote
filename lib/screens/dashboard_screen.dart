@@ -106,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
                   Text(
-                    'TakeNote',
+                    'Take Notes',
                     style: GoogleFonts.caveat(fontSize: 28, fontWeight: FontWeight.w600, color: colors.textPrimary),
                   ),
                 ],

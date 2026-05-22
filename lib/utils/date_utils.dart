@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
 
 class AppDateUtils {
-  static String formatReminder(DateTime dateTime) {
+  static String formatReminder(DateTime dateTime, {bool showYear = false}) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
@@ -15,6 +15,9 @@ class AppDateUtils {
     } else if (dateToCompare == tomorrow) {
       return 'Tomorrow $time';
     } else {
+      if (showYear || dateTime.year != now.year) {
+        return DateFormat('MMM d, yyyy, h:mm a').format(dateTime);
+      }
       return DateFormat('MMM d, h:mm a').format(dateTime);
     }
   }

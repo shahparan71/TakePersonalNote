@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return MaterialApp(
-            title: 'TakeNote',
+            title: 'Take Notes',
             navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [

@@ -224,10 +224,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.update_rounded, size: 14, color: Colors.indigo.withOpacity(0.8)),
-                          const SizedBox(width: 4),
+                          //Icon(Icons.update_rounded, size: 14, color: Colors.indigo.withOpacity(0.8)),
+                          const SizedBox(width: 2),
                           Text(
-                            'Next: ${AppDateUtils.formatReminder(AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval, customValue: _customIntervalValue, customUnit: _customIntervalUnit) ?? _reminderTime!)}',
+                            'Next: ${AppDateUtils.formatReminder(AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval, customValue: _customIntervalValue, customUnit: _customIntervalUnit) ?? _reminderTime!, showYear: true)}',
                             style: TextStyle(fontSize: 12, color: Colors.indigo.withOpacity(0.9)),
                           ),
                         ],
