@@ -37,6 +37,13 @@
             {
               "client_id": "964868838422-sa1javj43hid6phk44setf37ivsq0l4l.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "964868838422-bpe7v9br29ghl5tmsqmnelr8cvg6008r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.paran.bd.take.personal.note"
+              }
             }
           ]
         }

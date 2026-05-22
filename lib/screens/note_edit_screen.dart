@@ -305,7 +305,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           fit: StackFit.expand,
           children: [
             Padding(
-              padding: EdgeInsets.only(left: 16, right: 16, bottom: contentBottomPadding),
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: contentBottomPadding+10),
               child: Column(
                 children: [
                   TextField(
