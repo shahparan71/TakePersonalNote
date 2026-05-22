@@ -1,4 +1,4 @@
-package com.paran.bd.take.personal.note.take_personal_note
+package com.paran.bd.take.personal.note
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine

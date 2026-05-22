@@ -67,6 +67,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 20),
+            if (_driveUser == null)
+              FilledButton.icon(
+                onPressed: _driveBusy
+                    ? null
+                    : () async {
+                        setState(() => _driveBusy = true);
+                        await GoogleDriveSyncService().signIn();
+                        if (!mounted) return;
+                        setState(() {
+                          _driveBusy = false;
+                          _driveUser = GoogleDriveSyncService().currentUser?.email;
+                        });
+                        final err = GoogleDriveSyncService().lastAuthError;
+                        if (_driveUser == null && err != null && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                        }
+                      },
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.fabDark,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            if (_driveUser == null) const SizedBox(height: 10),
             FilledButton.icon(
               onPressed: _driveBusy
                   ? null

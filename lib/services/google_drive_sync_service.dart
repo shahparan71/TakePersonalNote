@@ -1,7 +1,12 @@
 import 'dart:convert';
+
+import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
+
+import '../config/google_auth_config.dart';
 import 'backup_service.dart';
 
 class GoogleDriveSyncResult {
@@ -23,38 +28,96 @@ class GoogleDriveSyncService {
   factory GoogleDriveSyncService() => _instance;
   GoogleDriveSyncService._internal();
 
+  String? _lastAuthError;
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [drive.DriveApi.driveFileScope],
+    scopes: [
+      'email',
+      drive.DriveApi.driveFileScope,
+    ],
+    serverClientId: kGoogleSignInWebClientId,
   );
 
   GoogleSignInAccount? get currentUser => _googleSignIn.currentUser;
 
+  String? get lastAuthError => _lastAuthError;
+
   Future<GoogleSignInAccount?> signIn() async {
+    _lastAuthError = null;
     try {
-      return await _googleSignIn.signIn();
-    } catch (e) {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        _lastAuthError = 'Sign-in was cancelled.';
+      }
+      return account;
+    } on PlatformException catch (e) {
+      _lastAuthError = _formatPlatformSignInError(e);
+      debugPrint('Google sign-in PlatformException: ${e.code} ${e.message}');
+      return null;
+    } catch (e, st) {
+      _lastAuthError = 'Sign-in failed: $e';
+      debugPrint('Google sign-in error: $e\n$st');
       return null;
     }
   }
 
   Future<void> signOut() => _googleSignIn.signOut();
 
-  Future<drive.DriveApi?> _driveApi() async {
-    var account = _googleSignIn.currentUser;
-    account ??= await _googleSignIn.signInSilently();
-    account ??= await signIn();
-    if (account == null) return null;
+  String _signInFailureMessage() {
+    return _lastAuthError ??
+        'Google sign-in failed. Add your debug SHA-1 in Firebase, enable Google '
+        'sign-in, enable Drive API, and replace android/app/google-services.json '
+        '(see docs/FIREBASE_GOOGLE_DRIVE_SETUP.md).';
+  }
 
-    final client = await _googleSignIn.authenticatedClient();
-    if (client == null) return null;
-    return drive.DriveApi(client);
+  Future<drive.DriveApi?> _driveApi() async {
+    _lastAuthError = null;
+    try {
+      var account = _googleSignIn.currentUser;
+      account ??= await _googleSignIn.signInSilently();
+      account ??= await signIn();
+      if (account == null) {
+        return null;
+      }
+
+      final client = await _googleSignIn.authenticatedClient();
+      if (client == null) {
+        _lastAuthError =
+            'Could not obtain Google API access token. Ensure Google Sign-In is '
+            'enabled in Firebase Authentication and your Web OAuth client is configured '
+            '(set kGoogleSignInWebClientId or update google-services.json).';
+        return null;
+      }
+      return drive.DriveApi(client);
+    } on PlatformException catch (e) {
+      _lastAuthError = _formatPlatformSignInError(e);
+      debugPrint('Google Drive auth PlatformException: ${e.code} ${e.message}');
+      return null;
+    } catch (e, st) {
+      _lastAuthError = 'Authentication failed: $e';
+      debugPrint('Google Drive auth error: $e\n$st');
+      return null;
+    }
+  }
+
+  String _formatPlatformSignInError(PlatformException e) {
+    final code = e.code;
+    final message = e.message ?? '';
+    if (code == 'sign_in_failed' || message.contains('10')) {
+      return 'Sign-in configuration error (ApiException 10). Register your app SHA-1 '
+          'in Firebase and re-download google-services.json.';
+    }
+    if (code == 'network_error') {
+      return 'Network error during sign-in. Check your connection and try again.';
+    }
+    return 'Google sign-in error ($code): $message';
   }
 
   Future<GoogleDriveSyncResult> syncToDrive({List<String>? folders}) async {
     try {
       final api = await _driveApi();
       if (api == null) {
-        return GoogleDriveSyncResult(success: false, message: 'Google sign-in cancelled or failed.');
+        return GoogleDriveSyncResult(success: false, message: _signInFailureMessage());
       }
 
       final jsonString = await BackupService().exportAllToJson(folders: folders);
@@ -88,7 +151,8 @@ class GoogleDriveSyncService {
         success: true,
         message: 'Backup synced to Google Drive successfully.',
       );
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Drive sync error: $e\n$st');
       return GoogleDriveSyncResult(success: false, message: 'Sync failed: $e');
     }
   }
@@ -97,7 +161,7 @@ class GoogleDriveSyncService {
     try {
       final api = await _driveApi();
       if (api == null) {
-        return GoogleDriveSyncResult(success: false, message: 'Google sign-in cancelled or failed.');
+        return GoogleDriveSyncResult(success: false, message: _signInFailureMessage());
       }
 
       final list = await api.files.list(
@@ -128,7 +192,8 @@ class GoogleDriveSyncService {
         message: 'Restored ${result.notesCount} notes and ${result.tasksCount} tasks from Drive.',
         folders: result.folders,
       );
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Drive fetch error: $e\n$st');
       return GoogleDriveSyncResult(success: false, message: 'Fetch failed: $e');
     }
   }
