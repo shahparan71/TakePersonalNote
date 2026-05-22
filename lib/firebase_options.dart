@@ -16,9 +16,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'Add GoogleService-Info.plist and run flutterfire configure for iOS.',
-        );
+        return ios;
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -33,4 +31,16 @@ class DefaultFirebaseOptions {
     projectId: 'takepersonalnote',
     storageBucket: 'takepersonalnote.firebasestorage.app',
   );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDlvkU1Ad0vHVS4GefiIol8jwM05--_aWE',
+    appId: '1:964868838422:ios:8566a36b61c262ca15d137',
+    messagingSenderId: '964868838422',
+    projectId: 'takepersonalnote',
+    storageBucket: 'takepersonalnote.firebasestorage.app',
+    androidClientId: '964868838422-7e0sshnjko3r6g3dqhf0v5lmkksv8cef.apps.googleusercontent.com',
+    iosClientId: '964868838422-bpe7v9br29ghl5tmsqmnelr8cvg6008r.apps.googleusercontent.com',
+    iosBundleId: 'com.paran.bd.take.personal.note',
+  );
+
 }
