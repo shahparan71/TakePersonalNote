@@ -13,7 +13,7 @@ import 'tasks_screen.dart';
 import 'calendar_screen.dart';
 import 'note_edit_screen.dart';
 import 'task_edit_screen.dart';
-import '../theme/app_colors.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -123,14 +123,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final tabProvider = Provider.of<TabProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: context.appColors.scaffoldBg,
       body: IndexedStack(
         index: tabProvider.selectedIndex,
         children: _screens,
       ),
       bottomNavigationBar: NavigationBar(
-        backgroundColor: AppColors.cardWhite,
-        indicatorColor: AppColors.accentTeal.withOpacity(0.25),
         selectedIndex: tabProvider.selectedIndex,
         onDestinationSelected: (index) {
           tabProvider.setIndex(index);

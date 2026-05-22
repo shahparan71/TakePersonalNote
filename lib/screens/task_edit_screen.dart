@@ -127,19 +127,20 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBg,
+        backgroundColor: colors.scaffoldBg,
         title: Text(
           widget.task == null ? 'New Task' : 'Edit Task',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary),
         ),
         actions: [
           IconButton(
             icon: Icon(
               _reminderTime == null ? Icons.notifications_none_outlined : Icons.notifications_active,
-              color: _reminderTime == null ? AppColors.textSecondary : AppColors.fabDark,
+              color: _reminderTime == null ? colors.textSecondary : colors.fabDark,
             ),
             onPressed: () {
               if (_reminderTime == null) {
@@ -183,11 +184,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             decoration: InputDecoration(
               hintText: 'What needs to be done?',
               filled: true,
-              fillColor: AppColors.cardWhite,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              hintStyle: GoogleFonts.outfit(fontSize: 18, color: AppColors.textSecondary),
+              fillColor: colors.cardSurface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
+              hintStyle: GoogleFonts.outfit(fontSize: 18, color: colors.textSecondary),
             ),
-            style: GoogleFonts.outfit(fontSize: 20, height: 1.4),
+            style: GoogleFonts.outfit(fontSize: 20, height: 1.4, color: colors.textPrimary),
             maxLines: null,
           ),
           const SizedBox(height: 32),

@@ -12,11 +12,12 @@ class ArchiveScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBg,
-        title: Text('Archive', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        backgroundColor: colors.scaffoldBg,
+        title: Text('Archive', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<NoteProvider>(
         builder: (context, provider, child) {
@@ -27,11 +28,11 @@ class ArchiveScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.archive_outlined, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 12),
-                  Text('No archived notes', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+                  Text('No archived notes', style: GoogleFonts.outfit(color: colors.textSecondary)),
                   const SizedBox(height: 8),
                   Text(
                     'Long-press a note and archive it from Notes',
-                    style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary),
+                    style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary),
                   ),
                 ],
               ),
@@ -68,8 +69,9 @@ class _ArchiveCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Material(
-      color: AppColors.cardWhite,
+      color: colors.cardSurface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -77,7 +79,7 @@ class _ArchiveCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: colors.border),
           ),
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -95,24 +97,24 @@ class _ArchiveCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(note.title.isEmpty ? 'Untitled' : note.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                    Text(note.title.isEmpty ? 'Untitled' : note.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary)),
                     const SizedBox(height: 4),
                     Text(
                       note.content,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       DateFormat('MMM d, yyyy').format(note.updatedAt),
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 10, color: colors.textSecondary),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.unarchive_outlined, color: AppColors.fabDark),
+                icon: Icon(Icons.unarchive_outlined, color: colors.fabDark),
                 tooltip: 'Restore',
                 onPressed: onUnarchive,
               ),

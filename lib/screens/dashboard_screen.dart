@@ -85,9 +85,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final colors = context.appColors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -95,7 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: AppColors.scaffoldBg,
+            backgroundColor: colors.scaffoldBg,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16, right: 20),
               title: Column(
@@ -103,27 +104,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary)),
+                  Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
                   Text(
                     'TakeNote',
-                    style: GoogleFonts.caveat(fontSize: 28, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    style: GoogleFonts.caveat(fontSize: 28, fontWeight: FontWeight.w600, color: colors.textPrimary),
                   ),
                 ],
               ),
               background: Padding(
-                padding: const EdgeInsets.only(left: 20, top: 48),
+                padding: const EdgeInsets.only(left: 20, top: 65),
                 child: Align(
                   alignment: Alignment.topLeft,
                   child: Text(
                     DateFormat('EEEE, MMMM d').format(now),
-                    style: GoogleFonts.outfit(fontSize: 14, color: AppColors.textSecondary),
+                    style: GoogleFonts.outfit(fontSize: 18, color: colors.textSecondary),
                   ),
                 ),
               ),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.archive_outlined, color: AppColors.textPrimary),
+                icon: Icon(Icons.archive_outlined, color: colors.textPrimary),
                 tooltip: 'Archive',
                 onPressed: () => Navigator.push(
                   context,
@@ -131,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.textPrimary),
+                icon: Icon(Icons.delete_outline, color: colors.textPrimary),
                 tooltip: 'Trash',
                 onPressed: () => Navigator.push(
                   context,
@@ -139,7 +140,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
+                icon: Icon(Icons.settings_outlined, color: colors.textPrimary),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -173,6 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildEmptyRestoreBanner(BuildContext context) {
+    final colors = context.appColors;
     return Consumer2<NoteProvider, TaskProvider>(
       builder: (context, noteProvider, taskProvider, _) {
         final isEmpty = noteProvider.notes.isEmpty && taskProvider.tasks.isEmpty;
@@ -182,23 +184,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           margin: const EdgeInsets.only(top: 20),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.cardWhite,
+            color: colors.cardSurface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             children: [
-              Icon(Icons.cloud_download_outlined, size: 40, color: AppColors.fabDark.withOpacity(0.8)),
+              Icon(Icons.cloud_download_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
               const SizedBox(height: 12),
               Text(
                 'No notes or tasks yet',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
               ),
               const SizedBox(height: 6),
               Text(
                 'Restore a previous backup from Google Drive',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(fontSize: 13, color: AppColors.textSecondary),
+                style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -210,7 +212,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       : const Icon(Icons.cloud_download),
                   label: Text(_isFetching ? 'Fetching...' : 'Fetch from Google Drive'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.fabDark,
+                    backgroundColor: colors.fabDark,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
@@ -237,28 +239,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _StatTile(
               label: 'Notes',
               value: noteProvider.notes.length.toString(),
-              tint: AppColors.notePastels[2],
+              tint: AppPalette.notePastels[2],
               icon: Icons.description_outlined,
               onTap: () => tabProvider.setIndex(1),
             ),
             _StatTile(
               label: 'Pending',
               value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
-              tint: AppColors.notePastels[4],
+              tint: AppPalette.notePastels[4],
               icon: Icons.assignment_outlined,
               onTap: () => tabProvider.setIndex(2),
             ),
             _StatTile(
               label: 'Pinned',
               value: noteProvider.notes.where((n) => n.isPinned).length.toString(),
-              tint: AppColors.notePastels[1],
+              tint: AppPalette.notePastels[1],
               icon: Icons.push_pin_outlined,
               onTap: () => tabProvider.setIndex(1),
             ),
             _StatTile(
               label: 'Done',
               value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
-              tint: AppColors.notePastels[3],
+              tint: AppPalette.notePastels[3],
               icon: Icons.task_alt_outlined,
               onTap: () => tabProvider.setIndex(2),
             ),
@@ -270,6 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildUpcomingTasks(BuildContext context) {
     final now = DateTime.now();
+    final colors = context.appColors;
     return Consumer<TaskProvider>(
       builder: (context, provider, child) {
         final upcoming = _upcomingTasks(provider.tasks);
@@ -278,12 +281,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.cardWhite,
+              color: colors.cardSurface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: colors.border),
             ),
             child: Center(
-              child: Text('No upcoming reminders', style: GoogleFonts.outfit(color: AppColors.textSecondary)),
+              child: Text('No upcoming reminders', style: GoogleFonts.outfit(color: colors.textSecondary)),
             ),
           );
         }
@@ -294,30 +297,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: AppColors.cardWhite,
+                color: colors.cardSurface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+                border: Border.all(color: colors.border),
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.accentTeal.withOpacity(0.15),
+                    color: AppPalette.accentTeal.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.alarm, color: AppColors.fabDark, size: 20),
+                  child: Icon(Icons.alarm, color: colors.fabDark, size: 20),
                 ),
-                title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15)),
+                title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
                 subtitle: Text(
                   displayTime != null ? AppDateUtils.formatReminder(displayTime) : '',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
                 ),
                 trailing: task.isRecurring
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.accentGreen.withOpacity(0.2),
+                          color: AppPalette.accentGreen.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -356,6 +359,7 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Material(
       color: tint,
       borderRadius: BorderRadius.circular(20),
@@ -367,10 +371,10 @@ class _StatTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: AppColors.textPrimary.withOpacity(0.7), size: 22),
+              Icon(icon, color: colors.textPrimary.withOpacity(0.7), size: 22),
               const Spacer(),
-              Text(value, style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold)),
-              Text(label, style: GoogleFonts.outfit(fontSize: 12, color: AppColors.textSecondary)),
+              Text(value, style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+              Text(label, style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
             ],
           ),
         ),

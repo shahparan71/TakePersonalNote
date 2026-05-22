@@ -12,11 +12,12 @@ class HiddenNotesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBg,
-        title: Text('Hidden Notes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        backgroundColor: colors.scaffoldBg,
+        title: Text('Hidden Notes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<NoteProvider>(
         builder: (context, provider, child) {
@@ -31,13 +32,13 @@ class HiddenNotesScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text(
                       'No hidden notes',
-                      style: GoogleFonts.outfit(fontSize: 16, color: AppColors.textSecondary),
+                      style: GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Notes you hide from the main list appear here. They are not deleted.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(fontSize: 13, color: AppColors.textSecondary),
+                      style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
                     ),
                   ],
                 ),
@@ -76,8 +77,9 @@ class _HiddenNoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Material(
-      color: AppColors.cardWhite,
+      color: colors.cardSurface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -85,7 +87,7 @@ class _HiddenNoteCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: colors.border),
           ),
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -105,25 +107,25 @@ class _HiddenNoteCard extends StatelessWidget {
                   children: [
                     Text(
                       note.title.isEmpty ? 'Untitled' : note.title,
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       note.content,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       DateFormat('MMM d, yyyy').format(note.updatedAt),
-                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 10, color: colors.textSecondary),
                     ),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.visibility_outlined, color: AppColors.fabDark),
+                icon: Icon(Icons.visibility_outlined, color: colors.fabDark),
                 tooltip: 'Unhide',
                 onPressed: onUnhide,
               ),

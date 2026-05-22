@@ -52,18 +52,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       useRootNavigator: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => SheetSafeArea(
+      builder: (ctx) {
+        final colors = ctx.appColors;
+        return SheetSafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
               const SizedBox(height: 8),
               Text(
                 _driveUser ?? 'Not signed in — you will be asked to sign in when syncing',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: colors.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 20),
               FilledButton.icon(
@@ -76,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                 icon: const Icon(Icons.cloud_upload_outlined),
                 label: const Text('Sync to Drive'),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
+                style: FilledButton.styleFrom(backgroundColor: colors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
@@ -108,7 +110,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-      ),
+      );
+      },
     );
   }
 
@@ -151,11 +154,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
-        backgroundColor: AppColors.scaffoldBg,
-        title: Text('Settings', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        backgroundColor: colors.scaffoldBg,
+        title: Text('Settings', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
@@ -211,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Divider(height: 1),
               const _SettingsSection(title: 'Storage & Backup'),
               ListTile(
-                leading: Icon(Icons.cloud, color: AppColors.fabDark),
+                leading: Icon(Icons.cloud, color: colors.fabDark),
                 title: const Text('Sync with Google Drive Backup'),
                 subtitle: Text(
                   _driveBusy
@@ -223,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _driveBusy ? null : _openDriveBackupSheet,
               ),
               SwitchListTile(
-                secondary: Icon(Icons.sync, color: AppColors.fabDark),
+                secondary: Icon(Icons.sync, color: colors.fabDark),
                 title: const Text('Auto-sync to Google Drive'),
                 subtitle: const Text(
                   'Automatically backs up notes and tasks when the app opens or resumes (requires sign-in)',
@@ -254,7 +258,7 @@ class _SettingsSection extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         title,
-        style: GoogleFonts.outfit(color: AppColors.fabDark, fontWeight: FontWeight.w600, fontSize: 13),
+        style: GoogleFonts.outfit(color: context.appColors.fabDark, fontWeight: FontWeight.w600, fontSize: 13),
       ),
     );
   }

@@ -88,12 +88,13 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomBarHeight = _selectionMode ? 72.0 : 0.0;
+    final colors = context.appColors;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppColors.scaffoldBg,
+        backgroundColor: colors.scaffoldBg,
         leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
         title: _selectionMode
             ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
@@ -306,12 +307,13 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Widget _buildNoteItem(Note note, {required bool isCard, required Widget child}) {
     final isSelected = note.id != null && _selectedNoteIds.contains(note.id);
+    final colors = context.appColors;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.noteCardTint(note.color),
+        color: colors.noteCardTint(note.color),
         borderRadius: BorderRadius.circular(isCard ? 20 : 14),
-        border: isSelected ? Border.all(color: AppColors.fabDark, width: 2) : Border.all(color: Colors.grey.shade200),
+        border: isSelected ? Border.all(color: colors.fabDark, width: 2) : Border.all(color: colors.border),
       ),
       child: Material(
         color: Colors.transparent,

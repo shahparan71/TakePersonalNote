@@ -313,9 +313,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                     decoration: InputDecoration(
                       hintText: 'Add Title',
                       filled: true,
-                      fillColor: AppColors.cardWhite.withOpacity(0.7),
+                      fillColor: context.appColors.cardSurface.withOpacity(0.7),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                      hintStyle: GoogleFonts.outfit(fontSize: 20, color: AppColors.textSecondary),
+                      hintStyle: GoogleFonts.outfit(fontSize: 20, color: context.appColors.textSecondary),
                     ),
                     style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
@@ -335,7 +335,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 height: _formattingToolbarHeight,
                 child: Material(
                   elevation: 8,
-                  color: AppColors.toolbarDark,
+                  color: context.appColors.toolbarDark,
                   child: _buildFormattingToolbar(),
                 ),
               ),

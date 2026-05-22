@@ -28,11 +28,12 @@ class _TasksScreenState extends State<TasksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppColors.scaffoldBg,
+        backgroundColor: colors.scaffoldBg,
         title: Text('Tasks', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
@@ -43,8 +44,8 @@ class _TasksScreenState extends State<TasksScreen> {
               decoration: InputDecoration(
                 hintText: 'Search tasks...',
                 filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                fillColor: colors.cardSurface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: colors.border)),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
@@ -118,13 +119,14 @@ class _TasksScreenState extends State<TasksScreen> {
   Widget _buildTaskTile(BuildContext context, Task task, {bool isCompletedSection = false}) {
     final isCompleted = task.status == TaskStatus.completed;
     final priorityColor = _priorityColor(task.priority);
+    final colors = context.appColors;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: colors.cardSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: colors.border),
       ),
       child: Material(
         color: Colors.transparent,

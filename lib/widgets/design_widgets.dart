@@ -14,13 +14,14 @@ class DesignHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return AppBar(
       elevation: 0,
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: colors.scaffoldBg,
       leading: leading,
       title: Text(
         title,
-        style: GoogleFonts.caveat(fontSize: 32, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        style: GoogleFonts.caveat(fontSize: 32, fontWeight: FontWeight.w600, color: colors.textPrimary),
       ),
       actions: actions,
     );
@@ -36,17 +37,19 @@ class DesignSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return TextField(
       controller: controller,
       onChanged: onChanged,
+      style: TextStyle(color: colors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.7), fontSize: 14),
+        hintStyle: TextStyle(color: colors.textSecondary.withOpacity(0.7), fontSize: 14),
         filled: true,
-        fillColor: AppColors.cardWhite,
-        prefixIcon: Icon(Icons.search, size: 20, color: AppColors.textSecondary.withOpacity(0.8)),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+        fillColor: colors.cardSurface,
+        prefixIcon: Icon(Icons.search, size: 20, color: colors.textSecondary.withOpacity(0.8)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
         contentPadding: const EdgeInsets.symmetric(vertical: 0),
       ),
     );
@@ -63,7 +66,7 @@ class DesignFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return FloatingActionButton(
       heroTag: heroTag,
-      backgroundColor: AppColors.fabDark,
+      backgroundColor: context.appColors.fabDark,
       elevation: 4,
       onPressed: onPressed,
       child: const Icon(Icons.add, color: Colors.white),
@@ -112,16 +115,17 @@ class DesignSectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(title, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(title, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w600, color: colors.textPrimary)),
           const Spacer(),
           if (trailing != null)
             GestureDetector(
               onTap: onTrailingTap,
-              child: Text(trailing!, style: GoogleFonts.outfit(fontSize: 13, color: AppColors.textSecondary)),
+              child: Text(trailing!, style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary)),
             ),
         ],
       ),
