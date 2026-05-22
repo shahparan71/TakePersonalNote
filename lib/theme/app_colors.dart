@@ -34,8 +34,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const AppPalette dark = AppPalette(
     scaffoldBg: Color(0xFF121212),
     cardSurface: Color(0xFF2C2C2E),
-    textPrimary: Color(0xFFF2F2F7),
-    textSecondary: Color(0xFF98989F),
+    textPrimary: Color(0xFF545461),
+    textSecondary: Color(0xFF373750),
     border: Color(0xFF3A3A3C),
     fabDark: Color(0xFF3D6B64),
     toolbarDark: Color(0xFF0D0D0D),
