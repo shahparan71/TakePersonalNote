@@ -108,8 +108,8 @@ class NotificationService {
             priority: Priority.high,
             ticker: 'ticker',
             showWhen: true,
-            icon: 'ic_notification',
-            largeIcon: const DrawableResourceAndroidBitmap('ic_notification'),
+            icon: 'app_icon_2',
+            largeIcon: const DrawableResourceAndroidBitmap('app_icon_2'),
             color: const Color(0xFF6366F1),
           ),
           iOS: DarwinNotificationDetails(
@@ -145,8 +145,8 @@ class NotificationService {
       channelDescription: 'Used for testing initial setup',
       importance: Importance.max,
       priority: Priority.high,
-      icon: 'ic_notification',
-      largeIcon: const DrawableResourceAndroidBitmap('ic_notification'),
+      icon: 'app_icon_2',
+      largeIcon: const DrawableResourceAndroidBitmap('app_icon_2'),
       color: const Color(0xFF6366F1),
     );
     final NotificationDetails details = NotificationDetails(android: androidDetails, iOS: const DarwinNotificationDetails());
