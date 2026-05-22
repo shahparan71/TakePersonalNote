@@ -108,6 +108,8 @@ class NotificationService {
             priority: Priority.high,
             ticker: 'ticker',
             showWhen: true,
+            icon: 'ic_notification',
+            color: Color(0xFF6366F1),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -142,6 +144,8 @@ class NotificationService {
       channelDescription: 'Used for testing initial setup',
       importance: Importance.max,
       priority: Priority.high,
+      icon: 'ic_notification',
+      color: Color(0xFF6366F1),
     );
     const NotificationDetails details = NotificationDetails(android: androidDetails, iOS: DarwinNotificationDetails());
     await _notificationsPlugin.show(999, title, fullBody, details);
