@@ -15,6 +15,7 @@ import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
@@ -40,9 +41,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
-    
+
     final initialContent = widget.note?.content ?? widget.initialText ?? '';
-    
+
     quill.Document doc;
     if (initialContent.isNotEmpty) {
       try {
@@ -69,8 +70,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _reminderTime = widget.note?.reminderTime;
     _isRecurring = widget.note?.isRecurring ?? false;
     _recurringInterval = widget.note?.recurringInterval ?? RecurringInterval.none;
-    
+
     _contentController.addListener(() {
+      setState(() {});
+    });
+    _contentFocusNode.addListener(() {
       setState(() {});
     });
   }
@@ -101,7 +105,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       final newNote = Note(
         title: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
         content: _currentContent,
-        type: NoteType.text, // Always text now
+        type: NoteType.text,
+        // Always text now
         color: _selectedColor,
         isPinned: _isPinned,
         reminderTime: _reminderTime,
@@ -199,41 +204,23 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: widget.note != null
-            ? Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: CircleActionButton(
-                  icon: Icons.delete_outline,
-                  color: AppColors.actionDelete,
-                  size: 40,
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Delete note?'),
-                        content: const Text('Move this note to trash?'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-                        ],
-                      ),
-                    );
-                    if (confirm == true && mounted) {
-                      await Provider.of<NoteProvider>(context, listen: false).trashNote(widget.note!);
-                      if (mounted) Navigator.pop(context);
-                    }
-                  },
-                ),
-              )
-            : null,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: CircleActionButton(
+            icon: Icons.close,
+            color: Colors.grey,
+            size: 40,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
         actions: [
-          if (_contentController.hasUndo)
+          /*if (_contentController.hasUndo)
             IconButton(
               icon: const Icon(Icons.undo, color: AppColors.actionEdit),
               onPressed: () {
                 _contentController.undo();
               },
-            ),
+            ),*/
           CircleActionButton(
             icon: _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
             color: AppColors.actionPin,
@@ -275,8 +262,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       decoration: InputDecoration(
                         hintText: 'Add Title',
                         filled: true,
-                        fillColor: context.appColors.cardSurface.withOpacity(0.7),
+                        fillColor: context.appColors.cardSurface.withValues(alpha: 0.7),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         hintStyle: GoogleFonts.outfit(fontSize: 20, color: context.appColors.textSecondary),
                       ),
                       style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
@@ -288,58 +277,66 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       child: quill.QuillEditor.basic(
                         controller: _contentController,
                         focusNode: _contentFocusNode,
+                        config: quill.QuillEditorConfig(
+                          placeholder: 'Start typing your note here...',
+                          embedBuilders: [
+                            ...FlutterQuillEmbeds.editorBuilders(),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            Container(
-              color: context.appColors.toolbarDark,
-              child: quill.QuillSimpleToolbar(
-                controller: _contentController,
-                config: quill.QuillSimpleToolbarConfig(
-                  showBoldButton: true,
-                  showItalicButton: true,
-                  showListBullets: true,
-                  showBackgroundColorButton: true,
-                  showFontSize: true,
-                  showUndo: false,
-                  showRedo: false,
-                  showFontFamily: false,
-                  showStrikeThrough: false,
-                  showInlineCode: false,
-                  showColorButton: false,
-                  showClearFormat: false,
-                  showAlignmentButtons: false,
-                  showLeftAlignment: false,
-                  showCenterAlignment: false,
-                  showRightAlignment: false,
-                  showJustifyAlignment: false,
-                  showHeaderStyle: false,
-                  showListNumbers: false,
-                  showListCheck: false,
-                  showCodeBlock: false,
-                  showQuote: false,
-                  showIndent: false,
-                  showLink: false,
-                  showDirection: false,
-                  showSearchButton: false,
-                  showSubscript: false,
-                  showSuperscript: false,
-                  showClipboardCopy: false,
-                  showClipboardCut: false,
-                  showClipboardPaste: false,
-                  customButtons: [
-                    quill.QuillToolbarCustomButtonOptions(
-                      icon: const Icon(Icons.image),
-                      onPressed: _pickImage,
-                      tooltip: 'Insert Image',
-                    ),
-                  ],
+            !_contentFocusNode.hasFocus
+                ? Container()
+                : Container(
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.white : context.appColors.toolbarDark,
+                    child: quill.QuillSimpleToolbar(
+                      controller: _contentController,
+                      config: quill.QuillSimpleToolbarConfig(
+                        showBoldButton: true,
+                        showItalicButton: true,
+                        showListBullets: true,
+                        showBackgroundColorButton: true,
+                        showFontSize: false,
+                        showUndo: true,
+                        showRedo: true,
+                        showFontFamily: false,
+                        showStrikeThrough: false,
+                        showInlineCode: false,
+                        showColorButton: false,
+                        showClearFormat: false,
+                        showAlignmentButtons: false,
+                        showLeftAlignment: false,
+                        showCenterAlignment: false,
+                        showRightAlignment: false,
+                        showJustifyAlignment: false,
+                        showHeaderStyle: false,
+                        showListNumbers: false,
+                        showListCheck: false,
+                        showCodeBlock: false,
+                        showQuote: false,
+                        showIndent: false,
+                        showLink: false,
+                        showDirection: false,
+                        showSearchButton: false,
+                        showSubscript: false,
+                        showSuperscript: false,
+                        showClipboardCopy: false,
+                        showClipboardCut: false,
+                        showClipboardPaste: false,
+                        /*customButtons: [
+                quill.QuillToolbarCustomButtonOptions(
+                  icon: const Icon(Icons.image),
+                  onPressed: _pickImage,
+                  tooltip: 'Insert Image',
                 ),
-              ),
-            ),
+              ],*/
+                      ),
+                    ),
+                  ),
           ],
         ),
       ),
