@@ -104,16 +104,9 @@ class _NotesScreenState extends State<NotesScreen> {
               builder: (context, provider, _) {
                 final count = provider.hiddenNotes.length;
                 return IconButton(
-                  icon: Badge(
-                    isLabelVisible: count > 0,
-                    label: Text('$count'),
-                    child: const Icon(Icons.visibility_off_outlined),
-                  ),
+                  icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.visibility_off_outlined)),
                   tooltip: 'Hidden notes',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HiddenNotesScreen()),
-                  ).then((_) => _refreshNotes()),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
                 );
               },
             ),
@@ -534,10 +527,7 @@ class _NotesScreenState extends State<NotesScreen> {
         ),
         action: SnackBarAction(
           label: 'View',
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const HiddenNotesScreen()),
-          ).then((_) => _refreshNotes()),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
         ),
       ),
     );
