@@ -118,7 +118,7 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
-        matchDateTimeComponents: recurrence == null || recurrence == RecurringInterval.none
+        matchDateTimeComponents: recurrence == null || recurrence == RecurringInterval.none || recurrence == RecurringInterval.custom
             ? null
             : recurrence == RecurringInterval.daily
                 ? DateTimeComponents.time

@@ -21,7 +21,7 @@ class DatabaseService {
     String path = join(await getDatabasesPath(), 'personal_notes_tasks.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -30,6 +30,12 @@ class DatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE notes ADD COLUMN isHidden INTEGER DEFAULT 0');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE notes ADD COLUMN customIntervalValue INTEGER');
+      await db.execute('ALTER TABLE notes ADD COLUMN customIntervalUnit INTEGER');
+      await db.execute('ALTER TABLE tasks ADD COLUMN customIntervalValue INTEGER');
+      await db.execute('ALTER TABLE tasks ADD COLUMN customIntervalUnit INTEGER');
     }
   }
 
@@ -49,6 +55,8 @@ class DatabaseService {
         reminderTime TEXT,
         isRecurring INTEGER,
         recurringInterval INTEGER,
+        customIntervalValue INTEGER,
+        customIntervalUnit INTEGER,
         createdAt TEXT,
         updatedAt TEXT,
         deletedAt TEXT
@@ -67,6 +75,8 @@ class DatabaseService {
         status INTEGER,
         isRecurring INTEGER,
         recurringInterval INTEGER,
+        customIntervalValue INTEGER,
+        customIntervalUnit INTEGER,
         createdAt TEXT,
         updatedAt TEXT
       )

@@ -21,19 +21,21 @@ class TaskEditScreen extends StatefulWidget {
 
 class _TaskEditScreenState extends State<TaskEditScreen> {
   late TextEditingController _descController;
-  TaskPriority _priority = TaskPriority.low;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
+  int? _customIntervalValue;
+  CustomIntervalUnit? _customIntervalUnit;
 
   @override
   void initState() {
     super.initState();
     _descController = TextEditingController(text: widget.task?.description ?? widget.initialText ?? '');
-    _priority = widget.task?.priority ?? TaskPriority.low;
     _reminderTime = widget.task?.reminderTime;
     _isRecurring = widget.task?.isRecurring ?? false;
     _recurringInterval = widget.task?.recurringInterval ?? RecurringInterval.none;
+    _customIntervalValue = widget.task?.customIntervalValue;
+    _customIntervalUnit = widget.task?.customIntervalUnit;
     if (_isRecurring && _recurringInterval == RecurringInterval.none) {
       _recurringInterval = RecurringInterval.daily;
     }
@@ -86,12 +88,14 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     )).copyWith(
       title: generatedTitle,
       description: _descController.text,
-      priority: _priority,
+      priority: widget.task?.priority ?? TaskPriority.low,
       reminderTime: _reminderTime,
       isRecurring: _reminderTime == null ? false : _isRecurring,
       recurringInterval: _reminderTime == null
           ? RecurringInterval.none
           : (_isRecurring ? _recurringInterval : RecurringInterval.none),
+      customIntervalValue: _customIntervalValue,
+      customIntervalUnit: _customIntervalUnit,
       updatedAt: now,
     );
 
@@ -108,7 +112,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     if (success) {
       message = 'Reminder scheduled for ${DateFormat('MMM d, h:mm a').format(_reminderTime!)}';
       if (_isRecurring && _recurringInterval != RecurringInterval.none) {
-        message += ' (${_recurringInterval.name})';
+        if (_recurringInterval == RecurringInterval.custom) {
+          message += ' (Every $_customIntervalValue ${_customIntervalUnit?.name})';
+        } else {
+          message += ' (${_recurringInterval.name})';
+        }
       }
     } else if (_reminderTime!.isBefore(DateTime.now()) && !_isRecurring) {
       message = 'Reminder skipped: time is in the past';
@@ -170,12 +178,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         children: [
           if (_reminderTime != null) ...[
             _buildReminderCard(),
-            const SizedBox(height: 16),
-            _buildRecurrenceSection(),
-            if (_isRecurring) ...[
-              const SizedBox(height: 8),
-              _buildNextReminderInfo(),
-            ],
             const SizedBox(height: 20),
           ],
           TextField(
@@ -191,8 +193,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             style: GoogleFonts.outfit(fontSize: 20, height: 1.4, color: colors.textPrimary),
             maxLines: null,
           ),
-          const SizedBox(height: 32),
-          _buildPrioritySelector(),
         ],
       ),
     );
@@ -212,12 +212,36 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
               const Icon(Icons.alarm_rounded, color: Colors.blue, size: 22),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  AppDateUtils.formatReminder(_reminderTime!),
-                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppDateUtils.formatReminder(_reminderTime!),
+                      style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    if (_isRecurring) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.update_rounded, size: 14, color: Colors.indigo.withOpacity(0.8)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Next: ${AppDateUtils.formatReminder(AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval, customValue: _customIntervalValue, customUnit: _customIntervalUnit) ?? _reminderTime!)}',
+                            style: TextStyle(fontSize: 12, color: Colors.indigo.withOpacity(0.9)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const Icon(Icons.edit_calendar, size: 18, color: Colors.blue),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.repeat_rounded, size: 20, color: Colors.blue),
+                onPressed: _showRecurrenceDialog,
+              ),
             ],
           ),
         ),
@@ -225,67 +249,106 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
   }
 
-  Widget _buildRecurrenceSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.repeat_rounded, size: 20, color: Colors.grey),
-            const SizedBox(width: 8),
-            const Text('Repeat', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            const Spacer(),
-            Switch.adaptive(
-              value: _isRecurring,
-              onChanged: (val) => setState(() {
-                _isRecurring = val;
-                if (val && _recurringInterval == RecurringInterval.none) {
-                  _recurringInterval = RecurringInterval.daily;
-                }
-              }),
-            ),
-          ],
-        ),
-        if (_isRecurring) ...[
-          const SizedBox(height: 12),
-          _buildRecurrenceIntervalSelector(),
+  Future<void> _showRecurrenceDialog() async {
+    final result = await showDialog<RecurringInterval>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Repeat'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.daily),
+            child: const Text('Daily'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.weekly),
+            child: const Text('Weekly'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.monthly),
+            child: const Text('Monthly'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.custom),
+            child: const Text('Custom'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.none),
+            child: const Text('None'),
+          ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildRecurrenceIntervalSelector() {
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<RecurringInterval>(
-        segments: const [
-          ButtonSegment(value: RecurringInterval.daily, label: Text('Daily')),
-          ButtonSegment(value: RecurringInterval.weekly, label: Text('Weekly')),
-          ButtonSegment(value: RecurringInterval.monthly, label: Text('Monthly')),
-        ],
-        selected: {
-          _recurringInterval == RecurringInterval.none
-              ? RecurringInterval.daily
-              : _recurringInterval,
-        },
-        onSelectionChanged: (s) => _setRecurrenceInterval(s.first),
       ),
     );
+
+    if (result == RecurringInterval.custom) {
+      await _showCustomIntervalDialog();
+      return;
+    }
+
+    if (result != null) {
+      setState(() {
+        _recurringInterval = result;
+        _isRecurring = result != RecurringInterval.none;
+      });
+    }
   }
 
-  Widget _buildNextReminderInfo() {
-    final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
-    if (nextDate == null) return const SizedBox.shrink();
-    return Row(
-      children: [
-        Icon(Icons.update_rounded, size: 14, color: Colors.indigo.withOpacity(0.8)),
-        const SizedBox(width: 6),
-        Text(
-          'Next: ${AppDateUtils.formatReminder(nextDate)}',
-          style: TextStyle(fontSize: 12, color: Colors.indigo.withOpacity(0.9)),
-        ),
-      ],
+  Future<void> _showCustomIntervalDialog() async {
+    int tempVal = _customIntervalValue ?? 1;
+    CustomIntervalUnit tempUnit = _customIntervalUnit ?? CustomIntervalUnit.days;
+    final controller = TextEditingController(text: tempVal.toString());
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateSB) {
+          return AlertDialog(
+            title: const Text('Custom Repeat'),
+            content: Row(
+              children: [
+                const Text('Every '),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 60,
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(isDense: true),
+                    controller: controller,
+                    onChanged: (val) {
+                      tempVal = int.tryParse(val) ?? 1;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<CustomIntervalUnit>(
+                  value: tempUnit,
+                  items: const [
+                    DropdownMenuItem(value: CustomIntervalUnit.days, child: Text('Days')),
+                    DropdownMenuItem(value: CustomIntervalUnit.weeks, child: Text('Weeks')),
+                    DropdownMenuItem(value: CustomIntervalUnit.months, child: Text('Months')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setStateSB(() => tempUnit = val);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
+            ],
+          );
+        },
+      ),
     );
+
+    if (confirmed == true) {
+      setState(() {
+        _customIntervalValue = tempVal;
+        _customIntervalUnit = tempUnit;
+        _recurringInterval = RecurringInterval.custom;
+        _isRecurring = true;
+      });
+    }
   }
 
   Future<void> _selectReminder(BuildContext context) async {
@@ -312,72 +375,5 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     }
   }
 
-  Widget _buildPrioritySelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Priority',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: TaskPriority.values.map((p) {
-            final isSelected = _priority == p;
-            final color = _priorityColor(p);
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: p != TaskPriority.high ? 8 : 0),
-                child: InkWell(
-                  onTap: () => setState(() => _priority = p),
-                  borderRadius: BorderRadius.circular(10),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected ? color : Colors.grey.withOpacity(0.25),
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          p.name[0].toUpperCase() + p.name.substring(1),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? color : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
 
-  Color _priorityColor(TaskPriority p) {
-    switch (p) {
-      case TaskPriority.low:
-        return Colors.green;
-      case TaskPriority.medium:
-        return Colors.orange;
-      case TaskPriority.high:
-        return Colors.red;
-    }
-  }
 }

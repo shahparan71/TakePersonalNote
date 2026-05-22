@@ -15,7 +15,9 @@ class Note {
   final bool isHidden;
   final DateTime? reminderTime;
   final bool isRecurring;
-  final RecurringInterval recurringInterval; 
+  final RecurringInterval recurringInterval;
+  final int? customIntervalValue;
+  final CustomIntervalUnit? customIntervalUnit;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -34,6 +36,8 @@ class Note {
     this.reminderTime,
     this.isRecurring = false,
     this.recurringInterval = RecurringInterval.none,
+    this.customIntervalValue,
+    this.customIntervalUnit,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -55,6 +59,8 @@ class Note {
     Object? reminderTime = _unset,
     bool? isRecurring,
     RecurringInterval? recurringInterval,
+    int? customIntervalValue,
+    CustomIntervalUnit? customIntervalUnit,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _unset,
@@ -73,6 +79,8 @@ class Note {
       reminderTime: reminderTime == _unset ? this.reminderTime : reminderTime as DateTime?,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
+      customIntervalValue: customIntervalValue ?? this.customIntervalValue,
+      customIntervalUnit: customIntervalUnit ?? this.customIntervalUnit,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt == _unset ? this.deletedAt : deletedAt as DateTime?,
@@ -94,6 +102,8 @@ class Note {
       'reminderTime': reminderTime?.toIso8601String(),
       'isRecurring': isRecurring ? 1 : 0,
       'recurringInterval': recurringInterval.index,
+      'customIntervalValue': customIntervalValue,
+      'customIntervalUnit': customIntervalUnit?.index,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -114,7 +124,9 @@ class Note {
       isHidden: (map['isHidden'] ?? 0) == 1,
       reminderTime: map['reminderTime'] != null ? DateTime.parse(map['reminderTime']) : null,
       isRecurring: map['isRecurring'] == 1,
-      recurringInterval: RecurringInterval.values[map['recurringInterval']],
+      recurringInterval: RecurringInterval.values[map['recurringInterval'] ?? 0],
+      customIntervalValue: map['customIntervalValue'],
+      customIntervalUnit: map['customIntervalUnit'] != null ? CustomIntervalUnit.values[map['customIntervalUnit']] : null,
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
       deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,
