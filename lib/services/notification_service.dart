@@ -99,7 +99,7 @@ class NotificationService {
         title,
         body,
         tz.TZDateTime.from(scheduledDate, tz.local),
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'reminders_channel',
             'Reminders',
@@ -109,7 +109,8 @@ class NotificationService {
             ticker: 'ticker',
             showWhen: true,
             icon: 'ic_notification',
-            color: Color(0xFF6366F1),
+            largeIcon: const DrawableResourceAndroidBitmap('ic_notification'),
+            color: const Color(0xFF6366F1),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -138,16 +139,17 @@ class NotificationService {
     final tzName = tz.local.name;
     final fullBody = '$body\nDetected Timezone: $tzName';
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'test_channel',
       'Test Notifications',
       channelDescription: 'Used for testing initial setup',
       importance: Importance.max,
       priority: Priority.high,
       icon: 'ic_notification',
-      color: Color(0xFF6366F1),
+      largeIcon: const DrawableResourceAndroidBitmap('ic_notification'),
+      color: const Color(0xFF6366F1),
     );
-    const NotificationDetails details = NotificationDetails(android: androidDetails, iOS: DarwinNotificationDetails());
+    final NotificationDetails details = NotificationDetails(android: androidDetails, iOS: const DarwinNotificationDetails());
     await _notificationsPlugin.show(999, title, fullBody, details);
   }
 
