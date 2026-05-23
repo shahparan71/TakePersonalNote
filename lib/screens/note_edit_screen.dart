@@ -296,6 +296,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                     child: quill.QuillSimpleToolbar(
                       controller: _contentController,
                       config: quill.QuillSimpleToolbarConfig(
+                        multiRowsDisplay: false,
                         showBoldButton: true,
                         showItalicButton: true,
                         showListBullets: true,
@@ -306,7 +307,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         showFontFamily: false,
                         showStrikeThrough: false,
                         showInlineCode: false,
-                        showColorButton: false,
+                        showColorButton: true,
                         showClearFormat: false,
                         showAlignmentButtons: false,
                         showLeftAlignment: false,
@@ -317,7 +318,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         showListNumbers: false,
                         showListCheck: false,
                         showCodeBlock: false,
-                        showQuote: false,
+                        showQuote: true,
                         showIndent: false,
                         showLink: false,
                         showDirection: false,
