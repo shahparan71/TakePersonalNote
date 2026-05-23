@@ -1,14 +1,20 @@
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'dart:io';
 import '../main.dart';
 import '../screens/note_edit_screen.dart';
 import '../screens/task_edit_screen.dart';
 import '../models/recurring_interval.dart';
 import 'database_service.dart';
+import 'alarm_callback.dart';
+
+const String _notifMetaPrefix = 'notif_meta_';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -86,44 +92,105 @@ class NotificationService {
     String? payload,
     RecurringInterval? recurrence,
   }) async {
-    if (scheduledDate.isBefore(DateTime.now())) {
-      // Don't schedule notifications in the past
+    await cancelNotification(id);
+
+    final isRecurring = recurrence != null && recurrence != RecurringInterval.none;
+    if (!isRecurring && scheduledDate.isBefore(DateTime.now())) {
       return false;
     }
 
     try {
-      await _notificationsPlugin.zonedSchedule(
+      // Store notification metadata in SharedPreferences for background isolate
+      final prefs = await SharedPreferences.getInstance();
+      final meta = {
+        'title': title,
+        'body': body,
+        'payload': payload,
+        'scheduledDateMs': scheduledDate.millisecondsSinceEpoch,
+        'recurrence': recurrence?.name ?? 'none',
+      };
+
+      // Add custom interval info if applicable
+      if (recurrence == RecurringInterval.custom) {
+        // These will be set from the task data if needed
+        // For now they're passed via the payload parsing
+      }
+
+      await prefs.setString('$_notifMetaPrefix$id', jsonEncode(meta));
+
+      // Calculate delay from now
+      final delay = scheduledDate.difference(DateTime.now());
+      if (delay.isNegative && !isRecurring) {
+        return false;
+      }
+
+      final effectiveDelay = delay.isNegative ? Duration.zero : delay;
+
+      await AndroidAlarmManager.oneShot(
+        effectiveDelay,
         id,
-        title,
-        body,
-        tz.TZDateTime.from(scheduledDate, tz.local),
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'reminders_channel',
-            'Reminders',
-            channelDescription: 'Task reminders',
-            importance: Importance.max,
-            priority: Priority.high,
-            ticker: 'ticker',
-            showWhen: true,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        payload: payload,
-        matchDateTimeComponents: recurrence == null || recurrence == RecurringInterval.none
-            ? null
-            : recurrence == RecurringInterval.daily
-                ? DateTimeComponents.time
-                : recurrence == RecurringInterval.weekly
-                    ? DateTimeComponents.dayOfWeekAndTime
-                    : DateTimeComponents.dayOfMonthAndTime,
+        alarmCallback,
+        exact: true,
+        allowWhileIdle: true,
+        wakeup: true,
+        rescheduleOnReboot: true,
       );
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Enhanced schedule that includes custom interval data for recurring alarms.
+  Future<bool> scheduleNotificationWithCustomInterval({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+    String? payload,
+    RecurringInterval? recurrence,
+    int? customIntervalValue,
+    CustomIntervalUnit? customIntervalUnit,
+  }) async {
+    await cancelNotification(id);
+
+    final isRecurring = recurrence != null && recurrence != RecurringInterval.none;
+    if (!isRecurring && scheduledDate.isBefore(DateTime.now())) {
+      return false;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final meta = {
+        'title': title,
+        'body': body,
+        'payload': payload,
+        'scheduledDateMs': scheduledDate.millisecondsSinceEpoch,
+        'recurrence': recurrence?.name ?? 'none',
+        'customIntervalValue': customIntervalValue,
+        'customIntervalUnit': customIntervalUnit?.name,
+      };
+
+      await prefs.setString('$_notifMetaPrefix$id', jsonEncode(meta));
+
+      final delay = scheduledDate.difference(DateTime.now());
+      if (delay.isNegative && !isRecurring) {
+        return false;
+      }
+
+      final effectiveDelay = delay.isNegative ? Duration.zero : delay;
+
+      await AndroidAlarmManager.oneShot(
+        effectiveDelay,
+        id,
+        alarmCallback,
+        exact: true,
+        allowWhileIdle: true,
+        wakeup: true,
+        rescheduleOnReboot: true,
+      );
+
       return true;
     } catch (e) {
       return false;
@@ -134,18 +201,27 @@ class NotificationService {
     final tzName = tz.local.name;
     final fullBody = '$body\nDetected Timezone: $tzName';
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'test_channel',
       'Test Notifications',
       channelDescription: 'Used for testing initial setup',
       importance: Importance.max,
       priority: Priority.high,
+      icon: 'app_icon_2',
+      largeIcon: const DrawableResourceAndroidBitmap('app_icon_2'),
+      color: const Color(0xFF6366F1),
     );
-    const NotificationDetails details = NotificationDetails(android: androidDetails, iOS: DarwinNotificationDetails());
+    final NotificationDetails details = NotificationDetails(android: androidDetails, iOS: const DarwinNotificationDetails());
     await _notificationsPlugin.show(999, title, fullBody, details);
   }
 
   Future<void> cancelNotification(int id) async {
+    // Cancel the alarm
+    await AndroidAlarmManager.cancel(id);
+    // Also cancel any shown notification
     await _notificationsPlugin.cancel(id);
+    // Clean up stored metadata
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_notifMetaPrefix$id');
   }
 }

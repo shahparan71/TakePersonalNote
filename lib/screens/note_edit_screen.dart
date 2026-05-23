@@ -1,13 +1,21 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:image_picker/image_picker.dart';
 import 'package:take_personal_note/models/note.dart';
-import 'package:take_personal_note/models/task.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
-import 'package:take_personal_note/utils/note_text_controller.dart';
+import 'package:take_personal_note/widgets/sheet_safe_area.dart';
+import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
@@ -21,44 +29,74 @@ class NoteEditScreen extends StatefulWidget {
 
 class _NoteEditScreenState extends State<NoteEditScreen> {
   late TextEditingController _titleController;
-  late NoteTextController _contentController;
+  late quill.QuillController _contentController;
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
-  bool _isHighlighterActive = false;
-  double _fontSize = 18.0;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
-  NoteType _type = NoteType.text;
+  final FocusNode _contentFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
-    _contentController = NoteTextController(text: widget.note?.content ?? widget.initialText ?? '');
-    _contentController.addListener(_onContentChanged);
+
+    final initialContent = widget.note?.content ?? widget.initialText ?? '';
+
+    quill.Document doc;
+    if (initialContent.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(initialContent);
+        if (decoded is List) {
+          doc = quill.Document.fromJson(decoded);
+        } else {
+          doc = quill.Document()..insert(0, initialContent);
+        }
+      } catch (e) {
+        doc = quill.Document()..insert(0, initialContent);
+      }
+    } else {
+      doc = quill.Document();
+    }
+
+    _contentController = quill.QuillController(
+      document: doc,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
     _isPinned = widget.note?.isPinned ?? false;
     _reminderTime = widget.note?.reminderTime;
     _isRecurring = widget.note?.isRecurring ?? false;
-    _recurringInterval = (widget.note?.recurringInterval as RecurringInterval?) ?? RecurringInterval.none;
-    _type = widget.note?.type ?? NoteType.text;
+    _recurringInterval = widget.note?.recurringInterval ?? RecurringInterval.none;
+
+    _contentController.addListener(() {
+      setState(() {});
+    });
+    _contentFocusNode.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _titleController.dispose();
-    _contentController.removeListener(_onContentChanged);
     _contentController.dispose();
+    _contentFocusNode.dispose();
     super.dispose();
   }
 
-  void _onContentChanged() {
-    setState(() {}); // Trigger rebuild for character count and undo state
+  String get _currentContent {
+    return jsonEncode(_contentController.document.toDelta().toJson());
+  }
+
+  bool get _isEmpty {
+    return _titleController.text.trim().isEmpty && _contentController.document.isEmpty();
   }
 
   void _saveNote() {
-    if (_titleController.text.isEmpty && _contentController.text.isEmpty) return;
+    if (_isEmpty) return;
 
     final provider = Provider.of<NoteProvider>(context, listen: false);
     final now = DateTime.now();
@@ -66,7 +104,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     if (widget.note == null) {
       final newNote = Note(
         title: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
-        content: _contentController.text,
+        content: _currentContent,
+        type: NoteType.text,
+        // Always text now
         color: _selectedColor,
         isPinned: _isPinned,
         reminderTime: _reminderTime,
@@ -75,12 +115,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         createdAt: now,
         updatedAt: now,
       );
-      provider.addNote(newNote).then((id) {
-        if (_reminderTime != null) {
-          NotificationService().scheduleNotification(
-            id: id ?? DateTime.now().millisecond,
+      provider.addNote(newNote).then((id) async {
+        if (_reminderTime != null && id != null) {
+          await NotificationService().scheduleNotification(
+            id: id,
             title: 'Note Reminder',
-            body: _titleController.text,
+            body: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
             scheduledDate: _reminderTime!,
             payload: 'note_$id',
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
@@ -90,27 +130,29 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     } else {
       final updatedNote = widget.note!.copyWith(
         title: _titleController.text,
-        content: _contentController.text,
+        content: _currentContent,
         color: _selectedColor,
         isPinned: _isPinned,
-        type: _type,
+        type: NoteType.text,
+        category: widget.note!.category,
         reminderTime: _reminderTime,
         isRecurring: _reminderTime == null ? false : _isRecurring,
         recurringInterval: _reminderTime == null ? RecurringInterval.none : _recurringInterval,
         updatedAt: now,
       );
-      provider.updateNote(updatedNote).then((_) {
+      provider.updateNote(updatedNote).then((_) async {
+        final noteId = widget.note!.id!;
         if (_reminderTime != null) {
-          NotificationService().scheduleNotification(
-            id: widget.note!.id!,
+          await NotificationService().scheduleNotification(
+            id: noteId,
             title: 'Note Reminder',
             body: _titleController.text,
             scheduledDate: _reminderTime!,
-            payload: 'note_${widget.note!.id!}',
+            payload: 'note_$noteId',
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
           );
         } else if (widget.note!.reminderTime != null) {
-          NotificationService().cancelNotification(widget.note!.id!);
+          await NotificationService().cancelNotification(noteId);
         }
       });
     }
@@ -123,7 +165,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
     );
-    if (pickedDate != null) {
+    if (pickedDate != null && mounted) {
       final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
       if (pickedTime != null) {
         setState(() {
@@ -133,111 +175,168 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
-  void _formatText(String prefix, String suffix) {
-    if (MediaQuery.of(context).viewInsets.bottom <= 0) return; // Keyboard check
-    
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    if (selection.isValid) {
-      final selectedText = selection.textInside(text);
-      final newText = text.replaceRange(selection.start, selection.end, '$prefix$selectedText$suffix');
-      _contentController.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(offset: selection.start + prefix.length + selectedText.length + suffix.length),
+  void _setRecurrenceInterval(RecurringInterval interval) {
+    setState(() {
+      _isRecurring = true;
+      _recurringInterval = interval;
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final index = _contentController.selection.baseOffset;
+      final length = _contentController.selection.extentOffset - index;
+      _contentController.replaceText(
+        index,
+        length,
+        quill.BlockEmbed.image(pickedFile.path),
+        null,
       );
     }
   }
 
-  void _toggleHighlighter() {
-    setState(() {
-      _isHighlighterActive = !_isHighlighterActive;
-      _contentController.isHighlighterActive = _isHighlighterActive;
-    });
-  }
-
-  void _updateFontSize(bool increase) {
-    setState(() {
-      _fontSize = increase ? _fontSize + 2 : (_fontSize > 10 ? _fontSize - 2 : _fontSize);
-      _contentController.updateFontSize(_fontSize);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
     return Scaffold(
       backgroundColor: Color(_selectedColor),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: CircleActionButton(
+            icon: Icons.close,
+            color: Colors.grey,
+            size: 40,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
         actions: [
-          if (_contentController.canUndo)
+          /*if (_contentController.hasUndo)
             IconButton(
-              icon: const Icon(Icons.undo, color: Colors.blue),
+              icon: const Icon(Icons.undo, color: AppColors.actionEdit),
               onPressed: () {
                 _contentController.undo();
-                setState(() {});
               },
-              tooltip: 'Undo',
+            ),*/
+          CircleActionButton(
+            icon: _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+            color: AppColors.actionPin,
+            size: 40,
+            onPressed: () => setState(() => _isPinned = !_isPinned),
+          ),
+          const SizedBox(width: 6),
+          CircleActionButton(
+            icon: Icons.palette_outlined,
+            color: AppColors.actionEdit,
+            size: 40,
+            onPressed: _showColorPicker,
+          ),
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CircleActionButton(
+              icon: Icons.check,
+              color: AppColors.actionSave,
+              size: 40,
+              onPressed: () {
+                _saveNote();
+                Navigator.pop(context);
+              },
             ),
-          IconButton(icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined), onPressed: () => setState(() => _isPinned = !_isPinned)),
-          IconButton(icon: const Icon(Icons.palette_outlined), onPressed: _showColorPicker),
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () {
-              _saveNote();
-              Navigator.pop(context);
-            },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      body: SafeArea(
         child: Column(
           children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: 'Title',
-                border: InputBorder.none,
-                hintStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            _buildMetadataRow(),
-            /*_buildOptionsToolbar(),*/
-            /*_buildFormattingToolbar(keyboardVisible),*/
-            if (_reminderTime != null) _buildRecurrenceRow(),
             Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1.0),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: TextField(
-                  controller: _contentController,
-                  maxLines: null,
-                  expands: true,
-                  textAlignVertical: TextAlignVertical.top,
-                  decoration: InputDecoration(
-                    hintText: _type == NoteType.text ? 'Start typing...' : '- [ ] New item',
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                  style: TextStyle(fontSize: _fontSize),
-                  onChanged: (val) {
-                    if (_isHighlighterActive && val.length > _contentController.text.length) {
-                      // Logic for when pen is enabled - we insert tags as they type
-                      // This is a simplified approach, real custom painting is better
-                      // But for this, inserting == == tags works well with our controller
-                    }
-                  },
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, right: 16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: 'Add Title',
+                        filled: true,
+                        fillColor: context.appColors.cardSurface.withValues(alpha: 0.7),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: context.appColors.textSecondary),
+                      ),
+                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildMetadataRow(),
+                    if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
+                    Expanded(
+                      child: quill.QuillEditor.basic(
+                        controller: _contentController,
+                        focusNode: _contentFocusNode,
+                        config: quill.QuillEditorConfig(
+                          placeholder: 'Start typing your note here...',
+                          embedBuilders: [
+                            ...FlutterQuillEmbeds.editorBuilders(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            SizedBox(height: keyboardVisible ? 0 : 50),
+            !_contentFocusNode.hasFocus
+                ? Container()
+                : Container(
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.white : context.appColors.toolbarDark,
+                    child: quill.QuillSimpleToolbar(
+                      controller: _contentController,
+                      config: quill.QuillSimpleToolbarConfig(
+                        showBoldButton: true,
+                        showItalicButton: true,
+                        showListBullets: true,
+                        showBackgroundColorButton: true,
+                        showFontSize: false,
+                        showUndo: true,
+                        showRedo: true,
+                        showFontFamily: false,
+                        showStrikeThrough: false,
+                        showInlineCode: false,
+                        showColorButton: false,
+                        showClearFormat: false,
+                        showAlignmentButtons: false,
+                        showLeftAlignment: false,
+                        showCenterAlignment: false,
+                        showRightAlignment: false,
+                        showJustifyAlignment: false,
+                        showHeaderStyle: false,
+                        showListNumbers: false,
+                        showListCheck: false,
+                        showCodeBlock: false,
+                        showQuote: false,
+                        showIndent: false,
+                        showLink: false,
+                        showDirection: false,
+                        showSearchButton: false,
+                        showSubscript: false,
+                        showSuperscript: false,
+                        showClipboardCopy: false,
+                        showClipboardCut: false,
+                        showClipboardPaste: false,
+                        /*customButtons: [
+                quill.QuillToolbarCustomButtonOptions(
+                  icon: const Icon(Icons.image),
+                  onPressed: _pickImage,
+                  tooltip: 'Insert Image',
+                ),
+              ],*/
+                      ),
+                    ),
+                  ),
           ],
         ),
       ),
@@ -251,11 +350,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            DateFormat('MMMM d, yyyy h:mm a').format(DateTime.now()),
+            DateFormat('MMMM d, yyyy h:mm a').format(widget.note?.updatedAt ?? DateTime.now()),
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
           Text(
-            '${_contentController.text.length} characters',
+            '${_contentController.document.toPlainText().trim().length} characters',
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
@@ -263,198 +362,128 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     );
   }
 
-  Widget _buildRecurrenceRow() {
-    if (_reminderTime == null) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+  Widget _buildReminderBanner() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: _selectReminder,
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Repeat', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                SizedBox(
-                  height: 32,
-                  child: Switch.adaptive(value: _isRecurring, onChanged: (val) => setState(() => _isRecurring = val)),
-                ),
-              ],
+            const Icon(Icons.alarm, size: 16, color: Colors.blue),
+            const SizedBox(width: 6),
+            Text(
+              AppDateUtils.formatReminder(_reminderTime!),
+              style: const TextStyle(fontSize: 13, color: Colors.blue, fontWeight: FontWeight.w600),
             ),
-            if (_isRecurring) ...[const SizedBox(width: 12), _buildIntervalDropdown()],
           ],
         ),
-        if (_isRecurring) ...[const SizedBox(height: 8), _buildNextOccurrenceDisplay()],
-        const SizedBox(height: 8),
-        const Divider(height: 1),
-        const SizedBox(height: 8),
+      ),
+    );
+  }
+
+  Widget _buildRecurrenceRow() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.repeat, size: 18, color: Colors.grey),
+              const SizedBox(width: 8),
+              const Text('Repeat', style: TextStyle(fontWeight: FontWeight.w500)),
+              const Spacer(),
+              Switch.adaptive(
+                value: _isRecurring,
+                onChanged: (val) => setState(() {
+                  _isRecurring = val;
+                  if (val && _recurringInterval == RecurringInterval.none) {
+                    _recurringInterval = RecurringInterval.daily;
+                  }
+                }),
+              ),
+            ],
+          ),
+          if (_isRecurring) ...[const SizedBox(height: 8), _buildRecurrenceChips(), const SizedBox(height: 4), _buildNextOccurrenceDisplay()],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecurrenceChips() {
+    return Row(
+      children: [
+        _recurrenceChip('Daily', RecurringInterval.daily),
+        const SizedBox(width: 8),
+        _recurrenceChip('Weekly', RecurringInterval.weekly),
+        const SizedBox(width: 8),
+        _recurrenceChip('Monthly', RecurringInterval.monthly),
       ],
     );
   }
 
-  Widget _buildIntervalDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<RecurringInterval>(
-          value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
-          items: RecurringInterval.values
-              .where((v) => v != RecurringInterval.none)
-              .map(
-                (v) => DropdownMenuItem(
-                  value: v,
-                  child: Text(v.name.toUpperCase(), style: const TextStyle(fontSize: 12, color: Colors.blue)),
-                ),
-              )
-              .toList(),
-          onChanged: (val) => setState(() => _recurringInterval = val!),
-        ),
-      ),
+  Widget _recurrenceChip(String label, RecurringInterval interval) {
+    final selected = _recurringInterval == interval;
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : null)),
+      selected: selected,
+      selectedColor: Colors.blue,
+      onSelected: (_) => _setRecurrenceInterval(interval),
+      visualDensity: VisualDensity.compact,
     );
   }
 
   Widget _buildNextOccurrenceDisplay() {
     final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
     if (nextDate == null) return const SizedBox.shrink();
-    return Row(
-      children: [
-        const Icon(Icons.update, size: 14, color: Colors.indigo),
-        const SizedBox(width: 6),
-        Text(
-          'Next occurrence: ${AppDateUtils.formatReminder(nextDate)}',
-          style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOptionsToolbar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Wrap(
-        spacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          InputChip(
-            avatar: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active, size: 16),
-            label: Text(_reminderTime == null ? 'Set Reminder' : AppDateUtils.formatReminder(_reminderTime!)),
-            onPressed: () async {
-              await _selectReminder();
-            },
-            onDeleted: _reminderTime != null
-                ? () => setState(() {
-                    _reminderTime = null;
-                    _isRecurring = false;
-                  })
-                : null,
-          ),
-          ActionChip(
-            avatar: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields, size: 16),
-            label: Text(_type == NoteType.text ? 'Text Mode' : 'Checklist'),
-            onPressed: () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecurrencePicker() {
-    if (_reminderTime == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          const Icon(Icons.repeat, size: 20, color: Colors.blue),
-          const SizedBox(width: 8),
-          const Text('Repeat: '),
-          Switch(value: _isRecurring, onChanged: (val) => setState(() => _isRecurring = val)),
-          if (_isRecurring)
-            DropdownButton<RecurringInterval>(
-              value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
-              items: RecurringInterval.values
-                  .where((v) => v != RecurringInterval.none)
-                  .map((v) => DropdownMenuItem(value: v, child: Text(v.name.toUpperCase())))
-                  .toList(),
-              onChanged: (val) => setState(() => _recurringInterval = val!),
-            ),
-          const Spacer(),
-          Text(DateFormat('MMM d, h:mm a').format(_reminderTime!)),
-          IconButton(icon: const Icon(Icons.edit_calendar, size: 20), onPressed: _selectReminder),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormattingToolbar(bool enabled) {
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.4,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(color: Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-        child: Row(
-          children: [
-            IconButton(icon: const Icon(Icons.format_bold, size: 20), onPressed: enabled ? () => _formatText('**', '**') : null, tooltip: 'Bold'),
-            IconButton(icon: const Icon(Icons.format_italic, size: 20), onPressed: enabled ? () => _formatText('__', '__') : null, tooltip: 'Italic'),
-            IconButton(icon: const Icon(Icons.format_list_bulleted, size: 20), onPressed: enabled ? () => _formatText('\n- ', '') : null, tooltip: 'Bullet List'),
-            IconButton(
-              icon: Icon(Icons.edit, size: 20, color: _isHighlighterActive ? Colors.blue : null),
-              onPressed: enabled ? _toggleHighlighter : null,
-              tooltip: 'Highlighter Pen',
-            ),
-            const Spacer(),
-            IconButton(icon: const Icon(Icons.add, size: 20), onPressed: enabled ? () => _updateFontSize(true) : null, tooltip: 'Increase Font'),
-            IconButton(icon: const Icon(Icons.remove, size: 20), onPressed: enabled ? () => _updateFontSize(false) : null, tooltip: 'Decrease Font'),
-            IconButton(
-              icon: Icon(_type == NoteType.checklist ? Icons.checklist : Icons.text_fields, size: 20),
-              onPressed: enabled ? () => setState(() => _type = _type == NoteType.text ? NoteType.checklist : NoteType.text) : null,
-              tooltip: 'Toggle Type',
-            ),
-          ],
-        ),
-      ),
-    );
+    return Text('Next: ${AppDateUtils.formatReminder(nextDate)}', style: const TextStyle(fontSize: 11, color: Colors.indigo));
   }
 
   void _showColorPicker() {
     final colors = [
-      0xFFFFFFFF, // white
-      0xFFFFCDD2, // red
-      0xFFF8BBD0, // pink
-      0xFFE1BEE7, // purple
-      0xFFC5CAE9, // indigo
-      0xFFBBDEFB, // blue
-      0xFFB2EBF2, // cyan
-      0xFFC8E6C9, // green
-      0xFFDCEDC8, // light green
-      0xFFF0F4C3, // lime
-      0xFFFFF9C4, // yellow
-      0xFFFFE0B2, // orange
+      0xFFFFFFFF,
+      0xFFFFCDD2,
+      0xFFF8BBD0,
+      0xFFE1BEE7,
+      0xFFC5CAE9,
+      0xFFBBDEFB,
+      0xFFB2EBF2,
+      0xFFC8E6C9,
+      0xFFDCEDC8,
+      0xFFF0F4C3,
+      0xFFFFF9C4,
+      0xFFFFE0B2,
     ];
 
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          height: 200,
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
-            itemCount: colors.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _selectedColor = colors[index]);
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Color(colors[index]),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey),
+        return SheetSafeArea(
+          includeNavBar: false,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            height: 200,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
+              itemCount: colors.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedColor = colors[index]);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Color(colors[index]),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey),
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },

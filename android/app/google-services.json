@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "964868838422",
+    "project_id": "takepersonalnote",
+    "storage_bucket": "takepersonalnote.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:964868838422:android:4d1c9e105f802edc15d137",
+        "android_client_info": {
+          "package_name": "com.paran.bd.take.personal.note"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "964868838422-7e0sshnjko3r6g3dqhf0v5lmkksv8cef.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.paran.bd.take.personal.note",
+            "certificate_hash": "92c556982d915253b47a73c1d7aada9505d31406"
+          }
+        },
+        {
+          "client_id": "964868838422-sa1javj43hid6phk44setf37ivsq0l4l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuBuYzQnNE_N5I13uUAvfqk7PjLotU-ng"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "964868838422-sa1javj43hid6phk44setf37ivsq0l4l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "964868838422-bpe7v9br29ghl5tmsqmnelr8cvg6008r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.paran.bd.take.personal.note"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

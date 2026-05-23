@@ -7,15 +7,18 @@ class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
   List<Note> _archivedNotes = [];
   List<Note> _trashedNotes = [];
+  List<Note> _hiddenNotes = [];
 
   List<Note> get notes => _notes;
   List<Note> get archivedNotes => _archivedNotes;
   List<Note> get trashedNotes => _trashedNotes;
+  List<Note> get hiddenNotes => _hiddenNotes;
 
   Future<void> fetchNotes({String? query, String? category, int? color, String? orderBy}) async {
     _notes = await _dbService.getNotes(query: query, category: category, color: color, orderBy: orderBy);
     _archivedNotes = await _dbService.getArchivedNotes();
     _trashedNotes = await _dbService.getTrashedNotes();
+    _hiddenNotes = await _dbService.getHiddenNotes();
     notifyListeners();
   }
 
@@ -61,6 +64,22 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> deleteNotePermanent(int id) async {
     await _dbService.deleteNotePermanent(id);
+    await fetchNotes();
+  }
+
+  Future<List<String>> getCategories() async {
+    return _dbService.getNoteCategories();
+  }
+
+  Future<void> hideNote(Note note) async {
+    await updateNote(note.copyWith(isHidden: true, isPinned: false));
+  }
+
+  Future<void> unhideNote(Note note) async {
+    await updateNote(note.copyWith(isHidden: false));
+  }
+
+  Future<void> refreshAll() async {
     await fetchNotes();
   }
 

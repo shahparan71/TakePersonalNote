@@ -2,18 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/models/task.dart';
 import 'package:take_personal_note/services/note_provider.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
+import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/utils/drive_sync_utils.dart';
+import 'package:take_personal_note/services/update_service.dart';
+import 'package:take_personal_note/services/battery_optimization_service.dart';
+import 'package:take_personal_note/services/settings_provider.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
 import 'trash_screen.dart';
 import 'settings_screen.dart';
+import 'task_edit_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _isFetching = false;
+  bool _updateAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdate();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
+  }
+
+  Future<void> _checkForUpdate() async {
+    final hasUpdate = await UpdateService().checkForUpdate();
+    if (mounted) {
+      setState(() => _updateAvailable = hasUpdate);
+    }
+  }
+
+  Future<void> _checkBatteryOptimization() async {
+    if (!mounted) return;
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    if (!settings.isBatteryPromptShown) {
+      final isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
+      if (!isIgnoring && mounted) {
+        settings.setBatteryPromptShown(true);
+        _showBatteryOptimizationDialog();
+      }
+    }
+  }
+
+  void _showBatteryOptimizationDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reliable Reminders'),
+        content: const Text(
+            'To ensure your task reminders fire on time even when the app is closed, please disable battery optimization for this app in your device settings.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('LATER'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              BatteryOptimizationService.requestIgnoreBatteryOptimizations();
+            },
+            child: const Text('SETTINGS'),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -22,129 +89,240 @@ class DashboardScreen extends StatelessWidget {
     return 'Good Evening';
   }
 
+  Future<void> _fetchFromGoogleDrive() async {
+    setState(() => _isFetching = true);
+    final result = await GoogleDriveSyncService().fetchFromDrive(merge: true);
+    if (!mounted) return;
+    setState(() => _isFetching = false);
+
+    await applyDriveSyncResult(context, result);
+    if (!mounted) return;
+    showDriveSyncSnackBar(context, result);
+  }
+
+  void _onFetchFromGoogleDrivePressed() {
+    confirmFetchFromDrive(
+      context,
+      onConfirm: _fetchFromGoogleDrive,
+    );
+  }
+
+  List<Task> _upcomingTasks(List<Task> tasks) {
+    final now = DateTime.now();
+    final upcoming = <Task>[];
+    for (final t in tasks) {
+      if (t.status == TaskStatus.completed || t.reminderTime == null) continue;
+      DateTime? sortTime = t.reminderTime;
+      if (t.isRecurring && t.reminderTime!.isBefore(now)) {
+        sortTime = AppDateUtils.calculateNextOccurrence(t.reminderTime, t.recurringInterval);
+      }
+      if (sortTime != null && sortTime.isAfter(now)) {
+        upcoming.add(t);
+      }
+    }
+    upcoming.sort((a, b) {
+      final aTime = _displayTime(a, now)!;
+      final bTime = _displayTime(b, now)!;
+      return aTime.compareTo(bTime);
+    });
+    return upcoming;
+  }
+
+  DateTime? _displayTime(Task task, DateTime now) {
+    if (task.reminderTime == null) return null;
+    if (task.isRecurring && task.reminderTime!.isBefore(now)) {
+      return AppDateUtils.calculateNextOccurrence(task.reminderTime, task.recurringInterval);
+    }
+    return task.reminderTime;
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final colors = context.appColors;
 
     return Scaffold(
+      backgroundColor: colors.scaffoldBg,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 168,
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: const Color(0xFF54BF8F),
+            backgroundColor: colors.scaffoldBg,
             flexibleSpace: FlexibleSpaceBar(
-              expandedTitleScale: 1.1,
-              titlePadding: const EdgeInsets.only(left: 20, bottom: 20, right: 20),
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16, right: 20),
               title: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
                   Text(
-                    _getGreeting(),
-                    style: GoogleFonts.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Text(
-                    'Welcome back!',
-                    style: GoogleFonts.outfit(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                    'Take Notes',
+                    style: GoogleFonts.caveat(fontSize: 28, fontWeight: FontWeight.w600, color: colors.textPrimary),
                   ),
                 ],
               ),
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFE4E3D1), Color(0xFFF8F6F6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              background: Padding(
+                padding: const EdgeInsets.only(left: 20, top: 65),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    DateFormat('EEEE, MMMM d').format(now),
+                    style: GoogleFonts.outfit(fontSize: 18, color: colors.textSecondary),
                   ),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -30,
-                      top: 40,
-                      child: Icon(
-                        Icons.auto_awesome_mosaic_rounded,
-                        size: 200,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
-                    Positioned(
-                      left: 20,
-                      top: 60,
-                      child: Text(
-                        DateFormat('EEEE, MMMM d').format(now),
-                        style: GoogleFonts.outfit(
-                          color: Colors.black87,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.archive_outlined, color: Colors.black87, size: 20),
+                icon: Icon(Icons.archive_outlined, color: colors.textPrimary),
+                tooltip: 'Archive',
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ArchiveScreen()),
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.black87, size: 20),
+                icon: Icon(Icons.delete_outline, color: colors.textPrimary),
+                tooltip: 'Trash',
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const TrashScreen()),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: IconButton(
-                  icon: const Icon(Icons.settings_outlined, color: Colors.black87, size: 20),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
+              IconButton(
+                icon: Icon(Icons.settings_outlined, color: colors.textPrimary),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),
               ),
+              const SizedBox(width: 4),
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                Text(
-                  'Overview',
-                  style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                const SizedBox(height: 16),
+                const DesignSectionTitle(title: 'Overview'),
+                const SizedBox(height: 10),
+                if (_updateAvailable) _buildUpdateBanner(context),
                 _buildStatsGrid(context),
-                const SizedBox(height: 32),
-                Text(
-                  'Upcoming Tasks',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87),
+                const SizedBox(height: 24),
+                DesignSectionTitle(
+                  title: 'Upcoming Tasks',
+                  trailing: 'See all',
+                  onTrailingTap: () => Provider.of<TabProvider>(context, listen: false).setIndex(2),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 _buildUpcomingTasks(context),
+                _buildEmptyRestoreBanner(context),
               ]),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildUpdateBanner(BuildContext context) {
+    final colors = context.appColors;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.fabDark.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.fabDark.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.system_update_alt, color: colors.fabDark),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Update Available', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
+                Text('A new version is available on the Play Store', style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
+              ],
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: colors.fabDark),
+            onPressed: () async {
+              final started = await UpdateService().startFlexibleUpdate();
+              if (started && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Update downloaded. Ready to install.'),
+                    action: SnackBarAction(
+                      label: 'INSTALL',
+                      onPressed: () => UpdateService().completeFlexibleUpdate(),
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyRestoreBanner(BuildContext context) {
+    final colors = context.appColors;
+    return Consumer2<NoteProvider, TaskProvider>(
+      builder: (context, noteProvider, taskProvider, _) {
+        final isEmpty = noteProvider.notes.isEmpty && taskProvider.tasks.isEmpty;
+        if (!isEmpty) return const SizedBox.shrink();
+
+        return Container(
+          margin: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colors.cardSurface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colors.border),
+          ),
+          child: Column(
+            children: [
+              Icon(Icons.cloud_download_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
+              const SizedBox(height: 12),
+              Text(
+                'No notes or tasks yet',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Restore a previous backup from Google Drive',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _isFetching ? null : _onFetchFromGoogleDrivePressed,
+                  icon: _isFetching
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.cloud_download),
+                  label: Text(_isFetching ? 'Fetching...' : 'Fetch from Google Drive'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colors.fabDark,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -155,127 +333,152 @@ class DashboardScreen extends StatelessWidget {
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.0,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.2,
           children: [
-            InkWell(
-              onTap: () => tabProvider.setIndex(1), // Notes tab
-              child: _buildStatCard('Total Notes', noteProvider.notes.length.toString(), Colors.indigo, Icons.description_outlined),
+            _StatTile(
+              label: 'Notes',
+              value: noteProvider.notes.length.toString(),
+              tint: AppPalette.notePastels[2],
+              icon: Icons.description_outlined,
+              onTap: () => tabProvider.setIndex(1),
             ),
-            InkWell(
-              onTap: () => tabProvider.setIndex(2), // Tasks tab
-              child: _buildStatCard('Pending Tasks', taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(), Colors.orange, Icons.assignment_late_outlined),
+            _StatTile(
+              label: 'Pending',
+              value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
+              tint: AppPalette.notePastels[4],
+              icon: Icons.assignment_outlined,
+              onTap: () => tabProvider.setIndex(2),
             ),
-            _buildStatCard('Pinned Notes', noteProvider.notes.where((n) => n.isPinned).length.toString(), Colors.pink, Icons.push_pin_outlined),
-            _buildStatCard('Completed', taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(), Colors.green, Icons.task_alt_outlined),
+            _StatTile(
+              label: 'Pinned',
+              value: noteProvider.notes.where((n) => n.isPinned).length.toString(),
+              tint: AppPalette.notePastels[1],
+              icon: Icons.push_pin_outlined,
+              onTap: () => tabProvider.setIndex(1),
+            ),
+            _StatTile(
+              label: 'Done',
+              value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
+              tint: AppPalette.notePastels[3],
+              icon: Icons.task_alt_outlined,
+              onTap: () => tabProvider.setIndex(2),
+            ),
           ],
         );
       },
     );
   }
 
-
-
   Widget _buildUpcomingTasks(BuildContext context) {
     final now = DateTime.now();
+    final colors = context.appColors;
     return Consumer<TaskProvider>(
       builder: (context, provider, child) {
-        final upcoming = provider.tasks
-            .where((t) => t.status != TaskStatus.completed && t.reminderTime != null && t.reminderTime!.isAfter(now))
-            .toList()
-          ..sort((a, b) => a.reminderTime!.compareTo(b.reminderTime!));
+        final upcoming = _upcomingTasks(provider.tasks);
 
         if (upcoming.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colors.cardSurface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.withOpacity(0.1)),
+              border: Border.all(color: colors.border),
             ),
-            child: const Center(
-              child: Text('No upcoming reminders', style: TextStyle(color: Colors.grey)),
+            child: Center(
+              child: Text('No upcoming reminders', style: GoogleFonts.outfit(color: colors.textSecondary)),
             ),
           );
         }
 
         return Column(
-          children: upcoming.take(3).map((task) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  shape: BoxShape.circle,
+          children: upcoming.take(5).map((task) {
+            final displayTime = _displayTime(task, now);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: colors.cardSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colors.border),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppPalette.accentTeal.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.alarm, color: colors.fabDark, size: 20),
                 ),
-                child: const Icon(Icons.alarm, color: Colors.blue, size: 20),
+                title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
+                subtitle: Text(
+                  displayTime != null ? AppDateUtils.formatReminder(displayTime) : '',
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
+                trailing: task.isRecurring
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppPalette.accentGreen.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          task.recurringInterval.name,
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                        ),
+                      )
+                    : const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
+                ),
               ),
-              title: Text(task.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16)),
-              subtitle: Builder(
-                builder: (context) {
-                  DateTime? displayTime = task.reminderTime;
-                  if (task.reminderTime != null && task.isRecurring && task.reminderTime!.isBefore(DateTime.now())) {
-                    displayTime = AppDateUtils.calculateNextOccurrence(task.reminderTime, task.recurringInterval) ?? task.reminderTime;
-                  }
-                  return Text(
-                    displayTime != null ? AppDateUtils.formatReminder(displayTime) : '',
-                    style: const TextStyle(fontSize: 12),
-                  );
-                },
-              ),
-              trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
-            ),
-          )).toList(),
+            );
+          }).toList(),
         );
       },
     );
   }
+}
 
-  Widget _buildStatCard(String label, String value, Color color, IconData icon) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color tint;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.tint,
+    required this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Material(
+      color: tint,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              Icon(Icons.more_horiz, color: Colors.grey[300], size: 18),
+              Icon(icon, color: colors.textPrimary.withOpacity(0.7), size: 22),
+              const Spacer(),
+              Text(value, style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+              Text(label, style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
             ],
           ),
-          const Spacer(),
-          Text(value, style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black87, letterSpacing: -1)),
-          Text(label, style: GoogleFonts.outfit(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
-        ],
+        ),
       ),
     );
   }

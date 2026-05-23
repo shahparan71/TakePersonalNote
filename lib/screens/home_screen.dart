@@ -4,12 +4,16 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 import 'package:take_personal_note/services/tab_provider.dart';
+import 'package:take_personal_note/services/settings_provider.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'dashboard_screen.dart';
 import 'notes_screen.dart';
 import 'tasks_screen.dart';
 import 'calendar_screen.dart';
 import 'note_edit_screen.dart';
 import 'task_edit_screen.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,20 +22,40 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late StreamSubscription _intentDataStreamSubscription;
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _intentDataStreamSubscription.cancel();
     super.dispose();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _triggerDriveAutoSync();
+    }
+  }
+
+  void _triggerDriveAutoSync() {
+    if (!mounted) return;
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    final folders = Provider.of<FolderProvider>(context, listen: false).folders;
+    GoogleDriveSyncService().runAutoSyncIfEnabled(
+      enabled: settings.isDriveAutoSyncEnabled,
+      folders: folders,
+    );
+  }
+
+  @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     Future.microtask(() {
       Provider.of<NoteProvider>(context, listen: false).cleanOldTrash();
+      _triggerDriveAutoSync();
     });
 
     // For sharing or opening app from timeout..
@@ -99,6 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final tabProvider = Provider.of<TabProvider>(context);
 
     return Scaffold(
+      backgroundColor: context.appColors.scaffoldBg,
       body: IndexedStack(
         index: tabProvider.selectedIndex,
         children: _screens,

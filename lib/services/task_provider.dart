@@ -36,4 +36,8 @@ class TaskProvider with ChangeNotifier {
   List<Task> getTasksByPriority(TaskPriority priority) {
     return _tasks.where((task) => task.priority == priority).toList();
   }
+
+  Future<void> refreshAll() async {
+    await fetchTasks();
+  }
 }

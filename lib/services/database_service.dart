@@ -21,9 +21,22 @@ class DatabaseService {
     String path = join(await getDatabasesPath(), 'personal_notes_tasks.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE notes ADD COLUMN isHidden INTEGER DEFAULT 0');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE notes ADD COLUMN customIntervalValue INTEGER');
+      await db.execute('ALTER TABLE notes ADD COLUMN customIntervalUnit INTEGER');
+      await db.execute('ALTER TABLE tasks ADD COLUMN customIntervalValue INTEGER');
+      await db.execute('ALTER TABLE tasks ADD COLUMN customIntervalUnit INTEGER');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -38,9 +51,12 @@ class DatabaseService {
         isPinned INTEGER,
         isArchived INTEGER,
         isTrashed INTEGER,
+        isHidden INTEGER DEFAULT 0,
         reminderTime TEXT,
         isRecurring INTEGER,
         recurringInterval INTEGER,
+        customIntervalValue INTEGER,
+        customIntervalUnit INTEGER,
         createdAt TEXT,
         updatedAt TEXT,
         deletedAt TEXT
@@ -59,6 +75,8 @@ class DatabaseService {
         status INTEGER,
         isRecurring INTEGER,
         recurringInterval INTEGER,
+        customIntervalValue INTEGER,
+        customIntervalUnit INTEGER,
         createdAt TEXT,
         updatedAt TEXT
       )
@@ -73,7 +91,7 @@ class DatabaseService {
 
   Future<List<Note>> getNotes({String? query, String? category, int? color, String? orderBy}) async {
     final db = await database;
-    String where = 'isTrashed = 0 AND isArchived = 0';
+    String where = 'isTrashed = 0 AND isArchived = 0 AND isHidden = 0';
     List<dynamic> whereArgs = [];
 
     if (query != null && query.isNotEmpty) {
@@ -94,6 +112,16 @@ class DatabaseService {
       where: where,
       whereArgs: whereArgs,
       orderBy: orderBy ?? 'isPinned DESC, updatedAt DESC',
+    );
+    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+  }
+
+  Future<List<Note>> getHiddenNotes() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'notes',
+      where: 'isHidden = 1 AND isTrashed = 0 AND isArchived = 0',
+      orderBy: 'updatedAt DESC',
     );
     return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
   }
@@ -126,6 +154,24 @@ class DatabaseService {
       'notes',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  Future<List<String>> getNoteCategories() async {
+    final db = await database;
+    final maps = await db.rawQuery(
+      "SELECT DISTINCT category FROM notes WHERE isTrashed = 0 AND isArchived = 0 AND category IS NOT NULL AND category != ''",
+    );
+    return maps.map((m) => m['category'] as String).toList();
+  }
+
+  Future<void> clearCategoryFromNotes(String category) async {
+    final db = await database;
+    await db.update(
+      'notes',
+      {'category': null},
+      where: 'category = ?',
+      whereArgs: [category],
     );
   }
 
@@ -193,6 +239,42 @@ class DatabaseService {
     final List<Map<String, dynamic>> maps = await db.query('tasks', where: 'id = ?', whereArgs: [id]);
     if (maps.isNotEmpty) return Task.fromMap(maps.first);
     return null;
+  }
+
+  Future<List<Note>> getAllNotes() async {
+    final db = await database;
+    final maps = await db.query('notes', orderBy: 'updatedAt DESC');
+    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+  }
+
+  Future<List<Task>> getAllTasks() async {
+    final db = await database;
+    final maps = await db.query('tasks', orderBy: 'updatedAt DESC');
+    return List.generate(maps.length, (i) => Task.fromMap(maps[i]));
+  }
+
+  Future<void> importBackupData({
+    required List<Map<String, dynamic>> notes,
+    required List<Map<String, dynamic>> tasks,
+    bool merge = true,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      if (!merge) {
+        await txn.delete('notes');
+        await txn.delete('tasks');
+      }
+      for (final map in notes) {
+        final data = Map<String, dynamic>.from(map);
+        data.remove('id');
+        await txn.insert('notes', data, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final map in tasks) {
+        final data = Map<String, dynamic>.from(map);
+        data.remove('id');
+        await txn.insert('tasks', data, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
   }
 
   Future<void> close() async {

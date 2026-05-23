@@ -6,6 +6,9 @@ import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
 import '../utils/date_utils.dart';
+import '../theme/app_colors.dart';
+import '../widgets/design_widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TaskEditScreen extends StatefulWidget {
   final Task? task;
@@ -18,19 +21,24 @@ class TaskEditScreen extends StatefulWidget {
 
 class _TaskEditScreenState extends State<TaskEditScreen> {
   late TextEditingController _descController;
-  TaskPriority _priority = TaskPriority.low;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
+  int? _customIntervalValue;
+  CustomIntervalUnit? _customIntervalUnit;
 
   @override
   void initState() {
     super.initState();
     _descController = TextEditingController(text: widget.task?.description ?? widget.initialText ?? '');
-    _priority = widget.task?.priority ?? TaskPriority.low;
     _reminderTime = widget.task?.reminderTime;
     _isRecurring = widget.task?.isRecurring ?? false;
     _recurringInterval = widget.task?.recurringInterval ?? RecurringInterval.none;
+    _customIntervalValue = widget.task?.customIntervalValue;
+    _customIntervalUnit = widget.task?.customIntervalUnit;
+    if (_isRecurring && _recurringInterval == RecurringInterval.none) {
+      _recurringInterval = RecurringInterval.daily;
+    }
   }
 
   @override
@@ -39,13 +47,34 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     super.dispose();
   }
 
+  int? get _notificationId => widget.task?.id != null ? widget.task!.id! + 10000 : null;
+
+  Future<void> _scheduleOrCancelNotification(int? taskId, String title) async {
+    if (taskId == null) return;
+    final notifId = taskId + 10000;
+    if (_reminderTime == null) {
+      await NotificationService().cancelNotification(notifId);
+      return;
+    }
+    final success = await NotificationService().scheduleNotificationWithCustomInterval(
+      id: notifId,
+      title: 'Task Reminder',
+      body: title,
+      scheduledDate: _reminderTime!,
+      payload: 'task_$taskId',
+      recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
+      customIntervalValue: _customIntervalValue,
+      customIntervalUnit: _customIntervalUnit,
+    );
+    if (mounted) _showSchedulingFeedback(success);
+  }
+
   void _saveTask() {
     if (_descController.text.trim().isEmpty) return;
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
     final now = DateTime.now();
 
-    // Generate title from description
     String generatedTitle = _descController.text.trim();
     if (generatedTitle.contains('\n')) {
       generatedTitle = generatedTitle.split('\n').first;
@@ -61,45 +90,21 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     )).copyWith(
       title: generatedTitle,
       description: _descController.text,
-      priority: _priority,
+      priority: widget.task?.priority ?? TaskPriority.low,
       reminderTime: _reminderTime,
       isRecurring: _reminderTime == null ? false : _isRecurring,
-      recurringInterval: _reminderTime == null ? RecurringInterval.none : _recurringInterval,
+      recurringInterval: _reminderTime == null
+          ? RecurringInterval.none
+          : (_isRecurring ? _recurringInterval : RecurringInterval.none),
+      customIntervalValue: _customIntervalValue,
+      customIntervalUnit: _customIntervalUnit,
       updatedAt: now,
     );
 
     if (widget.task == null) {
-      provider.addTask(task).then((id) async {
-        if (_reminderTime != null) {
-          final success = await NotificationService().scheduleNotification(
-            id: (id ?? 0) + 10000,
-            title: 'Task Reminder',
-            body: generatedTitle,
-            scheduledDate: _reminderTime!,
-            payload: 'task_$id',
-            recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
-          );
-          if (mounted) {
-            _showSchedulingFeedback(success);
-          }
-        }
-      });
+      provider.addTask(task).then((id) => _scheduleOrCancelNotification(id, generatedTitle));
     } else {
-      provider.updateTask(task).then((_) async {
-        if (_reminderTime != null) {
-          final success = await NotificationService().scheduleNotification(
-            id: widget.task!.id! + 10000,
-            title: 'Task Reminder',
-            body: generatedTitle,
-            scheduledDate: _reminderTime!,
-            payload: 'task_${widget.task!.id!}',
-            recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
-          );
-          if (mounted) {
-            _showSchedulingFeedback(success);
-          }
-        }
-      });
+      provider.updateTask(task).then((_) => _scheduleOrCancelNotification(widget.task!.id, generatedTitle));
     }
     Navigator.pop(context);
   }
@@ -107,25 +112,46 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   void _showSchedulingFeedback(bool success) {
     String message;
     if (success) {
-      message = '✅ Reminder scheduled for ${DateFormat('MMM d, h:mm a').format(_reminderTime!)}';
-    } else {
-      if (_reminderTime!.isBefore(DateTime.now())) {
-        message = '⚠️ Reminder skipped: Time is in the past';
-      } else {
-        message = '❌ Failed to schedule reminder (Timezone error)';
+      message = 'Reminder scheduled for ${DateFormat('MMM d, h:mm a').format(_reminderTime!)}';
+      if (_isRecurring && _recurringInterval != RecurringInterval.none) {
+        if (_recurringInterval == RecurringInterval.custom) {
+          message += ' (Every $_customIntervalValue ${_customIntervalUnit?.name})';
+        } else {
+          message += ' (${_recurringInterval.name})';
+        }
       }
+    } else if (_reminderTime!.isBefore(DateTime.now()) && !_isRecurring) {
+      message = 'Reminder skipped: time is in the past';
+    } else {
+      message = 'Failed to schedule reminder';
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _setRecurrenceInterval(RecurringInterval interval) {
+    setState(() {
+      _isRecurring = true;
+      _recurringInterval = interval;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Scaffold(
+      backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
-        title: Text(widget.task == null ? 'Task' : 'Edit Task'),
+        backgroundColor: colors.scaffoldBg,
+        title: Text(
+          widget.task == null ? 'New Task' : 'Edit Task',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary),
+        ),
         actions: [
           IconButton(
-            icon: Icon(_reminderTime == null ? Icons.notifications_none : Icons.notifications_active, color: _reminderTime == null ? null : Colors.blue),
+            icon: Icon(
+              _reminderTime == null ? Icons.notifications_none_outlined : Icons.notifications_active,
+              color: _reminderTime == null ? colors.textSecondary : colors.fabDark,
+            ),
             onPressed: () {
               if (_reminderTime == null) {
                 _selectReminder(context);
@@ -137,149 +163,208 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 });
               }
             },
-            tooltip: _reminderTime == null ? 'Set Reminder' : 'Remove Reminder',
           ),
-          IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: CircleActionButton(
+              icon: Icons.check,
+              color: AppColors.actionSave,
+              size: 40,
+              onPressed: _saveTask,
+            ),
+          ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         children: [
-          if (_reminderTime != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: InkWell(
-                onTap: () => _selectReminder(context),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.alarm_rounded, size: 18, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppDateUtils.formatReminder(_reminderTime!),
-                        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14),
+          if (_reminderTime != null) ...[
+            _buildReminderCard(),
+            const SizedBox(height: 20),
+          ],
+          TextField(
+            controller: _descController,
+            autofocus: widget.task == null,
+            decoration: InputDecoration(
+              hintText: 'What needs to be done?',
+              filled: true,
+              fillColor: colors.cardSurface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
+              hintStyle: GoogleFonts.outfit(fontSize: 18, color: colors.textSecondary),
+            ),
+            style: GoogleFonts.outfit(fontSize: 20, height: 1.4, color: colors.textPrimary),
+            maxLines: null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderCard() {
+    return Material(
+      color: Colors.blue.withOpacity(0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: () => _selectReminder(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.alarm_rounded, color: Colors.blue, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppDateUtils.formatReminder(_reminderTime!),
+                      style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600, fontSize: 15),
+                    ),
+                    if (_isRecurring) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          //Icon(Icons.update_rounded, size: 14, color: Colors.indigo.withOpacity(0.8)),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Next: ${AppDateUtils.formatReminder(AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval, customValue: _customIntervalValue, customUnit: _customIntervalUnit) ?? _reminderTime!, showYear: true)}',
+                            style: TextStyle(fontSize: 12, color: Colors.indigo.withOpacity(0.9)),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ),
-            ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _descController,
-                autofocus: widget.task == null,
-                decoration: const InputDecoration(
-                  hintText: 'What needs to be done?',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(fontSize: 22, color: Colors.grey),
-                ),
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w400),
-                maxLines: null,
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.repeat_rounded, size: 20, color: Colors.blue),
+                onPressed: _showRecurrenceDialog,
               ),
-              if (_reminderTime != null) ...[
-                const SizedBox(height: 8),
-                _buildRecurrenceRow(),
-              ],
             ],
           ),
-          if (_reminderTime != null && _isRecurring)
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 16),
-              child: _buildNextReminderInfo(),
-            ),
-          const Divider(),
-          const SizedBox(height: 16),
-          _buildPrioritySelector(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNextReminderInfo() {
-    final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
-    if (nextDate == null) return const SizedBox.shrink();
-
-    return Row(
-      children: [
-        const Icon(Icons.update_rounded, size: 14, color: Colors.indigo),
-        const SizedBox(width: 6),
-        Text(
-          'Next occurrence: ${AppDateUtils.formatReminder(nextDate)}',
-          style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.w500),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRecurrenceRow() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-      ),
-      child: Row(
+  Future<void> _showRecurrenceDialog() async {
+    final result = await showDialog<RecurringInterval>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Repeat'),
         children: [
-          const Icon(Icons.repeat_rounded, size: 20, color: Colors.grey),
-          const SizedBox(width: 12),
-          const Text('Repeat', style: TextStyle(fontWeight: FontWeight.w500)),
-          const Spacer(),
-          if (_isRecurring) ...[
-            _buildRecurrenceIntervalSelector(),
-            const SizedBox(width: 8),
-          ],
-          Switch.adaptive(
-            value: _isRecurring,
-            activeColor: Colors.blue,
-            onChanged: (val) => setState(() => _isRecurring = val),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.daily),
+            child: const Text('Daily'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.weekly),
+            child: const Text('Weekly'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.monthly),
+            child: const Text('Monthly'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.custom),
+            child: const Text('Custom'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context, RecurringInterval.none),
+            child: const Text('None'),
           ),
         ],
       ),
     );
+
+    if (result == RecurringInterval.custom) {
+      await _showCustomIntervalDialog();
+      return;
+    }
+
+    if (result != null) {
+      setState(() {
+        _recurringInterval = result;
+        _isRecurring = result != RecurringInterval.none;
+      });
+    }
   }
 
-  Widget _buildRecurrenceIntervalSelector() {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<RecurringInterval>(
-        value: _recurringInterval == RecurringInterval.none ? RecurringInterval.daily : _recurringInterval,
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 13),
-        items: RecurringInterval.values
-            .where((v) => v != RecurringInterval.none)
-            .map((v) => DropdownMenuItem(
-                  value: v,
-                  child: Text(v.name.substring(0, 1).toUpperCase() + v.name.substring(1)),
-                ))
-            .toList(),
-        onChanged: (val) => setState(() => _recurringInterval = val!),
+  Future<void> _showCustomIntervalDialog() async {
+    int tempVal = _customIntervalValue ?? 1;
+    CustomIntervalUnit tempUnit = _customIntervalUnit ?? CustomIntervalUnit.days;
+    final controller = TextEditingController(text: tempVal.toString());
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateSB) {
+          return AlertDialog(
+            title: const Text('Custom Repeat'),
+            content: Row(
+              children: [
+                const Text('Every '),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 60,
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(isDense: true),
+                    controller: controller,
+                    onChanged: (val) {
+                      tempVal = int.tryParse(val) ?? 1;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<CustomIntervalUnit>(
+                  value: tempUnit,
+                  items: const [
+                    DropdownMenuItem(value: CustomIntervalUnit.days, child: Text('Days')),
+                    DropdownMenuItem(value: CustomIntervalUnit.weeks, child: Text('Weeks')),
+                    DropdownMenuItem(value: CustomIntervalUnit.months, child: Text('Months')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setStateSB(() => tempUnit = val);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
+            ],
+          );
+        },
       ),
     );
+
+    if (confirmed == true) {
+      setState(() {
+        _customIntervalValue = tempVal;
+        _customIntervalUnit = tempUnit;
+        _recurringInterval = RecurringInterval.custom;
+        _isRecurring = true;
+      });
+    }
   }
 
   Future<void> _selectReminder(BuildContext context) async {
     final now = DateTime.now();
-    // Use the existing reminder time if available, otherwise now.
-    // Ensure initialDate is not before firstDate.
     DateTime initialDate = _reminderTime ?? now;
-    if (initialDate.isBefore(now)) {
-      initialDate = now;
-    }
+    if (initialDate.isBefore(now)) initialDate = now;
 
     final date = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: _reminderTime != null && _reminderTime!.isBefore(now) ? _reminderTime! : now,
+      firstDate: now,
       lastDate: DateTime(2030),
     );
-    if (date != null) {
-      if (!context.mounted) return;
+    if (date != null && context.mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()),
@@ -292,41 +377,5 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     }
   }
 
-  Widget _buildPrioritySelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Priority', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-        const SizedBox(height: 8),
-        Row(
-          children: TaskPriority.values.map((p) {
-            final isSelected = _priority == p;
-            Color color;
-            switch (p) {
-              case TaskPriority.low: color = Colors.green; break;
-              case TaskPriority.medium: color = Colors.orange; break;
-              case TaskPriority.high: color = Colors.red; break;
-            }
-            return Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: ChoiceChip(
-                label: Text(
-                  p.name.substring(0, 1).toUpperCase() + p.name.substring(1),
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : color,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-                selected: isSelected,
-                selectedColor: color,
-                backgroundColor: color.withOpacity(0.1),
-                side: BorderSide(color: isSelected ? Colors.transparent : color.withOpacity(0.3)),
-                onSelected: (val) => setState(() => _priority = p),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+
 }

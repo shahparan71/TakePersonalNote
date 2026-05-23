@@ -12,9 +12,12 @@ class Note {
   final bool isPinned;
   final bool isArchived;
   final bool isTrashed;
+  final bool isHidden;
   final DateTime? reminderTime;
   final bool isRecurring;
-  final RecurringInterval recurringInterval; 
+  final RecurringInterval recurringInterval;
+  final int? customIntervalValue;
+  final CustomIntervalUnit? customIntervalUnit;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -29,47 +32,58 @@ class Note {
     this.isPinned = false,
     this.isArchived = false,
     this.isTrashed = false,
+    this.isHidden = false,
     this.reminderTime,
     this.isRecurring = false,
     this.recurringInterval = RecurringInterval.none,
+    this.customIntervalValue,
+    this.customIntervalUnit,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
   });
+
+  static const Object _unset = Object();
 
   Note copyWith({
     int? id,
     String? title,
     String? content,
     NoteType? type,
-    String? category,
+    Object? category = _unset,
     int? color,
     bool? isPinned,
     bool? isArchived,
     bool? isTrashed,
-    DateTime? reminderTime,
+    bool? isHidden,
+    Object? reminderTime = _unset,
     bool? isRecurring,
     RecurringInterval? recurringInterval,
+    int? customIntervalValue,
+    CustomIntervalUnit? customIntervalUnit,
     DateTime? createdAt,
     DateTime? updatedAt,
-    DateTime? deletedAt,
+    Object? deletedAt = _unset,
   }) {
     return Note(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
       type: type ?? this.type,
-      category: category ?? this.category,
+      category: category == _unset ? this.category : category as String?,
       color: color ?? this.color,
       isPinned: isPinned ?? this.isPinned,
       isArchived: isArchived ?? this.isArchived,
       isTrashed: isTrashed ?? this.isTrashed,
-      reminderTime: reminderTime ?? this.reminderTime,
+      isHidden: isHidden ?? this.isHidden,
+      reminderTime: reminderTime == _unset ? this.reminderTime : reminderTime as DateTime?,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
+      customIntervalValue: customIntervalValue ?? this.customIntervalValue,
+      customIntervalUnit: customIntervalUnit ?? this.customIntervalUnit,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      deletedAt: deletedAt ?? this.deletedAt,
+      deletedAt: deletedAt == _unset ? this.deletedAt : deletedAt as DateTime?,
     );
   }
 
@@ -84,9 +98,12 @@ class Note {
       'isPinned': isPinned ? 1 : 0,
       'isArchived': isArchived ? 1 : 0,
       'isTrashed': isTrashed ? 1 : 0,
+      'isHidden': isHidden ? 1 : 0,
       'reminderTime': reminderTime?.toIso8601String(),
       'isRecurring': isRecurring ? 1 : 0,
       'recurringInterval': recurringInterval.index,
+      'customIntervalValue': customIntervalValue,
+      'customIntervalUnit': customIntervalUnit?.index,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),
@@ -104,9 +121,12 @@ class Note {
       isPinned: map['isPinned'] == 1,
       isArchived: map['isArchived'] == 1,
       isTrashed: map['isTrashed'] == 1,
+      isHidden: (map['isHidden'] ?? 0) == 1,
       reminderTime: map['reminderTime'] != null ? DateTime.parse(map['reminderTime']) : null,
       isRecurring: map['isRecurring'] == 1,
-      recurringInterval: RecurringInterval.values[map['recurringInterval']],
+      recurringInterval: RecurringInterval.values[map['recurringInterval'] ?? 0],
+      customIntervalValue: map['customIntervalValue'],
+      customIntervalUnit: map['customIntervalUnit'] != null ? CustomIntervalUnit.values[map['customIntervalUnit']] : null,
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
       deletedAt: map['deletedAt'] != null ? DateTime.parse(map['deletedAt']) : null,

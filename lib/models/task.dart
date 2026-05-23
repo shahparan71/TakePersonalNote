@@ -12,6 +12,8 @@ class Task {
   final TaskStatus status;
   final bool isRecurring;
   final RecurringInterval recurringInterval;
+  final int? customIntervalValue;
+  final CustomIntervalUnit? customIntervalUnit;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -24,6 +26,8 @@ class Task {
     this.status = TaskStatus.pending,
     this.isRecurring = false,
     this.recurringInterval = RecurringInterval.none,
+    this.customIntervalValue,
+    this.customIntervalUnit,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -37,6 +41,8 @@ class Task {
     TaskStatus? status,
     bool? isRecurring,
     RecurringInterval? recurringInterval,
+    int? customIntervalValue,
+    CustomIntervalUnit? customIntervalUnit,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -49,6 +55,8 @@ class Task {
       status: status ?? this.status,
       isRecurring: isRecurring ?? this.isRecurring,
       recurringInterval: recurringInterval ?? this.recurringInterval,
+      customIntervalValue: customIntervalValue ?? this.customIntervalValue,
+      customIntervalUnit: customIntervalUnit ?? this.customIntervalUnit,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -64,6 +72,8 @@ class Task {
       'status': status.index,
       'isRecurring': isRecurring ? 1 : 0,
       'recurringInterval': recurringInterval.index,
+      'customIntervalValue': customIntervalValue,
+      'customIntervalUnit': customIntervalUnit?.index,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -78,7 +88,9 @@ class Task {
       priority: TaskPriority.values[map['priority']],
       status: TaskStatus.values[map['status']],
       isRecurring: map['isRecurring'] == 1,
-      recurringInterval: RecurringInterval.values[map['recurringInterval']],
+      recurringInterval: RecurringInterval.values[map['recurringInterval'] ?? 0],
+      customIntervalValue: map['customIntervalValue'],
+      customIntervalUnit: map['customIntervalUnit'] != null ? CustomIntervalUnit.values[map['customIntervalUnit']] : null,
       createdAt: DateTime.parse(map['createdAt']),
       updatedAt: DateTime.parse(map['updatedAt']),
     );
