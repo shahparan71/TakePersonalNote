@@ -259,6 +259,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   children: [
                     TextField(
                       controller: _titleController,
+                      textAlign: TextAlign.center,
                       decoration: InputDecoration(
                         hintText: 'Add Title',
                         filled: true,
