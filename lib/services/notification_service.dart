@@ -13,6 +13,7 @@ import '../screens/task_edit_screen.dart';
 import '../models/recurring_interval.dart';
 import 'database_service.dart';
 import 'alarm_callback.dart';
+import 'notification_channels.dart';
 
 const String _notifMetaPrefix = 'notif_meta_';
 
@@ -75,6 +76,7 @@ class NotificationService {
     );
 
     if (Platform.isAndroid) {
+      await ensureReminderChannel(_notificationsPlugin);
       final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {

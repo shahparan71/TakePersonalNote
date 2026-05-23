@@ -12,8 +12,6 @@ import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/update_service.dart';
-import 'package:take_personal_note/services/battery_optimization_service.dart';
-import 'package:take_personal_note/services/settings_provider.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
@@ -36,7 +34,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _checkForUpdate();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkBatteryOptimization());
   }
 
   Future<void> _checkForUpdate() async {
@@ -44,42 +41,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (mounted) {
       setState(() => _updateAvailable = hasUpdate);
     }
-  }
-
-  Future<void> _checkBatteryOptimization() async {
-    if (!mounted) return;
-    final settings = Provider.of<SettingsProvider>(context, listen: false);
-    if (!settings.isBatteryPromptShown) {
-      final isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
-      if (!isIgnoring && mounted) {
-        settings.setBatteryPromptShown(true);
-        _showBatteryOptimizationDialog();
-      }
-    }
-  }
-
-  void _showBatteryOptimizationDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reliable Reminders'),
-        content: const Text(
-            'To ensure your task reminders fire on time even when the app is closed, please disable battery optimization for this app in your device settings.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('LATER'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              BatteryOptimizationService.requestIgnoreBatteryOptimizations();
-            },
-            child: const Text('SETTINGS'),
-          ),
-        ],
-      ),
-    );
   }
 
   String _getGreeting() {

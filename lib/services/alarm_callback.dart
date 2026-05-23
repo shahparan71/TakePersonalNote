@@ -1,8 +1,12 @@
 import 'dart:convert';
+import 'dart:ui';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
+
+import 'notification_channels.dart';
 
 /// Key prefix for storing notification metadata in SharedPreferences.
 const String _notifMetaPrefix = 'notif_meta_';
@@ -11,6 +15,7 @@ const String _notifMetaPrefix = 'notif_meta_';
 @pragma('vm:entry-point')
 void alarmCallback(int alarmId) async {
   WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
   final metaJson = prefs.getString('$_notifMetaPrefix$alarmId');
@@ -29,25 +34,13 @@ void alarmCallback(int alarmId) async {
   const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
   const initSettings = InitializationSettings(android: androidSettings);
   await flnPlugin.initialize(initSettings);
+  await ensureReminderChannel(flnPlugin);
 
-  // Show the notification
   await flnPlugin.show(
     alarmId,
     title,
     body,
-    const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'reminders_channel',
-        'Reminders',
-        channelDescription: 'Task reminders',
-        importance: Importance.max,
-        priority: Priority.high,
-        ticker: 'ticker',
-        showWhen: true,
-        icon: 'app_icon_2',
-        color: Color(0xFF6366F1),
-      ),
-    ),
+    reminderNotificationDetails,
     payload: payload,
   );
 

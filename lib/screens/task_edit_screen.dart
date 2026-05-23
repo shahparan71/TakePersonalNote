@@ -5,6 +5,8 @@ import 'package:take_personal_note/models/recurring_interval.dart';
 import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
+import '../services/battery_optimization_service.dart';
+import '../services/settings_provider.dart';
 import '../utils/date_utils.dart';
 import '../theme/app_colors.dart';
 import '../widgets/design_widgets.dart';
@@ -48,6 +50,42 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   }
 
 
+  Future<void> _checkBatteryOptimization() async {
+    if (!mounted) return;
+    final settings = Provider.of<SettingsProvider>(context, listen: false);
+    if (!settings.isBatteryPromptShown) {
+      final isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
+      if (!isIgnoring && mounted) {
+        settings.setBatteryPromptShown(true);
+        _showBatteryOptimizationDialog();
+      }
+    }
+  }
+
+  void _showBatteryOptimizationDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reliable Reminders'),
+        content: const Text(
+            'To ensure your task reminders fire on time even when the app is closed, please disable battery optimization for this app in your device settings.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('LATER'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              BatteryOptimizationService.requestIgnoreBatteryOptimizations();
+            },
+            child: const Text('SETTINGS'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _scheduleOrCancelNotification(int? taskId, String title) async {
     if (taskId == null) return;
     final notifId = taskId + 10000;
@@ -55,6 +93,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       await NotificationService().cancelNotification(notifId);
       return;
     }
+    await _checkBatteryOptimization();
     final success = await NotificationService().scheduleNotificationWithCustomInterval(
       id: notifId,
       title: 'Task Reminder',
