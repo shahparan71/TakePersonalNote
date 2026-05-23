@@ -1,21 +1,20 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:take_personal_note/models/note.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
-import 'package:intl/intl.dart';
-import 'package:take_personal_note/utils/date_utils.dart';
-import 'package:take_personal_note/widgets/sheet_safe_area.dart';
-import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:take_personal_note/utils/date_utils.dart';
+import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
@@ -166,7 +165,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       lastDate: DateTime(2030),
     );
     if (pickedDate != null && mounted) {
-      final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
+      final TimeOfDay? pickedTime =
+          await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
       if (pickedTime != null) {
         setState(() {
           _reminderTime = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
@@ -329,12 +329,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         showClipboardCut: false,
                         showClipboardPaste: false,
                         /*customButtons: [
-                quill.QuillToolbarCustomButtonOptions(
-                  icon: const Icon(Icons.image),
-                  onPressed: _pickImage,
-                  tooltip: 'Insert Image',
-                ),
-              ],*/
+                          quill.QuillToolbarCustomButtonOptions(
+                            icon: const Icon(Icons.image),
+                            onPressed: _pickImage,
+                            tooltip: 'Insert Image',
+                          ),
+                        ],*/
                       ),
                     ),
                   ),
@@ -406,7 +406,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               ),
             ],
           ),
-          if (_isRecurring) ...[const SizedBox(height: 8), _buildRecurrenceChips(), const SizedBox(height: 4), _buildNextOccurrenceDisplay()],
+          if (_isRecurring) ...[
+            const SizedBox(height: 8),
+            _buildRecurrenceChips(),
+            const SizedBox(height: 4),
+            _buildNextOccurrenceDisplay()
+          ],
         ],
       ),
     );
