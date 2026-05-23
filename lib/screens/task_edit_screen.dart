@@ -47,7 +47,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     super.dispose();
   }
 
-  int? get _notificationId => widget.task?.id != null ? widget.task!.id! + 10000 : null;
 
   Future<void> _scheduleOrCancelNotification(int? taskId, String title) async {
     if (taskId == null) return;
