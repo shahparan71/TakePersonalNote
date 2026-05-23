@@ -263,7 +263,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       decoration: InputDecoration(
                         hintText: 'Add Title',
                         filled: true,
-                        fillColor: context.appColors.cardSurface.withValues(alpha: 0.7),
+                        fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
@@ -316,7 +316,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         showRightAlignment: false,
                         showJustifyAlignment: false,
                         showHeaderStyle: false,
-                        showListNumbers: false,
+                        showListNumbers: true,
                         showListCheck: false,
                         showCodeBlock: false,
                         showQuote: true,
