@@ -34,7 +34,7 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("C:/Users/USER/Desktop/Project/TakePersonalNote/TakeNote.jks")
+            storeFile = rootProject.file("../TakeNote.jks")
             storePassword = "takenote"
             keyAlias = "Key0"
             keyPassword = "takenote"
