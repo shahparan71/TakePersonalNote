@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,9 +11,6 @@ import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/theme/app_theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-
-import 'services/alarm_callback.dart';
 import 'screens/lock_screen.dart';
 import 'screens/home_screen.dart';
 
@@ -23,10 +18,9 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await AndroidAlarmManager.initialize();
   await NotificationService().init();
+  await NotificationService().rescheduleAllReminders();
 
   final settingsProvider = SettingsProvider();
   await settingsProvider.loadSettings();

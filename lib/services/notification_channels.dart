@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 const String reminderChannelId = 'reminders_channel';
@@ -29,6 +30,8 @@ const AndroidNotificationDetails reminderAndroidDetails = AndroidNotificationDet
   ticker: 'ticker',
   showWhen: true,
   icon: 'app_icon_2',
+  largeIcon: DrawableResourceAndroidBitmap('app_icon_2'),
+  color: Color(0xFF6366F1),
 );
 
 const NotificationDetails reminderNotificationDetails = NotificationDetails(

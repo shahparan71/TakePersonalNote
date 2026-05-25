@@ -107,7 +107,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     if (mounted) _showSchedulingFeedback(success);
   }
 
-  void _saveTask() {
+  Future<void> _saveTask() async {
     if (_descController.text.trim().isEmpty) return;
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
@@ -140,11 +140,13 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
 
     if (widget.task == null) {
-      provider.addTask(task).then((id) => _scheduleOrCancelNotification(id, generatedTitle));
+      final id = await provider.addTask(task);
+      await _scheduleOrCancelNotification(id, generatedTitle);
     } else {
-      provider.updateTask(task).then((_) => _scheduleOrCancelNotification(widget.task!.id, generatedTitle));
+      await provider.updateTask(task);
+      await _scheduleOrCancelNotification(widget.task!.id, generatedTitle);
     }
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   void _showSchedulingFeedback(bool success) {
