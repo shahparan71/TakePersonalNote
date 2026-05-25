@@ -133,7 +133,7 @@ class _NotesScreenState extends State<NotesScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search notes...',
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: colors.cardSurface,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                           prefixIcon: const Icon(Icons.search, size: 20),
                           contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -157,7 +157,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 return Center(
                   child: Text(
                     _selectedFolder == null ? 'No notes yet. Add one!' : 'No notes in this folder',
-                    style: TextStyle(color: Colors.grey[500]),
+                    style: TextStyle(color: colors.textSecondary),
                   ),
                 );
               }
@@ -245,6 +245,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNoteCard(Note note) {
+    final colors = context.appColors;
     return _buildNoteItem(
       note,
       isCard: true,
@@ -258,7 +259,7 @@ class _NotesScreenState extends State<NotesScreen> {
             Expanded(
               child: Text(
                 NoteUtils.getPlainText(note.content),
-                style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.3),
+                style: TextStyle(fontSize: 13, color: colors.textSecondary, height: 1.3),
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -271,6 +272,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNoteListTile(Note note) {
+    final colors = context.appColors;
     return _buildNoteItem(
       note,
       isCard: false,
@@ -281,7 +283,10 @@ class _NotesScreenState extends State<NotesScreen> {
             Container(
               width: 4,
               height: 48,
-              decoration: BoxDecoration(color: Color(note.color), borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: note.color == AppPalette.themeDefaultNoteColor ? colors.fabDark : Color(note.color),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -292,7 +297,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   const SizedBox(height: 4),
                   Text(
                     NoteUtils.getPlainText(note.content),
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 13, color: colors.textSecondary),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -340,7 +345,7 @@ class _NotesScreenState extends State<NotesScreen> {
                   child: Container(
                     width: 4,
                     decoration: BoxDecoration(
-                      color: Color(note.color),
+                      color: note.color == AppPalette.themeDefaultNoteColor ? colors.fabDark : Color(note.color),
                       borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
                     ),
                   ),
@@ -369,35 +374,37 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNoteHeader(Note note) {
+    final colors = context.appColors;
     return Row(
       children: [
         Expanded(
           child: Text(
             note.title.isEmpty ? 'Untitled' : note.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colors.textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (note.isPinned) const Icon(Icons.push_pin, size: 14, color: Colors.blue),
+        if (note.isPinned) Icon(Icons.push_pin, size: 14, color: Theme.of(context).colorScheme.primary),
       ],
     );
   }
 
   Widget _buildNoteFooter(Note note) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          Text(DateFormat('MMM d, yyyy').format(note.updatedAt), style: TextStyle(fontSize: 10, color: Colors.grey[500])),
+          Text(DateFormat('MMM d, yyyy').format(note.updatedAt), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
           if (note.category != null && note.category!.isNotEmpty) ...[
             const SizedBox(width: 8),
-            Icon(Icons.folder_outlined, size: 11, color: Colors.grey[400]),
+            Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary),
             const SizedBox(width: 2),
             Flexible(
               child: Text(
                 note.category!,
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 10, color: colors.textSecondary),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -436,6 +443,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _actionButton(IconData icon, String label, VoidCallback onTap, {Color? color}) {
+    final defaultColor = context.appColors.textPrimary;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -444,9 +452,9 @@ class _NotesScreenState extends State<NotesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: color ?? Colors.black87),
+            Icon(icon, size: 22, color: color ?? defaultColor),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, color: color ?? Colors.black87)),
+            Text(label, style: TextStyle(fontSize: 11, color: color ?? defaultColor)),
           ],
         ),
       ),

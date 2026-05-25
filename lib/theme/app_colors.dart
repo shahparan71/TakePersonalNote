@@ -34,12 +34,17 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const AppPalette dark = AppPalette(
     scaffoldBg: Color(0xFF121212),
     cardSurface: Color(0xFF2C2C2E),
-    textPrimary: Color(0xFF545461),
-    textSecondary: Color(0xFF373750),
+    textPrimary: Color(0xFFF2F2F7),
+    textSecondary: Color(0xFF8E8E93),
     border: Color(0xFF3A3A3C),
     fabDark: Color(0xFF3D6B64),
     toolbarDark: Color(0xFF0D0D0D),
   );
+
+  /// Stored note color meaning "follow app theme" (not literal white).
+  static const int themeDefaultNoteColor = 0xFFFFFFFF;
+
+  bool get _isDarkTheme => scaffoldBg.computeLuminance() < 0.2;
 
   /// Brand / action colors (same in both themes).
   static const Color accentGreen = Color(0xFF7CB87C);
@@ -61,8 +66,27 @@ class AppPalette extends ThemeExtension<AppPalette> {
 
   Color noteCardTint(int colorValue) {
     final c = Color(colorValue);
-    if (c == Colors.white || colorValue == 0xFFFFFFFF) return cardSurface;
-    return c.withOpacity(0.35);
+    if (c == Colors.white || colorValue == themeDefaultNoteColor) return cardSurface;
+    if (_isDarkTheme) {
+      return Color.lerp(cardSurface, c, 0.35)!;
+    }
+    return c.withValues(alpha: 0.35);
+  }
+
+  /// Background for dashboard stat tiles; light pastels in light mode, subtle accents in dark.
+  Color statTileTint(int pastelIndex) {
+    if (_isDarkTheme) {
+      final accents = [fabDark, accentTeal, accentGreen, actionPin];
+      return Color.lerp(cardSurface, accents[pastelIndex % accents.length], 0.22)!;
+    }
+    final i = pastelIndex.clamp(0, notePastels.length - 1);
+    return notePastels[i];
+  }
+
+  /// Editor/list background for a note color value.
+  Color noteEditorBackground(int colorValue) {
+    if (colorValue == themeDefaultNoteColor) return scaffoldBg;
+    return Color(colorValue);
   }
 
   @override

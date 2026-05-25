@@ -301,28 +301,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _StatTile(
               label: 'Notes',
               value: noteProvider.notes.length.toString(),
-              tint: AppPalette.notePastels[2],
+              tint: context.appColors.statTileTint(2),
               icon: Icons.description_outlined,
               onTap: () => tabProvider.setIndex(1),
             ),
             _StatTile(
               label: 'Pending',
               value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
-              tint: AppPalette.notePastels[4],
+              tint: context.appColors.statTileTint(4),
               icon: Icons.assignment_outlined,
               onTap: () => tabProvider.setIndex(2),
             ),
             _StatTile(
               label: 'Pinned',
               value: noteProvider.notes.where((n) => n.isPinned).length.toString(),
-              tint: AppPalette.notePastels[1],
+              tint: context.appColors.statTileTint(1),
               icon: Icons.push_pin_outlined,
               onTap: () => tabProvider.setIndex(1),
             ),
             _StatTile(
               label: 'Done',
               value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
-              tint: AppPalette.notePastels[3],
+              tint: context.appColors.statTileTint(3),
               icon: Icons.task_alt_outlined,
               onTap: () => tabProvider.setIndex(2),
             ),
@@ -390,7 +390,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
                         ),
                       )
-                    : const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+                    : Icon(Icons.chevron_right, size: 20, color: colors.textSecondary),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),

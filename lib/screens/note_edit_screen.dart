@@ -199,16 +199,20 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final scaffoldColor = colors.noteEditorBackground(_selectedColor);
+
     return Scaffold(
-      backgroundColor: Color(_selectedColor),
+      backgroundColor: scaffoldColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: colors.textPrimary),
         leading: Padding(
           padding: const EdgeInsets.only(left: 8),
           child: CircleActionButton(
             icon: Icons.close,
-            color: Colors.grey,
+            color: colors.textSecondary,
             size: 40,
             onPressed: () => Navigator.pop(context),
           ),
@@ -267,22 +271,46 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: context.appColors.textSecondary),
+                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textSecondary),
                       ),
-                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
                     ),
                     const SizedBox(height: 8),
                     _buildMetadataRow(),
                     if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
                     Expanded(
-                      child: quill.QuillEditor.basic(
-                        controller: _contentController,
-                        focusNode: _contentFocusNode,
-                        config: quill.QuillEditorConfig(
-                          placeholder: 'Start typing your note here...',
-                          embedBuilders: [
-                            ...FlutterQuillEmbeds.editorBuilders(),
-                          ],
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          textTheme: Theme.of(context).textTheme.apply(
+                                bodyColor: colors.textPrimary,
+                                displayColor: colors.textPrimary,
+                              ),
+                        ),
+                        child: quill.QuillEditor.basic(
+                          controller: _contentController,
+                          focusNode: _contentFocusNode,
+                          config: quill.QuillEditorConfig(
+                            placeholder: 'Start typing your note here...',
+                            customStyles: quill.DefaultStyles(
+                              paragraph: quill.DefaultTextBlockStyle(
+                                GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.5),
+                                const quill.HorizontalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                null,
+                              ),
+                              placeHolder: quill.DefaultTextBlockStyle(
+                                GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary, height: 1.5),
+                                const quill.HorizontalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                null,
+                              ),
+                            ),
+                            embedBuilders: [
+                              ...FlutterQuillEmbeds.editorBuilders(),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -293,7 +321,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             !_contentFocusNode.hasFocus
                 ? Container()
                 : Container(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.white : context.appColors.toolbarDark,
+                    color: colors.cardSurface,
                     child: quill.QuillSimpleToolbar(
                       controller: _contentController,
                       config: quill.QuillSimpleToolbarConfig(
@@ -346,6 +374,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Widget _buildMetadataRow() {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -353,11 +382,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         children: [
           Text(
             DateFormat('MMMM d, yyyy h:mm a').format(widget.note?.updatedAt ?? DateTime.now()),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: colors.textSecondary),
           ),
           Text(
             '${_contentController.document.toPlainText().trim().length} characters',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: colors.textSecondary),
           ),
         ],
       ),
@@ -365,6 +394,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Widget _buildReminderBanner() {
+    final accent = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -372,11 +402,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         borderRadius: BorderRadius.circular(8),
         child: Row(
           children: [
-            const Icon(Icons.alarm, size: 16, color: Colors.blue),
+            Icon(Icons.alarm, size: 16, color: accent),
             const SizedBox(width: 6),
             Text(
               AppDateUtils.formatReminder(_reminderTime!),
-              style: const TextStyle(fontSize: 13, color: Colors.blue, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 13, color: accent, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -385,6 +415,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Widget _buildRecurrenceRow() {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -392,9 +423,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.repeat, size: 18, color: Colors.grey),
+              Icon(Icons.repeat, size: 18, color: colors.textSecondary),
               const SizedBox(width: 8),
-              const Text('Repeat', style: TextStyle(fontWeight: FontWeight.w500)),
+              Text('Repeat', style: TextStyle(fontWeight: FontWeight.w500, color: colors.textPrimary)),
               const Spacer(),
               Switch.adaptive(
                 value: _isRecurring,
@@ -432,10 +463,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Widget _recurrenceChip(String label, RecurringInterval interval) {
     final selected = _recurringInterval == interval;
+    final primary = Theme.of(context).colorScheme.primary;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : null)),
+      label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : context.appColors.textPrimary)),
       selected: selected,
-      selectedColor: Colors.blue,
+      selectedColor: primary,
       onSelected: (_) => _setRecurrenceInterval(interval),
       visualDensity: VisualDensity.compact,
     );
@@ -444,7 +476,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget _buildNextOccurrenceDisplay() {
     final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
     if (nextDate == null) return const SizedBox.shrink();
-    return Text('Next: ${AppDateUtils.formatReminder(nextDate)}', style: const TextStyle(fontSize: 11, color: Colors.indigo));
+    return Text(
+      'Next: ${AppDateUtils.formatReminder(nextDate)}',
+      style: TextStyle(fontSize: 11, color: context.appColors.textSecondary),
+    );
   }
 
   void _showColorPicker() {
@@ -463,9 +498,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       0xFFFFE0B2,
     ];
 
+    final sheetColors = context.appColors;
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
+      backgroundColor: sheetColors.cardSurface,
       builder: (context) {
         return SheetSafeArea(
           includeNavBar: false,
@@ -476,6 +513,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
               itemCount: colors.length,
               itemBuilder: (context, index) {
+                final isThemeDefault = colors[index] == AppPalette.themeDefaultNoteColor;
+                final swatchColor = isThemeDefault ? sheetColors.scaffoldBg : Color(colors[index]);
+                final isSelected = _selectedColor == colors[index];
                 return GestureDetector(
                   onTap: () {
                     setState(() => _selectedColor = colors[index]);
@@ -483,10 +523,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Color(colors[index]),
+                      color: swatchColor,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey),
+                      border: Border.all(
+                        color: isSelected ? sheetColors.fabDark : sheetColors.border,
+                        width: isSelected ? 2 : 1,
+                      ),
                     ),
+                    child: isThemeDefault
+                        ? Icon(Icons.brightness_auto, size: 18, color: sheetColors.textSecondary)
+                        : null,
                   ),
                 );
               },
