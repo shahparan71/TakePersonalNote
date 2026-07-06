@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import 'database_service.dart';
+import 'google_drive_sync_service.dart';
 import 'notification_service.dart';
 
 class TaskProvider with ChangeNotifier {
@@ -17,12 +18,14 @@ class TaskProvider with ChangeNotifier {
   Future<int?> addTask(Task task) async {
     final id = await _dbService.insertTask(task);
     await fetchTasks();
+    await _syncDriveIfSignedIn();
     return id;
   }
 
   Future<void> updateTask(Task task) async {
     await _dbService.updateTask(task);
     await fetchTasks();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> deleteTask(int id) async {
@@ -33,6 +36,7 @@ class TaskProvider with ChangeNotifier {
     } catch (_) {}
     await _dbService.deleteTask(id);
     await fetchTasks();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> deleteTasks(List<int> ids) async {
@@ -43,6 +47,7 @@ class TaskProvider with ChangeNotifier {
       await _dbService.deleteTask(id);
     }
     await fetchTasks();
+    await _syncDriveIfSignedIn();
   }
 
   List<Task> getTasksByStatus(TaskStatus status) {
@@ -55,5 +60,11 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> refreshAll() async {
     await fetchTasks();
+  }
+
+  Future<void> _syncDriveIfSignedIn() async {
+    if (GoogleDriveSyncService().isSignedIn) {
+      await GoogleDriveSyncService().syncToDrive();
+    }
   }
 }

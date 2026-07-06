@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/note.dart';
 import 'database_service.dart';
+import 'google_drive_sync_service.dart';
 
 class NoteProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -25,24 +26,28 @@ class NoteProvider with ChangeNotifier {
   Future<int?> addNote(Note note) async {
     final id = await _dbService.insertNote(note);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
     return id;
   }
 
   Future<void> updateNote(Note note) async {
     await _dbService.updateNote(note);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> archiveNote(Note note) async {
     final archivedNote = note.copyWith(isArchived: true, isPinned: false);
     await _dbService.updateNote(archivedNote);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> unarchiveNote(Note note) async {
     final unarchivedNote = note.copyWith(isArchived: false);
     await _dbService.updateNote(unarchivedNote);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> trashNote(Note note) async {
@@ -54,17 +59,20 @@ class NoteProvider with ChangeNotifier {
     );
     await _dbService.updateNote(trashedNote);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> restoreNote(Note note) async {
     final restoredNote = note.copyWith(isTrashed: false, deletedAt: null);
     await _dbService.updateNote(restoredNote);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
   }
 
   Future<void> deleteNotePermanent(int id) async {
     await _dbService.deleteNotePermanent(id);
     await fetchNotes();
+    await _syncDriveIfSignedIn();
   }
 
   Future<List<String>> getCategories() async {
@@ -81,6 +89,12 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> refreshAll() async {
     await fetchNotes();
+  }
+
+  Future<void> _syncDriveIfSignedIn() async {
+    if (GoogleDriveSyncService().isSignedIn) {
+      await GoogleDriveSyncService().syncToDrive();
+    }
   }
 
   Future<void> cleanOldTrash() async {

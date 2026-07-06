@@ -210,6 +210,14 @@ class GoogleDriveSyncService {
     }
   }
 
+  /// Sync immediately if the user is currently signed in to Google Drive.
+  Future<GoogleDriveSyncResult?> syncIfSignedIn({List<String>? folders}) async {
+    if (!isSignedIn) {
+      return null;
+    }
+    return await syncToDrive(folders: folders);
+  }
+
   /// Background backup when auto-sync is on. Uses silent sign-in only (no login UI).
   Future<void> runAutoSyncIfEnabled({
     required bool enabled,
