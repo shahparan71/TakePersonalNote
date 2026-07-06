@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import 'database_service.dart';
+import 'notification_service.dart';
 
 class TaskProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -25,7 +26,22 @@ class TaskProvider with ChangeNotifier {
   }
 
   Future<void> deleteTask(int id) async {
+    // Cancel any scheduled notification for this task (notifications
+    // for tasks use id + 10000 as the notification id).
+    try {
+      await NotificationService().cancelNotification(id + 10000);
+    } catch (_) {}
     await _dbService.deleteTask(id);
+    await fetchTasks();
+  }
+
+  Future<void> deleteTasks(List<int> ids) async {
+    for (final id in ids) {
+      try {
+        await NotificationService().cancelNotification(id + 10000);
+      } catch (_) {}
+      await _dbService.deleteTask(id);
+    }
     await fetchTasks();
   }
 

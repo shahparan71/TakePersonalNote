@@ -19,6 +19,8 @@ class TasksScreen extends StatefulWidget {
 
 class _TasksScreenState extends State<TasksScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final Set<int> _selectedTaskIds = {};
+  bool _selectionMode = false;
 
   @override
   void dispose() {
@@ -34,7 +36,20 @@ class _TasksScreenState extends State<TasksScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: colors.scaffoldBg,
-        title: Text('Tasks', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+        leading: _selectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _selectionMode = false;
+                    _selectedTaskIds.clear();
+                  });
+                },
+              )
+            : null,
+        title: _selectionMode
+            ? Text('${_selectedTaskIds.length} selected', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 20))
+            : Text('Tasks', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -56,11 +71,18 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune),
-            onPressed: () => _showFilterDialog(context),
-            tooltip: 'Filter',
-          ),
+          if (_selectionMode)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _confirmAndDeleteSelected(),
+              tooltip: 'Delete selected',
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.tune),
+              onPressed: () => _showFilterDialog(context),
+              tooltip: 'Filter',
+            ),
         ],
       ),
       body: Consumer<TaskProvider>(
@@ -121,22 +143,45 @@ class _TasksScreenState extends State<TasksScreen> {
     final priorityColor = _priorityColor(task.priority);
     final colors = context.appColors;
 
+    final bool isSelected = _selectedTaskIds.contains(task.id);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: colors.cardSurface,
+        color: isSelected ? Colors.blue.withOpacity(0.10) : colors.cardSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
+        border: Border.all(color: isSelected ? Colors.blue.withOpacity(0.3) : colors.border),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
-          ),
-          onLongPress: () => _showQuickActions(context, task),
+          onTap: () {
+            if (_selectionMode) {
+              setState(() {
+                if (task.id != null) {
+                  if (_selectedTaskIds.contains(task.id)) {
+                    _selectedTaskIds.remove(task.id);
+                    if (_selectedTaskIds.isEmpty) _selectionMode = false;
+                  } else {
+                    _selectedTaskIds.add(task.id!);
+                  }
+                }
+              });
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
+              );
+            }
+          },
+          onLongPress: () {
+            // Enter multi-select mode on long press
+            setState(() {
+              _selectionMode = true;
+              if (task.id != null) _selectedTaskIds.add(task.id!);
+            });
+          },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
             child: Row(
@@ -189,6 +234,28 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmAndDeleteSelected() async {
+    if (_selectedTaskIds.isEmpty) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete selected tasks?'),
+        content: Text('Delete ${_selectedTaskIds.length} selected task(s)? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final provider = Provider.of<TaskProvider>(context, listen: false);
+    await provider.deleteTasks(_selectedTaskIds.toList());
+    setState(() {
+      _selectionMode = false;
+      _selectedTaskIds.clear();
+    });
   }
 
   Widget _buildReminderRow(Task task) {

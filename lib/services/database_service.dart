@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/note.dart';
 import '../models/task.dart';
+import 'notification_service.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -261,17 +262,56 @@ class DatabaseService {
     final db = await database;
     await db.transaction((txn) async {
       if (!merge) {
+        // Cancel any scheduled notifications for all tasks before wiping
+        // the tasks table, to avoid orphaned reminders.
+        final existingTasks = await txn.query('tasks', columns: ['id']);
+        for (final row in existingTasks) {
+          final id = row['id'] as int?;
+          if (id != null) {
+            try {
+              await NotificationService().cancelNotification(id + 10000);
+            } catch (_) {}
+          }
+        }
         await txn.delete('notes');
         await txn.delete('tasks');
       }
+      // When merging, avoid inserting duplicates by checking a few
+      // identifying fields (title, content, createdAt for notes; title,
+      // description, createdAt for tasks). This prevents repeated imports
+      // from Drive from creating duplicate rows.
       for (final map in notes) {
         final data = Map<String, dynamic>.from(map);
         data.remove('id');
+        if (merge) {
+          final title = data['title'] as String? ?? '';
+          final content = data['content'] as String? ?? '';
+          final createdAt = data['createdAt'] as String? ?? '';
+          final existing = await txn.query(
+            'notes',
+            where: 'title = ? AND content = ? AND createdAt = ?',
+            whereArgs: [title, content, createdAt],
+            limit: 1,
+          );
+          if (existing.isNotEmpty) continue;
+        }
         await txn.insert('notes', data, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       for (final map in tasks) {
         final data = Map<String, dynamic>.from(map);
         data.remove('id');
+        if (merge) {
+          final title = data['title'] as String? ?? '';
+          final description = data['description'] as String? ?? '';
+          final createdAt = data['createdAt'] as String? ?? '';
+          final existing = await txn.query(
+            'tasks',
+            where: 'title = ? AND description = ? AND createdAt = ?',
+            whereArgs: [title, description, createdAt],
+            limit: 1,
+          );
+          if (existing.isNotEmpty) continue;
+        }
         await txn.insert('tasks', data, conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });
