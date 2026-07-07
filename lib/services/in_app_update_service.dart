@@ -15,6 +15,8 @@ class InAppUpdateService {
 
   final PreferenceService _prefs = PreferenceService();
 
+  bool _hasPromptedThisSession = false;
+
   /// Maximum number of times the user can dismiss the flexible update dialog
   /// before the update becomes mandatory (immediate).
   static const int _maxDismissals = 2;
@@ -25,6 +27,8 @@ class InAppUpdateService {
   /// - If dismiss count < [_maxDismissals] → flexible update (dismissible).
   /// - If dismiss count >= [_maxDismissals] → immediate update (mandatory).
   Future<void> checkAndPromptUpdate(BuildContext context) async {
+    if (_hasPromptedThisSession) return;
+
     try {
       final updateInfo = await InAppUpdate.checkForUpdate();
 
@@ -34,6 +38,8 @@ class InAppUpdateService {
       }
 
       final dismissCount = await _prefs.getUpdateDismissCount();
+
+      _hasPromptedThisSession = true;
 
       if (dismissCount >= _maxDismissals) {
         // User has dismissed twice already — force immediate update.
