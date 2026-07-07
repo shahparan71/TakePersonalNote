@@ -11,6 +11,7 @@ import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/preference_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
@@ -196,6 +197,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildEmptyRestoreBanner(BuildContext context) {
     final colors = context.appColors;
+    const googleDriveColor = Color(0xFF1A73E8);
+
     return Consumer2<NoteProvider, TaskProvider>(
       builder: (context, noteProvider, taskProvider, _) {
         final isEmpty = noteProvider.notes.isEmpty && taskProvider.tasks.isEmpty;
@@ -203,39 +206,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (isEmpty) {
           return Container(
             margin: const EdgeInsets.only(top: 20),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: colors.cardSurface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colors.border),
+              gradient: LinearGradient(
+                colors: [
+                  colors.cardSurface,
+                  googleDriveColor.withOpacity(0.08),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: colors.border.withOpacity(0.5)),
+              boxShadow: [
+                BoxShadow(
+                  color: googleDriveColor.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
-                Icon(Icons.cloud_download_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
-                const SizedBox(height: 12),
-                Text(
-                  'No notes or tasks yet',
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Restore a previous backup from Google Drive',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.cardSurface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(FontAwesomeIcons.googleDrive, size: 36, color: googleDriveColor),
                 ),
                 const SizedBox(height: 16),
+                Text(
+                  'No notes or tasks yet',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your workspace is empty. Restore a previous backup from Google Drive to get your notes back.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(fontSize: 14, color: colors.fabDark, height: 1.4),
+                ),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton.icon(
+                  child: ElevatedButton.icon(
                     onPressed: _isFetching ? null : _onFetchFromGoogleDrivePressed,
                     icon: _isFetching
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.cloud_download),
-                    label: Text(_isFetching ? 'Fetching...' : 'Fetch from Google Drive'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.fabDark,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        : const Icon(FontAwesomeIcons.googleDrive, size: 18),
+                    label: Text(
+                      _isFetching ? 'Fetching...' : 'Fetch from Google Drive',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: googleDriveColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                 ),
@@ -252,39 +288,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             return Container(
               margin: const EdgeInsets.only(top: 20),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: colors.cardSurface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.border),
+                gradient: LinearGradient(
+                  colors: [
+                    colors.cardSurface,
+                    googleDriveColor.withOpacity(0.08),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: colors.border.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: googleDriveColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
-                  Icon(Icons.cloud_upload_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Local data is ready to back up',
-                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Save your local notes and tasks to Google Drive so they are not lost.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colors.cardSurface,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(FontAwesomeIcons.googleDrive, size: 36, color: googleDriveColor),
                   ),
                   const SizedBox(height: 16),
+                  Text(
+                    'Local data is ready to back up',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Save your local notes and tasks to Google Drive to keep them safe and synced across your devices.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(fontSize: 14, color: colors.fabDark, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
-                    child: FilledButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: _isSyncingToDrive ? null : _syncLocalDataToGoogleDrive,
                       icon: _isSyncingToDrive
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.cloud_upload),
-                      label: Text(_isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: colors.fabDark,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          : const Icon(FontAwesomeIcons.googleDrive, size: 18),
+                      label: Text(
+                        _isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: googleDriveColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                     ),
                   ),

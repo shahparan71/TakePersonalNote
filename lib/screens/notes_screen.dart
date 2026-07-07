@@ -157,7 +157,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 return Center(
                   child: Text(
                     _selectedFolder == null ? 'No notes yet. Add one!' : 'No notes in this folder',
-                    style: TextStyle(color: colors.textSecondary),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 20, fontWeight: FontWeight.w500),
                   ),
                 );
               }

@@ -94,7 +94,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 children: [
                   Icon(Icons.task_alt, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 12),
-                  Text('No tasks yet', style: GoogleFonts.outfit(color: Colors.grey[500], fontSize: 16)),
+                  Text('No tasks yet', style: GoogleFonts.outfit(color: Colors.grey[500], fontSize: 20)),
                 ],
               ),
             );
