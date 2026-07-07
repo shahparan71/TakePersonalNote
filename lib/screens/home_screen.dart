@@ -8,6 +8,7 @@ import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/services/settings_provider.dart';
 import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/services/google_drive_sync_service.dart';
+import 'package:take_personal_note/services/in_app_update_service.dart';
 import 'dashboard_screen.dart';
 import 'notes_screen.dart';
 import 'tasks_screen.dart';
@@ -38,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _triggerDriveAutoSync();
+      _checkForAppUpdate();
     }
   }
 
@@ -51,6 +53,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _checkForAppUpdate() {
+    if (!mounted) return;
+    InAppUpdateService().checkAndPromptUpdate(context);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     Future.microtask(() {
       Provider.of<NoteProvider>(context, listen: false).cleanOldTrash();
       _triggerDriveAutoSync();
+      _checkForAppUpdate();
     });
 
     // For sharing or opening app from timeout..
