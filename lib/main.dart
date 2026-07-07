@@ -13,6 +13,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'screens/lock_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/splash_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -58,7 +59,7 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: settings.themeMode,
-            home: settings.isAppLockEnabled ? const LockScreen() : const HomeScreen(),
+            home: const SplashScreen(),
           );
         },
       ),
