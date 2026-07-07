@@ -284,7 +284,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
           future: _shouldShowLocalBackupBanner(noteCount: noteProvider.notes.length, taskCount: taskProvider.tasks.length),
           builder: (context, snapshot) {
             final shouldShow = snapshot.data ?? false;
-            if (!shouldShow) return const SizedBox.shrink();
+            if (!shouldShow) {
+              return Container(
+                margin: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: googleDriveColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: googleDriveColor.withOpacity(0.2)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: googleDriveColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(FontAwesomeIcons.googleDrive, size: 24, color: googleDriveColor),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Drive Sync Active',
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: colors.textPrimary),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'You are logged in. All data is automatically synced to Google Drive in real-time.',
+                            style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary, height: 1.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
             return Container(
               margin: const EdgeInsets.only(top: 20),
