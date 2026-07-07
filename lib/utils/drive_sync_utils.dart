@@ -6,6 +6,10 @@ import '../services/google_drive_sync_service.dart';
 import '../services/note_provider.dart';
 import '../services/task_provider.dart';
 
+bool shouldShowLocalBackupBanner({required int noteCount, required int taskCount}) {
+  return noteCount > 0 || taskCount > 0;
+}
+
 Future<void> applyDriveSyncResult(BuildContext context, GoogleDriveSyncResult result) async {
   if (!result.success) return;
   await Provider.of<NoteProvider>(context, listen: false).refreshAll();

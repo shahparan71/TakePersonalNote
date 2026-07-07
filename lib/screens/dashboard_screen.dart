@@ -28,6 +28,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isFetching = false;
+  bool _isSyncingToDrive = false;
   bool _updateAvailable = false;
 
   @override
@@ -55,6 +56,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final result = await GoogleDriveSyncService().fetchFromDrive(merge: true);
     if (!mounted) return;
     setState(() => _isFetching = false);
+
+    await applyDriveSyncResult(context, result);
+    if (!mounted) return;
+    showDriveSyncSnackBar(context, result);
+  }
+
+  Future<void> _syncLocalDataToGoogleDrive() async {
+    setState(() => _isSyncingToDrive = true);
+    final result = await GoogleDriveSyncService().syncToDrive();
+    if (!mounted) return;
+    setState(() => _isSyncingToDrive = false);
 
     await applyDriveSyncResult(context, result);
     if (!mounted) return;
@@ -239,8 +251,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final colors = context.appColors;
     return Consumer2<NoteProvider, TaskProvider>(
       builder: (context, noteProvider, taskProvider, _) {
+        final hasLocalData = shouldShowLocalBackupBanner(noteCount: noteProvider.notes.length, taskCount: taskProvider.tasks.length);
         final isEmpty = noteProvider.notes.isEmpty && taskProvider.tasks.isEmpty;
-        if (!isEmpty) return const SizedBox.shrink();
+
+        if (isEmpty) {
+          return Container(
+            margin: const EdgeInsets.only(top: 20),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colors.cardSurface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colors.border),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.cloud_download_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
+                const SizedBox(height: 12),
+                Text(
+                  'No notes or tasks yet',
+                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Restore a previous backup from Google Drive',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _isFetching ? null : _onFetchFromGoogleDrivePressed,
+                    icon: _isFetching
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.cloud_download),
+                    label: Text(_isFetching ? 'Fetching...' : 'Fetch from Google Drive'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colors.fabDark,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!hasLocalData) return const SizedBox.shrink();
 
         return Container(
           margin: const EdgeInsets.only(top: 20),
@@ -252,15 +310,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           child: Column(
             children: [
-              Icon(Icons.cloud_download_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
+              Icon(Icons.cloud_upload_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
               const SizedBox(height: 12),
               Text(
-                'No notes or tasks yet',
+                'Local data is ready to back up',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
               ),
               const SizedBox(height: 6),
               Text(
-                'Restore a previous backup from Google Drive',
+                'Save your local notes and tasks to Google Drive so they are not lost.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
               ),
@@ -268,11 +326,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _isFetching ? null : _onFetchFromGoogleDrivePressed,
-                  icon: _isFetching
+                  onPressed: _isSyncingToDrive ? null : _syncLocalDataToGoogleDrive,
+                  icon: _isSyncingToDrive
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.cloud_download),
-                  label: Text(_isFetching ? 'Fetching...' : 'Fetch from Google Drive'),
+                      : const Icon(Icons.cloud_upload),
+                  label: Text(_isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive'),
                   style: FilledButton.styleFrom(
                     backgroundColor: colors.fabDark,
                     padding: const EdgeInsets.symmetric(vertical: 14),
