@@ -4,7 +4,17 @@ import 'package:provider/provider.dart';
 import '../services/folder_provider.dart';
 import '../services/google_drive_sync_service.dart';
 import '../services/note_provider.dart';
+import '../services/preference_service.dart';
 import '../services/task_provider.dart';
+
+bool shouldShowLocalBackupBanner({
+  required int noteCount,
+  required int taskCount,
+  required bool notesPendingSync,
+  required bool tasksPendingSync,
+}) {
+  return (noteCount > 0 || taskCount > 0) && (notesPendingSync || tasksPendingSync);
+}
 
 Future<void> applyDriveSyncResult(BuildContext context, GoogleDriveSyncResult result) async {
   if (!result.success) return;
