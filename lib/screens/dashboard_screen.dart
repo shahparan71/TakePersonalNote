@@ -12,6 +12,7 @@ import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/update_service.dart';
+import 'package:take_personal_note/services/preference_service.dart';
 
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
@@ -251,7 +252,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final colors = context.appColors;
     return Consumer2<NoteProvider, TaskProvider>(
       builder: (context, noteProvider, taskProvider, _) {
-        final hasLocalData = shouldShowLocalBackupBanner(noteCount: noteProvider.notes.length, taskCount: taskProvider.tasks.length);
         final isEmpty = noteProvider.notes.isEmpty && taskProvider.tasks.isEmpty;
 
         if (isEmpty) {
@@ -298,50 +298,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         }
 
-        if (!hasLocalData) return const SizedBox.shrink();
+        return FutureBuilder<bool>(
+          future: _shouldShowLocalBackupBanner(noteCount: noteProvider.notes.length, taskCount: taskProvider.tasks.length),
+          builder: (context, snapshot) {
+            final shouldShow = snapshot.data ?? false;
+            if (!shouldShow) return const SizedBox.shrink();
 
-        return Container(
-          margin: const EdgeInsets.only(top: 20),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: colors.cardSurface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colors.border),
-          ),
-          child: Column(
-            children: [
-              Icon(Icons.cloud_upload_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
-              const SizedBox(height: 12),
-              Text(
-                'Local data is ready to back up',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
+            return Container(
+              margin: const EdgeInsets.only(top: 20),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colors.cardSurface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: colors.border),
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Save your local notes and tasks to Google Drive so they are not lost.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _isSyncingToDrive ? null : _syncLocalDataToGoogleDrive,
-                  icon: _isSyncingToDrive
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.cloud_upload),
-                  label: Text(_isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colors.fabDark,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: Column(
+                children: [
+                  Icon(Icons.cloud_upload_outlined, size: 40, color: colors.fabDark.withOpacity(0.8)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Local data is ready to back up',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16, color: colors.textPrimary),
                   ),
-                ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Save your local notes and tasks to Google Drive so they are not lost.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _isSyncingToDrive ? null : _syncLocalDataToGoogleDrive,
+                      icon: _isSyncingToDrive
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.cloud_upload),
+                      label: Text(_isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colors.fabDark,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Future<bool> _shouldShowLocalBackupBanner({required int noteCount, required int taskCount}) async {
+    final prefs = PreferenceService();
+    final notesPendingSync = await prefs.isNotesPendingDriveSync();
+    final tasksPendingSync = await prefs.isTasksPendingDriveSync();
+    return shouldShowLocalBackupBanner(
+      noteCount: noteCount,
+      taskCount: taskCount,
+      notesPendingSync: notesPendingSync,
+      tasksPendingSync: tasksPendingSync,
     );
   }
 

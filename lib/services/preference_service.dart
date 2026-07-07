@@ -6,6 +6,8 @@ class PreferenceService {
   static const String _notesViewModeKey = 'notes_view_mode';
   static const String _driveAutoSyncEnabledKey = 'drive_auto_sync_enabled';
   static const String _driveLastAutoSyncMsKey = 'drive_last_auto_sync_ms';
+  static const String _notesPendingDriveSyncKey = 'notes_pending_drive_sync';
+  static const String _tasksPendingDriveSyncKey = 'tasks_pending_drive_sync';
   static const String _batteryPromptShownKey = 'battery_prompt_shown';
 
   Future<void> setAppLockEnabled(bool enabled) async {
@@ -56,6 +58,26 @@ class PreferenceService {
   Future<void> setDriveLastAutoSyncMs(int ms) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_driveLastAutoSyncMsKey, ms);
+  }
+
+  Future<void> setNotesPendingDriveSync(bool pending) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notesPendingDriveSyncKey, pending);
+  }
+
+  Future<bool> isNotesPendingDriveSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notesPendingDriveSyncKey) ?? false;
+  }
+
+  Future<void> setTasksPendingDriveSync(bool pending) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_tasksPendingDriveSyncKey, pending);
+  }
+
+  Future<bool> isTasksPendingDriveSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_tasksPendingDriveSyncKey) ?? false;
   }
 
   Future<void> setBatteryPromptShown(bool shown) async {

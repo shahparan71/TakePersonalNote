@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/note.dart';
 import 'database_service.dart';
 import 'google_drive_sync_service.dart';
+import 'preference_service.dart';
 
 class NoteProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -24,14 +25,14 @@ class NoteProvider with ChangeNotifier {
   }
 
   Future<int?> addNote(Note note) async {
-    final id = await _dbService.insertNote(note);
-    await fetchNotes();
+    final id = await _dbService.insertNote(note);    await PreferenceService().setNotesPendingDriveSync(true);    await fetchNotes();
     await _syncDriveIfSignedIn();
     return id;
   }
 
   Future<void> updateNote(Note note) async {
     await _dbService.updateNote(note);
+    await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     await _syncDriveIfSignedIn();
   }
@@ -39,6 +40,7 @@ class NoteProvider with ChangeNotifier {
   Future<void> archiveNote(Note note) async {
     final archivedNote = note.copyWith(isArchived: true, isPinned: false);
     await _dbService.updateNote(archivedNote);
+    await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     await _syncDriveIfSignedIn();
   }
@@ -46,6 +48,7 @@ class NoteProvider with ChangeNotifier {
   Future<void> unarchiveNote(Note note) async {
     final unarchivedNote = note.copyWith(isArchived: false);
     await _dbService.updateNote(unarchivedNote);
+    await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     await _syncDriveIfSignedIn();
   }
@@ -58,6 +61,7 @@ class NoteProvider with ChangeNotifier {
       deletedAt: DateTime.now(),
     );
     await _dbService.updateNote(trashedNote);
+    await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     await _syncDriveIfSignedIn();
   }
@@ -65,12 +69,14 @@ class NoteProvider with ChangeNotifier {
   Future<void> restoreNote(Note note) async {
     final restoredNote = note.copyWith(isTrashed: false, deletedAt: null);
     await _dbService.updateNote(restoredNote);
+    await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     await _syncDriveIfSignedIn();
   }
 
   Future<void> deleteNotePermanent(int id) async {
     await _dbService.deleteNotePermanent(id);
+    await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     await _syncDriveIfSignedIn();
   }

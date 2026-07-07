@@ -159,6 +159,10 @@ class GoogleDriveSyncService {
         );
       }
 
+      final preferenceService = PreferenceService();
+      await preferenceService.setNotesPendingDriveSync(false);
+      await preferenceService.setTasksPendingDriveSync(false);
+
       return GoogleDriveSyncResult(
         success: true,
         message: 'Backup synced to Google Drive successfully.',
@@ -199,6 +203,9 @@ class GoogleDriveSyncService {
       final jsonString = utf8.decode(chunks);
 
       final result = await BackupService().importFromJson(jsonString, merge: merge);
+      final preferenceService = PreferenceService();
+      await preferenceService.setNotesPendingDriveSync(false);
+      await preferenceService.setTasksPendingDriveSync(false);
       return GoogleDriveSyncResult(
         success: true,
         message: 'Restored ${result.notesCount} notes and ${result.tasksCount} tasks from Drive.',

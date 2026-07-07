@@ -3,6 +3,7 @@ import '../models/task.dart';
 import 'database_service.dart';
 import 'google_drive_sync_service.dart';
 import 'notification_service.dart';
+import 'preference_service.dart';
 
 class TaskProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
@@ -17,6 +18,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<int?> addTask(Task task) async {
     final id = await _dbService.insertTask(task);
+    await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
     await _syncDriveIfSignedIn();
     return id;
@@ -24,6 +26,7 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> updateTask(Task task) async {
     await _dbService.updateTask(task);
+    await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
     await _syncDriveIfSignedIn();
   }
@@ -35,6 +38,7 @@ class TaskProvider with ChangeNotifier {
       await NotificationService().cancelNotification(id + 10000);
     } catch (_) {}
     await _dbService.deleteTask(id);
+    await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
     await _syncDriveIfSignedIn();
   }
@@ -46,6 +50,7 @@ class TaskProvider with ChangeNotifier {
       } catch (_) {}
       await _dbService.deleteTask(id);
     }
+    await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
     await _syncDriveIfSignedIn();
   }
