@@ -10,7 +10,6 @@ import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
-import 'package:take_personal_note/services/update_service.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 
 import '../services/task_provider.dart';
@@ -29,27 +28,10 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isFetching = false;
   bool _isSyncingToDrive = false;
-  bool _updateAvailable = false;
-  bool _showUpdateDialog = false;
-  int _updateDismissCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _checkForUpdate();
-  }
-
-  Future<void> _checkForUpdate() async {
-    final prefs = PreferenceService();
-    final dismissCount = await prefs.getUpdateDismissCount();
-    final hasUpdate = await UpdateService().checkForUpdate();
-
-    if (!mounted) return;
-    setState(() {
-      _updateAvailable = hasUpdate;
-      _updateDismissCount = dismissCount;
-      _showUpdateDialog = hasUpdate;
-    });
   }
 
   String _getGreeting() {
@@ -207,106 +189,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          if (_updateAvailable && _showUpdateDialog) _buildUpdateDialog(context),
         ],
       ),
     );
-  }
-
-  Widget _buildUpdateDialog(BuildContext context) {
-    final colors = context.appColors;
-    final canCancel = _updateDismissCount < 2;
-
-    return Positioned.fill(
-      child: Material(
-        color: colors.scaffoldBg,
-        child: SafeArea(
-          child: PopScope(
-            canPop: false, // Replaces 'onWillPop: () async => false'
-            onPopInvokedWithResult: (didPop, result) {
-              if (didPop) return;
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 32),
-                  Center(
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: colors.fabDark.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.system_update, size: 46, color: colors.fabDark),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Text(
-                    'Update available',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(fontSize: 30, fontWeight: FontWeight.w700, color: colors.textPrimary),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'A new version of Take Notes is available on the Play Store. Please update to continue using the app.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.outfit(fontSize: 15, color: colors.textSecondary, height: 1.6),
-                  ),
-                  const Spacer(),
-                  if (!canCancel)
-                    Text(
-                      'This update is required. Please update now to continue.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
-                    ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.fabDark,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final started = await UpdateService().startImmediateUpdate();
-                      if (!started && mounted) {
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('Unable to start update. Please try again.')),
-                        );
-                      }
-                    },
-                    child: Text(canCancel ? 'Update' : 'Update now'),
-                  ),
-                  if (canCancel) ...[
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colors.textPrimary,
-                        side: BorderSide(color: colors.border),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed: _dismissUpdateDialog,
-                      child: const Text('Later'),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _dismissUpdateDialog() {
-    final nextCount = _updateDismissCount + 1;
-    PreferenceService().setUpdateDismissCount(nextCount);
-    setState(() {
-      _updateDismissCount = nextCount;
-      _showUpdateDialog = false;
-    });
   }
 
   Widget _buildEmptyRestoreBanner(BuildContext context) {
