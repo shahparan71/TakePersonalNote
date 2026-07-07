@@ -162,30 +162,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         index: tabProvider.selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          border: Border(
-            top: BorderSide(
-              color: theme.colorScheme.outlineVariant.withOpacity(0.4),
-              width: 1,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+                width: 1,
+              ),
             ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          child: GNav(
-            selectedIndex: tabProvider.selectedIndex,
-            onTabChange: tabProvider.setIndex,
-            backgroundColor: theme.colorScheme.surface,
-            color: theme.colorScheme.onSurfaceVariant,
-            activeColor: theme.colorScheme.primary,
-            tabBackgroundColor: theme.colorScheme.primary.withOpacity(0.12),
-            gap: 8,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            tabBorderRadius: 18,
-            iconSize: 24,
-            tabs: navTabs,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: GNav(
+              selectedIndex: tabProvider.selectedIndex,
+              onTabChange: tabProvider.setIndex,
+              backgroundColor: theme.colorScheme.surface,
+              color: theme.colorScheme.onSurfaceVariant,
+              activeColor: theme.colorScheme.primary,
+              tabBackgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+              gap: 8,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              tabBorderRadius: 18,
+              iconSize: 24,
+              tabs: navTabs,
+            ),
           ),
         ),
       ),
