@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
@@ -14,6 +15,7 @@ import 'calendar_screen.dart';
 import 'note_edit_screen.dart';
 import 'task_edit_screen.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -121,6 +123,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final tabProvider = Provider.of<TabProvider>(context);
+    final theme = Theme.of(context);
+
+    final navTabs = [
+      GButton(
+        icon: Icons.dashboard_outlined,
+        text: 'Dashboard',
+        iconColor: theme.colorScheme.onSurfaceVariant,
+        iconActiveColor: theme.colorScheme.primary,
+        textColor: theme.colorScheme.primary,
+      ),
+      GButton(
+        icon: Icons.note_alt_outlined,
+        text: 'Notes',
+        iconColor: theme.colorScheme.onSurfaceVariant,
+        iconActiveColor: theme.colorScheme.primary,
+        textColor: theme.colorScheme.primary,
+      ),
+      GButton(
+        icon: Icons.checklist_outlined,
+        text: 'Tasks',
+        iconColor: theme.colorScheme.onSurfaceVariant,
+        iconActiveColor: theme.colorScheme.primary,
+        textColor: theme.colorScheme.primary,
+      ),
+      GButton(
+        icon: Icons.calendar_month_outlined,
+        text: 'Calendar',
+        iconColor: theme.colorScheme.onSurfaceVariant,
+        iconActiveColor: theme.colorScheme.primary,
+        textColor: theme.colorScheme.primary,
+      ),
+    ];
 
     return Scaffold(
       backgroundColor: context.appColors.scaffoldBg,
@@ -128,33 +162,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         index: tabProvider.selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tabProvider.selectedIndex,
-        onDestinationSelected: (index) {
-          tabProvider.setIndex(index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          border: Border(
+            top: BorderSide(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+              width: 1,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.note_alt_outlined),
-            selectedIcon: Icon(Icons.note_alt),
-            label: 'Notes',
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          child: GNav(
+            selectedIndex: tabProvider.selectedIndex,
+            onTabChange: tabProvider.setIndex,
+            backgroundColor: theme.colorScheme.surface,
+            color: theme.colorScheme.onSurfaceVariant,
+            activeColor: theme.colorScheme.primary,
+            tabBackgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+            gap: 8,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            tabBorderRadius: 18,
+            iconSize: 24,
+            tabs: navTabs,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
-            label: 'Tasks',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Calendar',
-          ),
-        ],
+        ),
       ),
     );
   }
