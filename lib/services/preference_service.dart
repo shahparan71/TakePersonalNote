@@ -9,6 +9,7 @@ class PreferenceService {
   static const String _notesPendingDriveSyncKey = 'notes_pending_drive_sync';
   static const String _tasksPendingDriveSyncKey = 'tasks_pending_drive_sync';
   static const String _batteryPromptShownKey = 'battery_prompt_shown';
+  static const String _updateDismissCountKey = 'update_dismiss_count';
 
   Future<void> setAppLockEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
@@ -88,5 +89,15 @@ class PreferenceService {
   Future<bool> isBatteryPromptShown() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_batteryPromptShownKey) ?? false;
+  }
+
+  Future<void> setUpdateDismissCount(int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_updateDismissCountKey, count);
+  }
+
+  Future<int> getUpdateDismissCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_updateDismissCountKey) ?? 0;
   }
 }
