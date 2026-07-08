@@ -382,7 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onPressed: _isSyncingToDrive ? null : _syncLocalDataToGoogleDrive,
                       icon: _isSyncingToDrive
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : Icon(FontAwesomeIcons.googleDrive, size: 18),
+                          : const Icon(FontAwesomeIcons.googleDrive, size: 18),
                       label: Text(
                         _isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive',
                         style: const TextStyle(fontWeight: FontWeight.w600),
