@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../services/note_provider.dart';
 import '../services/folder_provider.dart';
 import '../services/preference_service.dart';
@@ -162,7 +163,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 );
               }
               return Padding(
-                padding: EdgeInsets.only(bottom: bottomBarHeight + 72),
+                padding: EdgeInsets.only(bottom: bottomBarHeight),
                 child: _isListView ? _buildListView(notes) : _buildGridView(notes),
               );
             },
@@ -222,14 +223,11 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildGridView(List<Note> notes) {
-    return GridView.builder(
+    return MasonryGridView.count(
       padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
       itemCount: notes.length,
       itemBuilder: (context, index) => _buildNoteCard(notes[index]),
     );
@@ -253,16 +251,15 @@ class _NotesScreenState extends State<NotesScreen> {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             _buildNoteHeader(note),
             const SizedBox(height: 6),
-            Expanded(
-              child: Text(
-                NoteUtils.getPlainText(note.content),
-                style: TextStyle(fontSize: 13, color: colors.textSecondary, height: 1.3),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
+            Text(
+              NoteUtils.getPlainText(note.content),
+              style: TextStyle(fontSize: 13, color: colors.textSecondary, height: 1.3),
+              maxLines: 20,
+              overflow: TextOverflow.ellipsis,
             ),
             _buildNoteFooter(note),
           ],
@@ -315,58 +312,61 @@ class _NotesScreenState extends State<NotesScreen> {
     final isSelected = note.id != null && _selectedNoteIds.contains(note.id);
     final colors = context.appColors;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.noteCardTint(note.color),
-        borderRadius: BorderRadius.circular(isCard ? 20 : 14),
-        border: isSelected ? Border.all(color: colors.fabDark, width: 2) : Border.all(color: colors.border),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(isCard ? 16 : 12),
-          onTap: () {
-            if (_selectionMode && note.id != null) {
-              _toggleNoteSelection(note.id!);
-            } else if (!_selectionMode) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => NoteEditScreen(note: note))).then((_) => _refreshNotes());
-            }
-          },
-          onLongPress: () {
-            if (note.id != null) _enterSelectionMode(note);
-          },
-          child: Stack(
-            children: [
-              if (isCard)
-                Positioned(
-                  left: 0,
-                  top: 16,
-                  bottom: 16,
-                  child: Container(
-                    width: 4,
-                    decoration: BoxDecoration(
-                      color: note.color == AppPalette.themeDefaultNoteColor ? colors.fabDark : Color(note.color),
-                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: isCard ? 140 : 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.noteCardTint(note.color),
+          borderRadius: BorderRadius.circular(isCard ? 20 : 14),
+          border: isSelected ? Border.all(color: colors.fabDark, width: 2) : Border.all(color: colors.border),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(isCard ? 16 : 12),
+            onTap: () {
+              if (_selectionMode && note.id != null) {
+                _toggleNoteSelection(note.id!);
+              } else if (!_selectionMode) {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => NoteEditScreen(note: note))).then((_) => _refreshNotes());
+              }
+            },
+            onLongPress: () {
+              if (note.id != null) _enterSelectionMode(note);
+            },
+            child: Stack(
+              children: [
+                if (isCard)
+                  Positioned(
+                    left: 0,
+                    top: 16,
+                    bottom: 16,
+                    child: Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        color: note.color == AppPalette.themeDefaultNoteColor ? colors.fabDark : Color(note.color),
+                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
+                      ),
                     ),
                   ),
-                ),
-              child,
-              if (_selectionMode)
-                Positioned(
-                  right: 8,
-                  top: isCard ? null : 0,
-                  bottom: isCard ? 12 : 0,
-                  child: Center(
-                    child: Checkbox(
-                      value: isSelected,
-                      shape: const CircleBorder(),
-                      onChanged: (_) {
-                        if (note.id != null) _toggleNoteSelection(note.id!);
-                      },
+                child,
+                if (_selectionMode)
+                  Positioned(
+                    right: 8,
+                    top: isCard ? null : 0,
+                    bottom: isCard ? 12 : 0,
+                    child: Center(
+                      child: Checkbox(
+                        value: isSelected,
+                        shape: const CircleBorder(),
+                        onChanged: (_) {
+                          if (note.id != null) _toggleNoteSelection(note.id!);
+                        },
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

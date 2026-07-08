@@ -28,6 +28,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   RecurringInterval _recurringInterval = RecurringInterval.none;
   int? _customIntervalValue;
   CustomIntervalUnit? _customIntervalUnit;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -109,6 +110,8 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
 
   Future<void> _saveTask() async {
     if (_descController.text.trim().isEmpty) return;
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
     final now = DateTime.now();
@@ -139,14 +142,18 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       updatedAt: now,
     );
 
-    if (widget.task == null) {
-      final id = await provider.addTask(task);
-      await _scheduleOrCancelNotification(id, generatedTitle);
-    } else {
-      await provider.updateTask(task);
-      await _scheduleOrCancelNotification(widget.task!.id, generatedTitle);
+    try {
+      if (widget.task == null) {
+        final id = await provider.addTask(task);
+        await _scheduleOrCancelNotification(id, generatedTitle);
+      } else {
+        await provider.updateTask(task);
+        await _scheduleOrCancelNotification(widget.task!.id, generatedTitle);
+      }
+      if (mounted) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-    if (mounted) Navigator.pop(context);
   }
 
   void _showSchedulingFeedback(bool success) {
@@ -206,12 +213,22 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: CircleActionButton(
-              icon: Icons.check,
-              color: AppColors.actionSave,
-              size: 40,
-              onPressed: _saveTask,
-            ),
+            child: _isSaving
+                ? Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.actionSave),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                    ),
+                  )
+                : CircleActionButton(
+                    icon: Icons.check,
+                    color: AppColors.actionSave,
+                    size: 40,
+                    onPressed: _saveTask,
+                  ),
           ),
         ],
       ),

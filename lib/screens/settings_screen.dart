@@ -189,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              if (kDebugMode)
+              /*if (kDebugMode)
                 ListTile(
                   leading: const Icon(Icons.notifications_active_outlined),
                   title: const Text('Test Notification'),
@@ -205,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     }
                   },
-                ),
+                ),*/
               const Divider(height: 1),
               const _SettingsSection(title: 'Security'),
               SwitchListTile(
