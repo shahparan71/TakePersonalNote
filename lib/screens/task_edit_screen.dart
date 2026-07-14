@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -67,20 +68,20 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reliable Reminders'),
-        content: const Text(
-            'To ensure your task reminders fire on time even when the app is closed, please disable battery optimization for this app in your device settings.'),
+        title: Text(AppLocalizations.of(context)!.reliableReminders),
+        content: Text(
+            AppLocalizations.of(context)!.reliableRemindersDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('LATER'),
+            child: Text(AppLocalizations.of(context)!.later),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               BatteryOptimizationService.requestIgnoreBatteryOptimizations();
             },
-            child: const Text('SETTINGS'),
+            child: Text(AppLocalizations.of(context)!.openSettings),
           ),
         ],
       ),
@@ -97,7 +98,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     await _checkBatteryOptimization();
     final success = await NotificationService().scheduleNotificationWithCustomInterval(
       id: notifId,
-      title: 'Task Reminder',
+      title: AppLocalizations.of(context)!.taskReminder,
       body: title,
       scheduledDate: _reminderTime!,
       payload: 'task_$taskId',
@@ -190,7 +191,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       appBar: AppBar(
         backgroundColor: colors.scaffoldBg,
         title: Text(
-          widget.task == null ? 'New Task' : 'Edit Task',
+          widget.task == null ? AppLocalizations.of(context)!.newTask : AppLocalizations.of(context)!.editTask,
           style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary),
         ),
         actions: [
@@ -243,7 +244,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             controller: _descController,
             autofocus: widget.task == null,
             decoration: InputDecoration(
-              hintText: 'What needs to be done?',
+              hintText: AppLocalizations.of(context)!.whatNeedsToBeDone,
               filled: true,
               fillColor: colors.cardSurface,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
@@ -312,27 +313,27 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     final result = await showDialog<RecurringInterval>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Repeat'),
+        title: Text(AppLocalizations.of(context)!.repeat),
         children: [
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, RecurringInterval.daily),
-            child: const Text('Daily'),
+            child: Text(AppLocalizations.of(context)!.daily),
           ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, RecurringInterval.weekly),
-            child: const Text('Weekly'),
+            child: Text(AppLocalizations.of(context)!.weekly),
           ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, RecurringInterval.monthly),
-            child: const Text('Monthly'),
+            child: Text(AppLocalizations.of(context)!.monthly),
           ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, RecurringInterval.custom),
-            child: const Text('Custom'),
+            child: Text(AppLocalizations.of(context)!.custom),
           ),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context, RecurringInterval.none),
-            child: const Text('None'),
+            child: Text(AppLocalizations.of(context)!.none),
           ),
         ],
       ),
@@ -361,10 +362,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateSB) {
           return AlertDialog(
-            title: const Text('Custom Repeat'),
+            title: Text(AppLocalizations.of(context)!.customRepeat),
             content: Row(
               children: [
-                const Text('Every '),
+                Text(AppLocalizations.of(context)!.every),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 60,
@@ -380,10 +381,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 const SizedBox(width: 8),
                 DropdownButton<CustomIntervalUnit>(
                   value: tempUnit,
-                  items: const [
-                    DropdownMenuItem(value: CustomIntervalUnit.days, child: Text('Days')),
-                    DropdownMenuItem(value: CustomIntervalUnit.weeks, child: Text('Weeks')),
-                    DropdownMenuItem(value: CustomIntervalUnit.months, child: Text('Months')),
+                  items: [
+                    DropdownMenuItem(value: CustomIntervalUnit.days, child: Text(AppLocalizations.of(context)!.days)),
+                    DropdownMenuItem(value: CustomIntervalUnit.weeks, child: Text(AppLocalizations.of(context)!.weeks)),
+                    DropdownMenuItem(value: CustomIntervalUnit.months, child: Text(AppLocalizations.of(context)!.months)),
                   ],
                   onChanged: (val) {
                     if (val != null) setStateSB(() => tempUnit = val);
@@ -392,7 +393,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
               TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
             ],
           );

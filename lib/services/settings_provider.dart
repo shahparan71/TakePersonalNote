@@ -8,11 +8,13 @@ class SettingsProvider extends ChangeNotifier {
   bool _isDriveAutoSyncEnabled = false;
   bool _isBatteryPromptShown = false;
   ThemeMode _themeMode = ThemeMode.system;
+  Locale _locale = const Locale('en');
 
   bool get isAppLockEnabled => _isAppLockEnabled;
   bool get isDriveAutoSyncEnabled => _isDriveAutoSyncEnabled;
   bool get isBatteryPromptShown => _isBatteryPromptShown;
   ThemeMode get themeMode => _themeMode;
+  Locale get locale => _locale;
 
   Future<void> loadSettings() async {
     _isAppLockEnabled = await _service.isAppLockEnabled();
@@ -20,6 +22,8 @@ class SettingsProvider extends ChangeNotifier {
     _isBatteryPromptShown = await _service.isBatteryPromptShown();
     final themeStr = await _service.getThemeMode();
     _themeMode = _parseThemeMode(themeStr);
+    final langStr = await _service.getAppLanguage();
+    _locale = Locale(langStr);
     notifyListeners();
   }
 
@@ -44,6 +48,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setThemeMode(String mode) async {
     await _service.setThemeMode(mode);
     _themeMode = _parseThemeMode(mode);
+    notifyListeners();
+  }
+
+  Future<void> setLocale(String languageCode) async {
+    await _service.setAppLanguage(languageCode);
+    _locale = Locale(languageCode);
     notifyListeners();
   }
 

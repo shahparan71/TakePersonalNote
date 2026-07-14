@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -75,7 +76,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Google Drive Backup', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+              Text(AppLocalizations.of(context)!.googleDriveBackup, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
               const SizedBox(height: 8),
               Text(
                 _driveUser ?? 'Not signed in — you will be asked to sign in when syncing',
@@ -91,7 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _runDriveAction(() => GoogleDriveSyncService().syncToDrive(folders: folders));
                       },
                 icon: const Icon(Icons.cloud_upload_outlined),
-                label: const Text('Sync to Drive'),
+                label: Text(AppLocalizations.of(context)!.syncToDrive),
                 style: FilledButton.styleFrom(backgroundColor: colors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
               ),
               const SizedBox(height: 10),
@@ -118,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (ctx.mounted) Navigator.pop(ctx);
                     setState(() => _driveUser = null);
                   },
-                  child: const Text('Sign out'),
+                  child: Text(AppLocalizations.of(context)!.signOut),
                 ),
               ],
             ],
@@ -137,8 +138,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Export Data'),
-        content: const Text('Choose your preferred export format:'),
+        title: Text(AppLocalizations.of(context)!.exportData),
+        content: Text(AppLocalizations.of(context)!.chooseExportFormat),
         actions: [
           TextButton(
             child: const Text('JSON'),
@@ -173,31 +174,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         backgroundColor: colors.scaffoldBg,
-        title: Text('Settings', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
+        title: Text(AppLocalizations.of(context)!.settings, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
           return ListView(
             children: [
-              const _SettingsSection(title: 'General'),
+              _SettingsSection(title: AppLocalizations.of(context)!.general),
               ListTile(
                 leading: const Icon(Icons.language),
-                title: const Text('App Language'),
-                trailing: const Text('English'),
-                onTap: () {},
+                title: Text(AppLocalizations.of(context)!.appLanguage),
+                trailing: DropdownButton<String>(
+                  value: settings.locale.languageCode,
+                  onChanged: (val) {
+                    if (val != null) settings.setLocale(val);
+                  },
+                  items: [
+                    DropdownMenuItem(value: 'en', child: Text('English')),
+                    DropdownMenuItem(value: 'es', child: Text('Español')),
+                    DropdownMenuItem(value: 'fr', child: Text('Français')),
+                  ],
+                ),
               ),
               const Divider(height: 1),
-              const _SettingsSection(title: 'Appearance'),
+              _SettingsSection(title: AppLocalizations.of(context)!.appearance),
               ListTile(
                 leading: const Icon(Icons.brightness_4),
-                title: const Text('Theme Mode'),
+                title: Text(AppLocalizations.of(context)!.themeMode),
                 trailing: DropdownButton<String>(
                   value: settings.themeModeString,
                   onChanged: (val) => settings.setThemeMode(val!),
-                  items: const [
-                    DropdownMenuItem(value: 'system', child: Text('System')),
-                    DropdownMenuItem(value: 'light', child: Text('Light')),
-                    DropdownMenuItem(value: 'dark', child: Text('Dark')),
+                  items: [
+                    DropdownMenuItem(value: 'system', child: Text(AppLocalizations.of(context)!.system)),
+                    DropdownMenuItem(value: 'light', child: Text(AppLocalizations.of(context)!.light)),
+                    DropdownMenuItem(value: 'dark', child: Text(AppLocalizations.of(context)!.dark)),
                   ],
                 ),
               ),
@@ -219,31 +229,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),*/
               const Divider(height: 1),
-              const _SettingsSection(title: 'Security'),
+              _SettingsSection(title: AppLocalizations.of(context)!.security),
               SwitchListTile(
                 secondary: const Icon(Icons.security),
-                title: const Text('App Lock'),
-                subtitle: const Text('Require authentication to open app'),
+                title: Text(AppLocalizations.of(context)!.appLock),
+                subtitle: Text(AppLocalizations.of(context)!.appLockDesc),
                 value: settings.isAppLockEnabled,
                 onChanged: settings.toggleAppLock,
               ),
               ListTile(
                 leading: const Icon(Icons.battery_alert),
-                title: const Text('Battery Optimization'),
-                subtitle: const Text('Disable to ensure reliable reminders'),
+                title: Text(AppLocalizations.of(context)!.batteryOptimization),
+                subtitle: Text(AppLocalizations.of(context)!.batteryOptimizationDesc),
                 onTap: () async {
                   await BatteryOptimizationService.openBatteryOptimizationSettings();
                 },
               ),
               const Divider(height: 1),
-              const _SettingsSection(title: 'Storage & Backup'),
+              _SettingsSection(title: AppLocalizations.of(context)!.storageBackup),
               ListTile(
                 leading: Icon(Icons.cloud, color: colors.fabDark),
-                title: const Text('Sync with Google Drive Backup'),
+                title: Text(AppLocalizations.of(context)!.syncDrive),
                 subtitle: Text(
                   _driveBusy
-                      ? 'Working...'
-                      : (_driveUser ?? 'Tap to backup or restore'),
+                      ? AppLocalizations.of(context)!.working
+                      : (_driveUser ?? AppLocalizations.of(context)!.tapToBackup),
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: _driveBusy ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
@@ -251,16 +261,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SwitchListTile(
                 secondary: Icon(Icons.sync, color: colors.fabDark),
-                title: const Text('Auto-sync to Google Drive'),
-                subtitle: const Text(
-                  'Automatically backs up notes and tasks when the app opens or resumes (requires sign-in)',
+                title: Text(AppLocalizations.of(context)!.autoSyncDrive),
+                subtitle: Text(
+                  AppLocalizations.of(context)!.autoSyncDriveDesc,
                 ),
                 value: settings.isDriveAutoSyncEnabled,
                 onChanged: settings.toggleDriveAutoSync,
               ),
               ListTile(
                 leading: const Icon(Icons.file_download),
-                title: const Text('Export Data'),
+                title: Text(AppLocalizations.of(context)!.exportData),
                 onTap: _showExportOptions,
               ),
               const SizedBox(height: 16),

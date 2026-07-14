@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
@@ -19,7 +20,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.calendar)),
       body: Consumer<TaskProvider>(
         builder: (context, provider, child) {
           final tasks = provider.tasks;
@@ -80,7 +81,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }).toList();
 
     if (dayTasks.isEmpty) {
-      return const Center(child: Text('No tasks for this day'));
+      return Center(child: Text(AppLocalizations.of(context)!.noTasksForThisDay));
     }
 
     return ListView.builder(

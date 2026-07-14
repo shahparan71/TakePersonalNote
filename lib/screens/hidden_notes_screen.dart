@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +19,7 @@ class HiddenNotesScreen extends StatelessWidget {
       backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         backgroundColor: colors.scaffoldBg,
-        title: Text('Hidden Notes', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
+        title: Text(AppLocalizations.of(context)!.hiddenNotes, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<NoteProvider>(
         builder: (context, provider, child) {
@@ -32,12 +33,12 @@ class HiddenNotesScreen extends StatelessWidget {
                     Icon(Icons.visibility_off_outlined, size: 64, color: Colors.grey[300]),
                     const SizedBox(height: 12),
                     Text(
-                      'No hidden notes',
+                      AppLocalizations.of(context)!.noHiddenNotes,
                       style: GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Notes you hide from the main list appear here. They are not deleted.',
+                      AppLocalizations.of(context)!.hiddenNotesDesc,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary),
                     ),
@@ -107,7 +108,7 @@ class _HiddenNoteCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      note.title.isEmpty ? 'Untitled' : note.title,
+                      note.title.isEmpty ? AppLocalizations.of(context)!.untitled : note.title,
                       style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary),
                     ),
                     const SizedBox(height: 4),
@@ -127,7 +128,7 @@ class _HiddenNoteCard extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(Icons.visibility_outlined, color: colors.fabDark),
-                tooltip: 'Unhide',
+                tooltip: AppLocalizations.of(context)!.unhide,
                 onPressed: onUnhide,
               ),
             ],

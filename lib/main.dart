@@ -10,6 +10,7 @@ import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/theme/app_theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:take_personal_note/services/google_drive_sync_service.dart';
@@ -54,11 +55,14 @@ class MyApp extends StatelessWidget {
             navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
             localizationsDelegates: const [
+              AppLocalizations.delegate,
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
               FlutterQuillLocalizations.delegate,
             ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: settings.locale,
             navigatorObservers: [
               FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
             ],

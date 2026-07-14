@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../services/security_service.dart';
 import 'home_screen.dart';
@@ -47,9 +48,9 @@ class _LockScreenState extends State<LockScreen> {
           children: [
             const Icon(Icons.lock, size: 80, color: Colors.blue),
             const SizedBox(height: 20),
-            const Text('App Locked', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(AppLocalizations.of(context)!.appLocked, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            const Text('Please authenticate to continue'),
+            Text(AppLocalizations.of(context)!.pleaseAuthenticateToContinue),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -62,7 +63,7 @@ class _LockScreenState extends State<LockScreen> {
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: _authenticate,
-              child: const Text('Unlock'),
+              child: Text(AppLocalizations.of(context)!.unlock),
             ),
           ],
         ),

@@ -26,7 +26,7 @@ class NoteProvider with ChangeNotifier {
 
   Future<int?> addNote(Note note) async {
     final id = await _dbService.insertNote(note);    await PreferenceService().setNotesPendingDriveSync(true);    await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
     return id;
   }
 
@@ -34,7 +34,7 @@ class NoteProvider with ChangeNotifier {
     await _dbService.updateNote(note);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> archiveNote(Note note) async {
@@ -42,7 +42,7 @@ class NoteProvider with ChangeNotifier {
     await _dbService.updateNote(archivedNote);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> unarchiveNote(Note note) async {
@@ -50,7 +50,7 @@ class NoteProvider with ChangeNotifier {
     await _dbService.updateNote(unarchivedNote);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> trashNote(Note note) async {
@@ -63,7 +63,7 @@ class NoteProvider with ChangeNotifier {
     await _dbService.updateNote(trashedNote);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> restoreNote(Note note) async {
@@ -71,14 +71,14 @@ class NoteProvider with ChangeNotifier {
     await _dbService.updateNote(restoredNote);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> deleteNotePermanent(int id) async {
     await _dbService.deleteNotePermanent(id);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<List<String>> getCategories() async {
@@ -97,7 +97,7 @@ class NoteProvider with ChangeNotifier {
     await fetchNotes();
   }
 
-  Future<void> _syncDriveIfSignedIn() async {
+  void _triggerSyncIfSignedIn() async {
     if (GoogleDriveSyncService().isSignedIn) {
       await GoogleDriveSyncService().syncToDrive();
     }

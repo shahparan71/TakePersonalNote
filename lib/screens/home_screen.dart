@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
@@ -89,8 +90,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('New Share Received'),
-        content: const Text('Would you like to save this text as a Note or a Task?'),
+        title: Text(AppLocalizations.of(context)!.newShareReceived),
+        content: Text(AppLocalizations.of(context)!.saveTextAsNoteOrTask),
         actions: [
           TextButton(
             onPressed: () {
@@ -102,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               );
             },
-            child: const Text('AS NOTE'),
+            child: Text(AppLocalizations.of(context)!.asNote),
           ),
           TextButton(
             onPressed: () {
@@ -114,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               );
             },
-            child: const Text('AS TASK'),
+            child: Text(AppLocalizations.of(context)!.asTask),
           ),
         ],
       ),
@@ -136,28 +137,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final navTabs = [
       GButton(
         icon: Icons.dashboard_outlined,
-        text: 'Dashboard',
+        text: AppLocalizations.of(context)!.dashboard,
         iconColor: theme.colorScheme.onSurfaceVariant,
         iconActiveColor: theme.colorScheme.primary,
         textColor: theme.colorScheme.primary,
       ),
       GButton(
         icon: Icons.note_alt_outlined,
-        text: 'Notes',
+        text: AppLocalizations.of(context)!.notesTitle,
         iconColor: theme.colorScheme.onSurfaceVariant,
         iconActiveColor: theme.colorScheme.primary,
         textColor: theme.colorScheme.primary,
       ),
       GButton(
         icon: Icons.checklist_outlined,
-        text: 'Tasks',
+        text: AppLocalizations.of(context)!.tasks,
         iconColor: theme.colorScheme.onSurfaceVariant,
         iconActiveColor: theme.colorScheme.primary,
         textColor: theme.colorScheme.primary,
       ),
       GButton(
         icon: Icons.calendar_month_outlined,
-        text: 'Calendar',
+        text: AppLocalizations.of(context)!.calendar,
         iconColor: theme.colorScheme.onSurfaceVariant,
         iconActiveColor: theme.colorScheme.primary,
         textColor: theme.colorScheme.primary,

@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/models/task.dart';
@@ -37,9 +38,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return AppLocalizations.of(context)!.goodMorning;
+    if (hour < 17) return AppLocalizations.of(context)!.goodAfternoon;
+    return AppLocalizations.of(context)!.goodEvening;
   }
 
   Future<void> _fetchFromGoogleDrive() async {
@@ -126,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(_getGreeting(), style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),
                       Text(
-                        'Take Notes',
+                        AppLocalizations.of(context)!.takeNotes,
                         style: GoogleFonts.caveat(fontSize: 28, fontWeight: FontWeight.w600, color: colors.textPrimary),
                       ),
                     ],
@@ -158,7 +159,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   IconButton(
                     icon: Icon(Icons.archive_outlined, color: colors.textPrimary),
-                    tooltip: 'Archive',
+                    tooltip: AppLocalizations.of(context)!.archive,
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ArchiveScreen()),
@@ -166,7 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   IconButton(
                     icon: Icon(Icons.delete_outline, color: colors.textPrimary),
-                    tooltip: 'Trash',
+                    tooltip: AppLocalizations.of(context)!.trash,
                     onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const TrashScreen()),
@@ -186,13 +187,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    const DesignSectionTitle(title: 'Overview'),
+                    DesignSectionTitle(title: AppLocalizations.of(context)!.overview),
                     const SizedBox(height: 10),
                     _buildStatsGrid(context),
                     const SizedBox(height: 24),
                     DesignSectionTitle(
-                      title: 'Upcoming Tasks',
-                      trailing: 'See all',
+                      title: AppLocalizations.of(context)!.upcomingTasks,
+                      trailing: AppLocalizations.of(context)!.seeAll,
                       onTrailingTap: () => Provider.of<TabProvider>(context, listen: false).setIndex(2),
                     ),
                     const SizedBox(height: 10),
@@ -258,12 +259,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No notes or tasks yet',
+                  AppLocalizations.of(context)!.noNotesOrTasksYet,
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your workspace is empty. Restore a previous backup from Google Drive to get your notes back.',
+                  AppLocalizations.of(context)!.emptyWorkspaceRestore,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(fontSize: 14, color: colors.fabDark, height: 1.4),
                 ),
@@ -276,7 +277,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Icon(FontAwesomeIcons.googleDrive, size: 18),
                     label: Text(
-                      _isFetching ? 'Fetching...' : 'Fetch from Google Drive',
+                      _isFetching ? AppLocalizations.of(context)!.fetching : AppLocalizations.of(context)!.fetchFromGoogleDrive,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -322,12 +323,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Drive Sync Active',
+                            AppLocalizations.of(context)!.driveSyncActive,
                             style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: colors.textPrimary),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'You are logged in. All data is automatically synced to Google Drive in real-time.',
+                            AppLocalizations.of(context)!.driveSyncActiveDesc,
                             style: GoogleFonts.outfit(fontSize: 13, color: colors.textSecondary, height: 1.3),
                           ),
                         ],
@@ -379,12 +380,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Local data is ready to back up',
+                    AppLocalizations.of(context)!.localDataReady,
                     style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Save your local notes and tasks to Google Drive to keep them safe and synced across your devices.',
+                    AppLocalizations.of(context)!.saveLocalNotesDesc,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.outfit(fontSize: 14, color: colors.fabDark, height: 1.4),
                   ),
@@ -397,7 +398,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(FontAwesomeIcons.googleDrive, size: 18),
                       label: Text(
-                        _isSyncingToDrive ? 'Uploading...' : 'Save to Google Drive',
+                        _isSyncingToDrive ? AppLocalizations.of(context)!.uploading : AppLocalizations.of(context)!.saveToGoogleDrive,
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -447,28 +448,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
           childAspectRatio: 1.2,
           children: [
             _StatTile(
-              label: 'Notes',
+              label: AppLocalizations.of(context)!.notesTitle,
               value: noteProvider.notes.length.toString(),
               tint: context.appColors.statTileTint(2),
               icon: Icons.description_outlined,
               onTap: () => tabProvider.setIndex(1),
             ),
             _StatTile(
-              label: 'Pending',
+              label: AppLocalizations.of(context)!.pending,
               value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
               tint: context.appColors.statTileTint(4),
               icon: Icons.assignment_outlined,
               onTap: () => tabProvider.setIndex(2),
             ),
             _StatTile(
-              label: 'Pinned',
+              label: AppLocalizations.of(context)!.pinned,
               value: noteProvider.notes.where((n) => n.isPinned).length.toString(),
               tint: context.appColors.statTileTint(1),
               icon: Icons.push_pin_outlined,
               onTap: () => tabProvider.setIndex(1),
             ),
             _StatTile(
-              label: 'Done',
+              label: AppLocalizations.of(context)!.done,
               value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
               tint: context.appColors.statTileTint(3),
               icon: Icons.task_alt_outlined,
@@ -496,7 +497,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               border: Border.all(color: colors.border),
             ),
             child: Center(
-              child: Text('No upcoming reminders', style: GoogleFonts.outfit(color: colors.textSecondary)),
+              child: Text(AppLocalizations.of(context)!.noUpcomingReminders, style: GoogleFonts.outfit(color: colors.textSecondary)),
             ),
           );
         }

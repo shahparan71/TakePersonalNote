@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +19,7 @@ class ArchiveScreen extends StatelessWidget {
       backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         backgroundColor: colors.scaffoldBg,
-        title: Text('Archive', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
+        title: Text(AppLocalizations.of(context)!.archive, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<NoteProvider>(
         builder: (context, provider, child) {
@@ -29,10 +30,10 @@ class ArchiveScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.archive_outlined, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 12),
-                  Text('No archived notes', style: GoogleFonts.outfit(color: colors.textSecondary)),
+                  Text(AppLocalizations.of(context)!.noArchivedNotes, style: GoogleFonts.outfit(color: colors.textSecondary)),
                   const SizedBox(height: 8),
                   Text(
-                    'Long-press a note and archive it from Notes',
+                    AppLocalizations.of(context)!.archiveInstruction,
                     style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary),
                   ),
                 ],
@@ -98,7 +99,7 @@ class _ArchiveCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(note.title.isEmpty ? 'Untitled' : note.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary)),
+                    Text(note.title.isEmpty ? AppLocalizations.of(context)!.untitled : note.title, style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: colors.textPrimary)),
                     const SizedBox(height: 4),
                     Text(
                       NoteUtils.getPlainText(note.content),
@@ -116,7 +117,7 @@ class _ArchiveCard extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(Icons.unarchive_outlined, color: colors.fabDark),
-                tooltip: 'Restore',
+                tooltip: AppLocalizations.of(context)!.restore,
                 onPressed: onUnarchive,
               ),
             ],

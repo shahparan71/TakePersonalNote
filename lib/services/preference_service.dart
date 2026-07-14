@@ -10,6 +10,17 @@ class PreferenceService {
   static const String _tasksPendingDriveSyncKey = 'tasks_pending_drive_sync';
   static const String _batteryPromptShownKey = 'battery_prompt_shown';
   static const String _updateDismissCountKey = 'update_dismiss_count';
+  static const String _appLanguageKey = 'app_language';
+
+  Future<void> setAppLanguage(String languageCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_appLanguageKey, languageCode);
+  }
+
+  Future<String> getAppLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_appLanguageKey) ?? 'en';
+  }
 
   Future<void> setAppLockEnabled(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();

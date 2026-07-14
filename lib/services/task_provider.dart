@@ -20,7 +20,7 @@ class TaskProvider with ChangeNotifier {
     final id = await _dbService.insertTask(task);
     await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
     return id;
   }
 
@@ -28,7 +28,7 @@ class TaskProvider with ChangeNotifier {
     await _dbService.updateTask(task);
     await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> deleteTask(int id) async {
@@ -40,7 +40,7 @@ class TaskProvider with ChangeNotifier {
     await _dbService.deleteTask(id);
     await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   Future<void> deleteTasks(List<int> ids) async {
@@ -52,7 +52,7 @@ class TaskProvider with ChangeNotifier {
     }
     await PreferenceService().setTasksPendingDriveSync(true);
     await fetchTasks();
-    await _syncDriveIfSignedIn();
+    _triggerSyncIfSignedIn();
   }
 
   List<Task> getTasksByStatus(TaskStatus status) {
@@ -67,7 +67,7 @@ class TaskProvider with ChangeNotifier {
     await fetchTasks();
   }
 
-  Future<void> _syncDriveIfSignedIn() async {
+  void _triggerSyncIfSignedIn() async {
     if (GoogleDriveSyncService().isSignedIn) {
       await GoogleDriveSyncService().syncToDrive();
     }

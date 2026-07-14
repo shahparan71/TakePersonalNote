@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -102,7 +103,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
     if (widget.note == null) {
       final newNote = Note(
-        title: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
+        title: _titleController.text.isEmpty ? AppLocalizations.of(context)!.untitled : _titleController.text,
         content: _currentContent,
         type: NoteType.text,
         // Always text now
@@ -118,8 +119,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         if (_reminderTime != null && id != null) {
           await NotificationService().scheduleNotification(
             id: id,
-            title: 'Note Reminder',
-            body: _titleController.text.isEmpty ? 'Untitled' : _titleController.text,
+            title: AppLocalizations.of(context)!.noteReminder,
+            body: _titleController.text.isEmpty ? AppLocalizations.of(context)!.untitled : _titleController.text,
             scheduledDate: _reminderTime!,
             payload: 'note_$id',
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
@@ -144,7 +145,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         if (_reminderTime != null) {
           await NotificationService().scheduleNotification(
             id: noteId,
-            title: 'Note Reminder',
+            title: AppLocalizations.of(context)!.noteReminder,
             body: _titleController.text,
             scheduledDate: _reminderTime!,
             payload: 'note_$noteId',
@@ -265,7 +266,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       controller: _titleController,
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
-                        hintText: 'Add Title',
+                        hintText: AppLocalizations.of(context)!.addTitle,
                         filled: true,
                         fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
@@ -290,7 +291,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                           controller: _contentController,
                           focusNode: _contentFocusNode,
                           config: quill.QuillEditorConfig(
-                            placeholder: 'Start typing your note here...',
+                            placeholder: AppLocalizations.of(context)!.startTypingNote,
                             customStyles: quill.DefaultStyles(
                               paragraph: quill.DefaultTextBlockStyle(
                                 GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.5),
@@ -425,7 +426,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             children: [
               Icon(Icons.repeat, size: 18, color: colors.textSecondary),
               const SizedBox(width: 8),
-              Text('Repeat', style: TextStyle(fontWeight: FontWeight.w500, color: colors.textPrimary)),
+              Text(AppLocalizations.of(context)!.repeat, style: TextStyle(fontWeight: FontWeight.w500, color: colors.textPrimary)),
               const Spacer(),
               Switch.adaptive(
                 value: _isRecurring,
@@ -452,11 +453,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget _buildRecurrenceChips() {
     return Row(
       children: [
-        _recurrenceChip('Daily', RecurringInterval.daily),
+        _recurrenceChip(AppLocalizations.of(context)!.daily, RecurringInterval.daily),
         const SizedBox(width: 8),
-        _recurrenceChip('Weekly', RecurringInterval.weekly),
+        _recurrenceChip(AppLocalizations.of(context)!.weekly, RecurringInterval.weekly),
         const SizedBox(width: 8),
-        _recurrenceChip('Monthly', RecurringInterval.monthly),
+        _recurrenceChip(AppLocalizations.of(context)!.monthly, RecurringInterval.monthly),
       ],
     );
   }

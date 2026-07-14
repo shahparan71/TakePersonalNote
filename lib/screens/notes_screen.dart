@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -100,7 +101,7 @@ class _NotesScreenState extends State<NotesScreen> {
         leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
         title: _selectionMode
             ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
-            : Text('Notes', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+            : Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         actions: [
           if (!_selectionMode) ...[
             Consumer<NoteProvider>(
@@ -108,7 +109,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 final count = provider.hiddenNotes.length;
                 return IconButton(
                   icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.visibility_off_outlined)),
-                  tooltip: 'Hidden notes',
+                  tooltip: AppLocalizations.of(context)!.hiddenNotesTooltip,
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
                 );
               },
@@ -116,9 +117,9 @@ class _NotesScreenState extends State<NotesScreen> {
             IconButton(
               icon: Icon(_isListView ? Icons.grid_view : Icons.view_list),
               onPressed: _toggleViewMode,
-              tooltip: _isListView ? 'Card view' : 'List view',
+              tooltip: _isListView ? AppLocalizations.of(context)!.cardViewTooltip : AppLocalizations.of(context)!.listViewTooltip,
             ),
-            IconButton(icon: const Icon(Icons.swap_vert), onPressed: () => _showSortDialog(context), tooltip: 'Sort'),
+            IconButton(icon: const Icon(Icons.swap_vert), onPressed: () => _showSortDialog(context), tooltip: AppLocalizations.of(context)!.sortTooltip),
           ],
         ],
         bottom: _selectionMode
@@ -132,7 +133,7 @@ class _NotesScreenState extends State<NotesScreen> {
                       child: TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          hintText: 'Search notes...',
+                          hintText: AppLocalizations.of(context)!.searchNotes,
                           filled: true,
                           fillColor: colors.cardSurface,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
@@ -157,7 +158,7 @@ class _NotesScreenState extends State<NotesScreen> {
               if (notes.isEmpty) {
                 return Center(
                   child: Text(
-                    _selectedFolder == null ? 'No notes yet. Add one!' : 'No notes in this folder',
+                    _selectedFolder == null ? AppLocalizations.of(context)!.noNotesYet : AppLocalizations.of(context)!.noNotesInFolder,
                     style: TextStyle(color: colors.textSecondary, fontSize: 20, fontWeight: FontWeight.w500),
                   ),
                 );
@@ -190,11 +191,11 @@ class _NotesScreenState extends State<NotesScreen> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
-              _folderChip('All', null),
+              _folderChip(AppLocalizations.of(context)!.all, null),
               ...folders.map((f) => _folderChip(f, f)),
               ActionChip(
                 avatar: const Icon(Icons.create_new_folder_outlined, size: 16),
-                label: const Text('New', style: TextStyle(fontSize: 12)),
+                label: Text(AppLocalizations.of(context)!.newFolder, style: TextStyle(fontSize: 12)),
                 onPressed: _showCreateFolderDialog,
                 visualDensity: VisualDensity.compact,
               ),
@@ -379,7 +380,7 @@ class _NotesScreenState extends State<NotesScreen> {
       children: [
         Expanded(
           child: Text(
-            note.title.isEmpty ? 'Untitled' : note.title,
+            note.title.isEmpty ? AppLocalizations.of(context)!.untitled : note.title,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colors.textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -429,11 +430,11 @@ class _NotesScreenState extends State<NotesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _actionButton(Icons.drive_file_move_outline, 'Move', _moveToFolder),
-                _actionButton(Icons.archive_outlined, 'Archive', _archiveSelected),
-                _actionButton(Icons.push_pin_outlined, 'Pin', _pinSelected),
-                _actionButton(Icons.visibility_off_outlined, 'Hide', _hideSelected),
-                _actionButton(Icons.delete_outline, 'Delete', _deleteSelected, color: Colors.red),
+                _actionButton(Icons.drive_file_move_outline, AppLocalizations.of(context)!.move, _moveToFolder),
+                _actionButton(Icons.archive_outlined, AppLocalizations.of(context)!.archive, _archiveSelected),
+                _actionButton(Icons.push_pin_outlined, AppLocalizations.of(context)!.pin, _pinSelected),
+                _actionButton(Icons.visibility_off_outlined, AppLocalizations.of(context)!.hide, _hideSelected),
+                _actionButton(Icons.delete_outline, AppLocalizations.of(context)!.delete, _deleteSelected, color: Colors.red),
               ],
             ),
           ),
@@ -480,13 +481,13 @@ class _NotesScreenState extends State<NotesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(16),
-              child: Text('Move to folder', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.moveToFolder, style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             ListTile(
               leading: const Icon(Icons.folder_off_outlined),
-              title: const Text('Remove from folder'),
+              title: Text(AppLocalizations.of(context)!.removeFromFolder),
               onTap: () => Navigator.pop(context, ''),
             ),
             ...folders.map((f) => ListTile(leading: const Icon(Icons.folder_outlined), title: Text(f), onTap: () => Navigator.pop(context, f))),
@@ -548,13 +549,13 @@ class _NotesScreenState extends State<NotesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete notes?'),
+        title: Text(AppLocalizations.of(context)!.deleteNotesTitle),
         content: Text('Move ${_selectedNoteIds.length} note(s) to trash?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -572,20 +573,20 @@ class _NotesScreenState extends State<NotesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('New Folder'),
+        title: Text(AppLocalizations.of(context)!.newFolderTitle),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(hintText: 'Folder name'),
+          decoration: InputDecoration(hintText: AppLocalizations.of(context)!.folderNameHint),
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.cancel)),
           TextButton(
             onPressed: () async {
               await Provider.of<FolderProvider>(context, listen: false).addFolder(controller.text);
               if (context.mounted) Navigator.pop(context);
             },
-            child: const Text('Create'),
+            child: Text(AppLocalizations.of(context)!.create),
           ),
         ],
       ),
@@ -607,9 +608,9 @@ class _NotesScreenState extends State<NotesScreen> {
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
             ),
-            ListTile(title: const Text('Sort by Date'), onTap: () => _sort('updatedAt DESC')),
-            ListTile(title: const Text('Sort by Title'), onTap: () => _sort('title ASC')),
-            ListTile(title: const Text('Sort by Color'), onTap: () => _sort('color ASC')),
+            ListTile(title: Text(AppLocalizations.of(context)!.sortByDate), onTap: () => _sort('updatedAt DESC')),
+            ListTile(title: Text(AppLocalizations.of(context)!.sortByTitle), onTap: () => _sort('title ASC')),
+            ListTile(title: Text(AppLocalizations.of(context)!.sortByColor), onTap: () => _sort('color ASC')),
           ],
         ),
       ),

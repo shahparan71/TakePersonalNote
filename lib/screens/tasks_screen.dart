@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -49,7 +50,7 @@ class _TasksScreenState extends State<TasksScreen> {
             : null,
         title: _selectionMode
             ? Text('${_selectedTaskIds.length} selected', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 20))
-            : Text('Tasks', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+            : Text(AppLocalizations.of(context)!.tasks, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -57,7 +58,7 @@ class _TasksScreenState extends State<TasksScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search tasks...',
+                hintText: AppLocalizations.of(context)!.searchTasks,
                 filled: true,
                 fillColor: colors.cardSurface,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: colors.border)),
@@ -75,13 +76,13 @@ class _TasksScreenState extends State<TasksScreen> {
             IconButton(
               icon: const Icon(Icons.delete_outline),
               onPressed: () => _confirmAndDeleteSelected(),
-              tooltip: 'Delete selected',
+              tooltip: AppLocalizations.of(context)!.deleteSelected,
             )
           else
             IconButton(
               icon: const Icon(Icons.tune),
               onPressed: () => _showFilterDialog(context),
-              tooltip: 'Filter',
+              tooltip: AppLocalizations.of(context)!.filter,
             ),
         ],
       ),
@@ -94,7 +95,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 children: [
                   Icon(Icons.task_alt, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 12),
-                  Text('No tasks yet', style: GoogleFonts.outfit(color: Colors.grey[500], fontSize: 20)),
+                  Text(AppLocalizations.of(context)!.noTasksYet, style: GoogleFonts.outfit(color: Colors.grey[500], fontSize: 20)),
                 ],
               ),
             );
@@ -114,7 +115,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    'Completed',
+                    AppLocalizations.of(context)!.completed,
                     style: GoogleFonts.outfit(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -244,8 +245,8 @@ class _TasksScreenState extends State<TasksScreen> {
         title: const Text('Delete selected tasks?'),
         content: Text('Delete ${_selectedTaskIds.length} selected task(s)? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)!.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context)!.delete)),
         ],
       ),
     );
@@ -309,7 +310,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
               ),
-              const ListTile(title: Text('Filter by Priority', style: TextStyle(fontWeight: FontWeight.bold))),
+              ListTile(title: Text(AppLocalizations.of(context)!.filterByPriority, style: TextStyle(fontWeight: FontWeight.bold))),
               ...TaskPriority.values.map(
                 (p) => ListTile(
                   title: Text(p.name[0].toUpperCase() + p.name.substring(1)),
@@ -320,7 +321,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 ),
               ),
               const Divider(),
-              const ListTile(title: Text('Filter by Status', style: TextStyle(fontWeight: FontWeight.bold))),
+              ListTile(title: Text(AppLocalizations.of(context)!.filterByStatus, style: TextStyle(fontWeight: FontWeight.bold))),
               ...TaskStatus.values.map(
                 (s) => ListTile(
                   title: Text(s.name[0].toUpperCase() + s.name.substring(1)),
@@ -331,7 +332,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 ),
               ),
               ListTile(
-                title: const Text('Clear Filters', style: TextStyle(color: Colors.blue)),
+                title: Text(AppLocalizations.of(context)!.clearFilters, style: TextStyle(color: Colors.blue)),
                 onTap: () {
                   Provider.of<TaskProvider>(context, listen: false).fetchTasks();
                   Navigator.pop(context);
@@ -367,7 +368,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
                 child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
               ),
-              title: const Text('Delete Task', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+              title: Text(AppLocalizations.of(context)!.deleteTask, style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
               onTap: () {
                 provider.deleteTask(task.id!);
                 Navigator.pop(context);

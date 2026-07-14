@@ -1,3 +1,4 @@
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/note_provider.dart';
@@ -8,11 +9,11 @@ class TrashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Trash')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.trash)),
       body: Consumer<NoteProvider>(
         builder: (context, provider, child) {
           if (provider.trashedNotes.isEmpty) {
-            return const Center(child: Text('Trash is empty'));
+            return Center(child: Text(AppLocalizations.of(context)!.trashIsEmpty));
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
