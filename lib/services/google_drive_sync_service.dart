@@ -22,7 +22,7 @@ class GoogleDriveSyncResult {
   });
 }
 
-class GoogleDriveSyncService {
+class GoogleDriveSyncService extends ChangeNotifier {
   static const String backupFileName = 'take_personal_note_backup.json';
   static const Duration autoSyncMinInterval = Duration(minutes: 15);
 
@@ -31,6 +31,16 @@ class GoogleDriveSyncService {
   GoogleDriveSyncService._internal();
 
   String? _lastAuthError;
+  bool _isSyncing = false;
+
+  bool get isSyncing => _isSyncing;
+
+  void _setSyncing(bool value) {
+    if (_isSyncing != value) {
+      _isSyncing = value;
+      notifyListeners();
+    }
+  }
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
@@ -126,6 +136,7 @@ class GoogleDriveSyncService {
   }
 
   Future<GoogleDriveSyncResult> syncToDrive({List<String>? folders}) async {
+    _setSyncing(true);
     try {
       final api = await _driveApi();
       if (api == null) {
@@ -170,10 +181,13 @@ class GoogleDriveSyncService {
     } catch (e, st) {
       debugPrint('Drive sync error: $e\n$st');
       return GoogleDriveSyncResult(success: false, message: 'Sync failed: $e');
+    } finally {
+      _setSyncing(false);
     }
   }
 
   Future<GoogleDriveSyncResult> fetchFromDrive({bool merge = true}) async {
+    _setSyncing(true);
     try {
       final api = await _driveApi();
       if (api == null) {
@@ -214,6 +228,8 @@ class GoogleDriveSyncService {
     } catch (e, st) {
       debugPrint('Drive fetch error: $e\n$st');
       return GoogleDriveSyncResult(success: false, message: 'Fetch failed: $e');
+    } finally {
+      _setSyncing(false);
     }
   }
 

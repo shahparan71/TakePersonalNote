@@ -11,6 +11,8 @@ import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/theme/app_theme.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'screens/lock_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/splash_screen.dart';
@@ -43,6 +45,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider(create: (_) => TabProvider()),
         ChangeNotifierProvider(create: (_) => FolderProvider()..loadFolders()),
+        ChangeNotifierProvider.value(value: GoogleDriveSyncService()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
@@ -55,6 +58,9 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
               FlutterQuillLocalizations.delegate,
+            ],
+            navigatorObservers: [
+              FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
             ],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

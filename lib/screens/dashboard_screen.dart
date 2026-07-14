@@ -143,6 +143,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 actions: [
+                  Consumer<GoogleDriveSyncService>(
+                    builder: (context, syncService, child) {
+                      if (syncService.isSyncing) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(right: 8.0, left: 8.0),
+                            child: _SyncingIcon(),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
                   IconButton(
                     icon: Icon(Icons.archive_outlined, color: colors.textPrimary),
                     tooltip: 'Archive',
@@ -409,6 +422,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final prefs = PreferenceService();
     final notesPendingSync = await prefs.isNotesPendingDriveSync();
     final tasksPendingSync = await prefs.isTasksPendingDriveSync();
+    
+    if (GoogleDriveSyncService().isSignedIn) {
+      return false;
+    }
+
     return shouldShowLocalBackupBanner(
       noteCount: noteCount,
       taskCount: taskCount,
@@ -571,6 +589,37 @@ class _StatTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SyncingIcon extends StatefulWidget {
+  const _SyncingIcon();
+
+  @override
+  State<_SyncingIcon> createState() => _SyncingIconState();
+}
+
+class _SyncingIconState extends State<_SyncingIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RotationTransition(
+      turns: _controller,
+      child: const Icon(Icons.sync, color: Colors.green, size: 24),
     );
   }
 }
