@@ -13,6 +13,7 @@ import '../theme/app_colors.dart';
 import '../widgets/sheet_safe_area.dart';
 import '../utils/drive_sync_utils.dart';
 import '../services/battery_optimization_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -24,11 +25,22 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _driveBusy = false;
   String? _driveUser;
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _refreshDriveUser();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _appVersion = 'Version ${packageInfo.version} (${packageInfo.buildNumber})';
+      });
+    }
   }
 
   void _refreshDriveUser() {
@@ -251,6 +263,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Export Data'),
                 onTap: _showExportOptions,
               ),
+              const SizedBox(height: 16),
+              if (_appVersion.isNotEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 32.0),
+                    child: Text(
+                      _appVersion,
+                      style: GoogleFonts.outfit(color: colors.textSecondary, fontSize: 13),
+                    ),
+                  ),
+                ),
             ],
           );
         },
