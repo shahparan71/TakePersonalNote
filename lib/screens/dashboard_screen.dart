@@ -260,6 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 16),
                 Text(
                   AppLocalizations.of(context)!.noNotesOrTasksYet,
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: colors.textPrimary),
                 ),
                 const SizedBox(height: 8),
