@@ -21,7 +21,6 @@ class NoteTextController extends TextEditingController {
       
       // Only wrap if it's a single char being typed (standard typing)
       if (newChar.length == 1 && !newChar.contains('=') && !newChar.contains('\n')) {
-        final selection = value.selection;
         final newText = oldText + '==' + newChar + '==';
         
         removeListener(_handleTextUpdate);
