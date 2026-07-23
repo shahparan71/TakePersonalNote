@@ -422,7 +422,7 @@ class _NotesScreenState extends State<NotesScreen> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (note.isPinned) Icon(Icons.push_pin, size: 14, color: Theme.of(context).colorScheme.primary),
+        if (note.isPinned) Icon(Icons.push_pin, size: 14, color: Theme.of(context).primaryColor),
       ],
     );
   }
