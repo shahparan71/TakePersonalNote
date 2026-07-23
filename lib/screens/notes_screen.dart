@@ -24,6 +24,7 @@ class NotesScreen extends StatefulWidget {
 
 class _NotesScreenState extends State<NotesScreen> {
   final TextEditingController _searchController = TextEditingController();
+  late ScrollController _scrollController;
   String? _selectedFolder;
   bool _isListView = false;
   bool _selectionMode = false;
@@ -32,6 +33,7 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _loadViewMode();
   }
 
@@ -48,6 +50,7 @@ class _NotesScreenState extends State<NotesScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -95,81 +98,82 @@ class _NotesScreenState extends State<NotesScreen> {
 
     return Scaffold(
       backgroundColor: colors.scaffoldBg,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: colors.scaffoldBg,
-        leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
-        title: _selectionMode
-            ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
-            : Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
-        actions: [
-          if (!_selectionMode) ...[
-            Consumer<NoteProvider>(
-              builder: (context, provider, _) {
-                final count = provider.hiddenNotes.length;
-                return IconButton(
-                  icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.visibility_off_outlined)),
-                  tooltip: AppLocalizations.of(context)!.hiddenNotesTooltip,
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
-                );
-              },
-            ),
-            IconButton(
-              icon: Icon(_isListView ? Icons.grid_view : Icons.view_list),
-              onPressed: _toggleViewMode,
-              tooltip: _isListView ? AppLocalizations.of(context)!.cardViewTooltip : AppLocalizations.of(context)!.listViewTooltip,
-            ),
-            IconButton(icon: const Icon(Icons.swap_vert), onPressed: () => _showSortDialog(context), tooltip: AppLocalizations.of(context)!.sortTooltip),
-          ],
-        ],
-        bottom: _selectionMode
-            ? null
-            : PreferredSize(
-                preferredSize: const Size.fromHeight(108),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.searchNotes,
-                          filled: true,
-                          fillColor: colors.cardSurface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                        ),
-                        onChanged: (val) {
-                          Provider.of<NoteProvider>(context, listen: false).fetchNotes(query: val.isEmpty ? null : val, category: _selectedFolder);
-                        },
-                      ),
-                    ),
-                    _buildFolderBar(),
-                  ],
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          SliverAppBar(
+            elevation: 0,
+            backgroundColor: colors.scaffoldBg,
+            leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
+            title: _selectionMode
+                ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
+                : Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+            actions: [
+              if (!_selectionMode) ...[
+                Consumer<NoteProvider>(
+                  builder: (context, provider, _) {
+                    final count = provider.hiddenNotes.length;
+                    return IconButton(
+                      icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.visibility_off_outlined)),
+                      tooltip: AppLocalizations.of(context)!.hiddenNotesTooltip,
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
+                    );
+                  },
                 ),
-              ),
-      ),
-      body: Stack(
-        children: [
+                IconButton(
+                  icon: Icon(_isListView ? Icons.grid_view : Icons.view_list),
+                  onPressed: _toggleViewMode,
+                  tooltip: _isListView ? AppLocalizations.of(context)!.cardViewTooltip : AppLocalizations.of(context)!.listViewTooltip,
+                ),
+                IconButton(icon: const Icon(Icons.swap_vert), onPressed: () => _showSortDialog(context), tooltip: AppLocalizations.of(context)!.sortTooltip),
+              ],
+            ],
+            floating: true,
+            pinned: true,
+            bottom: _selectionMode
+                ? null
+                : PreferredSize(
+                    preferredSize: const Size.fromHeight(108),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(context)!.searchNotes,
+                              filled: true,
+                              fillColor: colors.cardSurface,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                            onChanged: (val) {
+                              Provider.of<NoteProvider>(context, listen: false).fetchNotes(query: val.isEmpty ? null : val, category: _selectedFolder);
+                            },
+                          ),
+                        ),
+                        _buildFolderBar(),
+                      ],
+                    ),
+                  ),
+          ),
           Consumer<NoteProvider>(
             builder: (context, provider, child) {
               final notes = _filteredNotes(provider.notes);
               if (notes.isEmpty) {
-                return Center(
-                  child: Text(
-                    _selectedFolder == null ? AppLocalizations.of(context)!.noNotesYet : AppLocalizations.of(context)!.noNotesInFolder,
-                    style: TextStyle(color: colors.textSecondary, fontSize: 20, fontWeight: FontWeight.w500),
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Text(
+                      _selectedFolder == null ? AppLocalizations.of(context)!.noNotesYet : AppLocalizations.of(context)!.noNotesInFolder,
+                      style: TextStyle(color: colors.textSecondary, fontSize: 20, fontWeight: FontWeight.w500),
+                    ),
                   ),
                 );
               }
-              return Padding(
-                padding: EdgeInsets.only(bottom: bottomBarHeight),
-                child: _isListView ? _buildListView(notes) : _buildGridView(notes),
-              );
+              return _isListView ? _buildSliverListView(notes) : _buildSliverGridView(notes);
             },
           ),
-          if (_selectionMode) _buildSelectionActionBar(),
         ],
       ),
       floatingActionButton: _selectionMode
@@ -178,6 +182,13 @@ class _NotesScreenState extends State<NotesScreen> {
               heroTag: 'notes_fab',
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NoteEditScreen())).then((_) => _refreshNotes()),
             ),
+      bottomNavigationBar: _selectionMode
+          ? Container(
+              height: bottomBarHeight,
+              color: colors.cardSurface,
+              child: _buildSelectionActionBar(),
+            )
+          : null,
     );
   }
 
@@ -234,12 +245,36 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
+  Widget _buildSliverGridView(List<Note> notes) {
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverMasonryGrid.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childCount: notes.length,
+        itemBuilder: (context, index) => _buildNoteCard(notes[index]),
+      ),
+    );
+  }
+
   Widget _buildListView(List<Note> notes) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: notes.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) => _buildNoteListTile(notes[index]),
+    );
+  }
+
+  Widget _buildSliverListView(List<Note> notes) {
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList.separated(
+        itemCount: notes.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) => _buildNoteListTile(notes[index]),
+      ),
     );
   }
 
