@@ -34,6 +34,7 @@ class NoteEditScreen extends StatefulWidget {
 class _NoteEditScreenState extends State<NoteEditScreen> {
   late TextEditingController _titleController;
   late quill.QuillController _contentController;
+  late ScrollController _scrollController;
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
   DateTime? _reminderTime;
@@ -46,6 +47,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
 
     final initialContent = widget.note?.content ?? widget.initialText ?? '';
@@ -87,6 +89,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _scrollController.dispose();
     _contentFocusNode.dispose();
     super.dispose();
   }
@@ -358,29 +361,31 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         child: Column(
           children: [
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _titleController,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.addTitle,
-                        filled: true,
-                        fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textPrimary),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 0),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _titleController,
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: AppLocalizations.of(context)!.addTitle,
+                          filled: true,
+                          fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                          hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textSecondary),
+                        ),
+                        style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
                       ),
-                      style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildMetadataRow(),
-                    if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
-                    Expanded(
-                      child: Theme(
+                      const SizedBox(height: 8),
+                      _buildMetadataRow(),
+                      if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
+                      const SizedBox(height: 12),
+                      Theme(
                         data: Theme.of(context).copyWith(
                           textTheme: Theme.of(context).textTheme.apply(
                                 bodyColor: colors.textPrimary,
@@ -392,6 +397,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                           focusNode: _contentFocusNode,
                           config: quill.QuillEditorConfig(
                             placeholder: AppLocalizations.of(context)!.startTypingNote,
+                            scrollable: false,
+                            expands: false,
                             customStyles: quill.DefaultStyles(
                               paragraph: quill.DefaultTextBlockStyle(
                                 GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.5),
@@ -415,8 +422,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
             ),
