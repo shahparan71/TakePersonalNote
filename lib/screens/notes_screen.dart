@@ -130,34 +130,34 @@ class _NotesScreenState extends State<NotesScreen> {
             ],
             floating: true,
             pinned: true,
-            bottom: _selectionMode
-                ? null
-                : PreferredSize(
-                    preferredSize: const Size.fromHeight(108),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: AppLocalizations.of(context)!.searchNotes,
-                              filled: true,
-                              fillColor: colors.cardSurface,
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                              prefixIcon: const Icon(Icons.search, size: 20),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                            ),
-                            onChanged: (val) {
-                              Provider.of<NoteProvider>(context, listen: false).fetchNotes(query: val.isEmpty ? null : val, category: _selectedFolder);
-                            },
-                          ),
-                        ),
-                        _buildFolderBar(),
-                      ],
-                    ),
-                  ),
           ),
+          if (!_selectionMode)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.searchNotes,
+                    filled: true,
+                    fillColor: colors.cardSurface,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
+                  onChanged: (val) {
+                    Provider.of<NoteProvider>(context, listen: false).fetchNotes(query: val.isEmpty ? null : val, category: _selectedFolder);
+                  },
+                ),
+              ),
+            ),
+          if (!_selectionMode)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: _buildFolderBar(),
+              ),
+            ),
           Consumer<NoteProvider>(
             builder: (context, provider, child) {
               final notes = _filteredNotes(provider.notes);
