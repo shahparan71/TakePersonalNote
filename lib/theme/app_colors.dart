@@ -22,11 +22,11 @@ class AppPalette extends ThemeExtension<AppPalette> {
   });
 
   static const AppPalette light = AppPalette(
-    scaffoldBg: Color(0xFFF5F3EE),
-    cardSurface: Color(0xFFFFFFFF),
+    scaffoldBg: Color(0xFFFFFFFF),
+    cardSurface: Color(0xFFFFFCF8),
     textPrimary: Color(0xFF1C1C1E),
-    textSecondary: Color(0xFF8E8E93),
-    border: Color(0xFFE0E0E0),
+    textSecondary: Color(0xFF7B786F),
+    border: Color(0xFFEFE7DA),
     fabDark: Color(0xFF2D4F4A),
     toolbarDark: Color(0xFF1A1A1A),
   );
@@ -39,6 +39,47 @@ class AppPalette extends ThemeExtension<AppPalette> {
     border: Color(0xFF3A3A3C),
     fabDark: Color(0xFF3D6B64),
     toolbarDark: Color(0xFF0D0D0D),
+  );
+
+/*
+  static const AppPalette eyeWarming = AppPalette(
+    scaffoldBg: Color(0xFFFFF4D6),
+    cardSurface: Color(0xFFFFF8E8),
+    textPrimary: Color(0xFF4A3A2A),
+    textSecondary: Color(0xFF8B7253),
+    border: Color(0xFFECD6B0),
+    fabDark: Color(0xFF7C5A2B),
+    toolbarDark: Color(0xFF5B3F1D),
+  );
+*/
+
+  static const AppPalette eyeWarming = AppPalette(
+    scaffoldBg: Color(0xFFF3EBD7),
+    cardSurface: Color(0xFFF9F4E8),
+    textPrimary: Color(0xFF3A3128),
+    textSecondary: Color(0xFF72675B),
+    border: Color(0xFFE1D4BF),
+    fabDark: Color(0xFF6C5135),
+    toolbarDark: Color(0xFF4F3823),
+  );
+
+  static const AppPalette warmCream = AppPalette(
+    scaffoldBg: Color(0xFFFFF8EE),
+    cardSurface: Color(0xFFFFFFFF),
+    textPrimary: Color(0xFF33302B),
+    textSecondary: Color(0xFF6B655E),
+    border: Color(0xFFE9E0D3),
+    fabDark: Color(0xFF7B5D3B),
+    toolbarDark: Color(0xFF60462D),
+  );
+  static const AppPalette paper = AppPalette(
+    scaffoldBg: Color(0xFFF6F1E7),
+    cardSurface: Color(0xFFFCFAF5),
+    textPrimary: Color(0xFF2F2A24),
+    textSecondary: Color(0xFF6D665E),
+    border: Color(0xFFE2D9CA),
+    fabDark: Color(0xFF7A5A3A),
+    toolbarDark: Color(0xFF5E4630),
   );
 
   /// Stored note color meaning "follow app theme" (not literal white).

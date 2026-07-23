@@ -376,11 +376,12 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Widget _buildNoteHeader(Note note) {
     final colors = context.appColors;
+    final displayTitle = NoteUtils.getDisplayTitle(title: note.title, content: note.content);
     return Row(
       children: [
         Expanded(
           child: Text(
-            note.title.isEmpty ? AppLocalizations.of(context)!.untitled : note.title,
+            displayTitle,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: colors.textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

@@ -13,6 +13,7 @@ class AppTheme {
 
   static ThemeData get lightTheme => _buildTheme(AppPalette.light, Brightness.light);
   static ThemeData get darkTheme => _buildTheme(AppPalette.dark, Brightness.dark);
+  static ThemeData get eyeWarmingTheme => _buildTheme(AppPalette.eyeWarming, Brightness.light);
 
   static ThemeData _buildTheme(AppPalette palette, Brightness brightness) {
     final isLight = brightness == Brightness.light;

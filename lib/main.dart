@@ -66,9 +66,9 @@ class MyApp extends StatelessWidget {
             navigatorObservers: [
               FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
             ],
-            theme: AppTheme.lightTheme,
+            theme: settings.eyeWarmingEnabled ? AppTheme.eyeWarmingTheme : AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: settings.themeMode,
+            themeMode: settings.eyeWarmingEnabled ? ThemeMode.light : settings.themeMode,
             home: const SplashScreen(),
           );
         },

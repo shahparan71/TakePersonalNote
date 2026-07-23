@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart' as quill;
+import 'package:flutter/foundation.dart';
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +19,7 @@ import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
@@ -36,6 +40,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
   final FocusNode _contentFocusNode = FocusNode();
+  final RegExp _phoneNumberRegex = RegExp(r'(?<!\w)(\+?\d[\d\s().-]{7,}\d)(?!\w)');
+  final Set<int> _phoneNumberRanges = <int>{};
 
   @override
   void initState() {
@@ -71,9 +77,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _isRecurring = widget.note?.isRecurring ?? false;
     _recurringInterval = widget.note?.recurringInterval ?? RecurringInterval.none;
 
-    _contentController.addListener(() {
-      setState(() {});
-    });
+    _contentController.addListener(_refreshPhoneNumberStyles);
     _contentFocusNode.addListener(() {
       setState(() {});
     });
@@ -183,6 +187,101 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     });
   }
 
+  void _refreshPhoneNumberStyles() {
+    if (!mounted) return;
+    final text = _contentController.document.toPlainText();
+    final matches = _phoneNumberRegex.allMatches(text);
+    final nextRanges = <int>{};
+    for (final match in matches) {
+      final start = match.start;
+      final end = match.end;
+      for (var index = start; index < end; index++) {
+        nextRanges.add(index);
+      }
+    }
+    if (!setEquals(_phoneNumberRanges, nextRanges)) {
+      setState(() {
+        _phoneNumberRanges.clear();
+        _phoneNumberRanges.addAll(nextRanges);
+      });
+    }
+  }
+
+  void _handlePhoneNumberTap(String value) async {
+    final cleaned = value.replaceAll(RegExp(r'[^+\d]'), '');
+    if (cleaned.length < 7) return;
+    final uri = Uri(scheme: 'tel', path: cleaned);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  InlineSpan _buildStyledTextSpan(
+    String text,
+    TextStyle baseStyle,
+    Map<String, dynamic> attributes,
+  ) {
+    final phoneColor = Colors.orange;
+    final phoneStyle = baseStyle.copyWith(
+      color: phoneColor,
+      decoration: TextDecoration.underline,
+      decorationColor: phoneColor,
+    );
+
+    final children = <InlineSpan>[];
+    int charOffset = 0;
+
+    for (int i = 0; i < text.length; i++) {
+      final isPhoneChar = _phoneNumberRanges.contains(charOffset + i);
+      int runEnd = i;
+
+      while (runEnd < text.length &&
+          _phoneNumberRanges.contains(charOffset + runEnd) == isPhoneChar) {
+        runEnd++;
+      }
+
+      final run = text.substring(i, runEnd);
+      if (isPhoneChar) {
+        children.add(
+          TextSpan(
+            text: run,
+            style: phoneStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => _handlePhoneNumberTap(run),
+          ),
+        );
+      } else {
+        children.add(TextSpan(text: run, style: baseStyle));
+      }
+
+      i = runEnd - 1;
+    }
+
+    return TextSpan(children: children);
+  }
+
+  bool _handleEditorTap(
+    quill.TapUpDetails details,
+    TextPosition Function(Offset offset) getPositionForOffset,
+  ) {
+    final position = getPositionForOffset(details.localPosition);
+    final offset = position.offset;
+    final plainText = _contentController.document.toPlainText();
+
+    if (offset >= 0 && offset < plainText.length && _phoneNumberRanges.contains(offset)) {
+      final start = _findPhoneNumberStart(plainText, offset);
+      final end = _findPhoneNumberEnd(plainText, offset);
+
+      if (start != null && end != null && start < end) {
+        final text = plainText.substring(start, end);
+        _handlePhoneNumberTap(text);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -200,6 +299,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _refreshPhoneNumberStyles();
     final colors = context.appColors;
     final scaffoldColor = colors.noteEditorBackground(_selectedColor);
 
@@ -272,7 +372,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textSecondary),
+                        hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textPrimary),
                       ),
                       style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
                     ),
@@ -311,6 +411,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                             embedBuilders: [
                               ...FlutterQuillEmbeds.editorBuilders(),
                             ],
+                            onTapUp: _handleEditorTap,
                           ),
                         ),
                       ),
@@ -372,6 +473,26 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         ),
       ),
     );
+  }
+
+  int? _findPhoneNumberStart(String text, int index) {
+    for (var i = index; i >= 0; i--) {
+      final char = text[i];
+      if (char.contains(RegExp(r'\s')) || char == '\n') {
+        return i + 1;
+      }
+    }
+    return 0;
+  }
+
+  int? _findPhoneNumberEnd(String text, int index) {
+    for (var i = index; i < text.length; i++) {
+      final char = text[i];
+      if (char.contains(RegExp(r'\s')) || char == '\n') {
+        return i;
+      }
+    }
+    return text.length;
   }
 
   Widget _buildMetadataRow() {

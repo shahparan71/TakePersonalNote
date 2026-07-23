@@ -13,4 +13,15 @@ class NoteUtils {
     } catch (_) {}
     return content;
   }
+
+  static String getDisplayTitle({required String title, required String content}) {
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isNotEmpty) return trimmedTitle;
+
+    final plainText = getPlainText(content).trim();
+    if (plainText.isEmpty) return 'Untitled';
+
+    final firstLine = plainText.split('\n').firstWhere((line) => line.trim().isNotEmpty, orElse: () => plainText).trim();
+    return firstLine.isEmpty ? 'Untitled' : firstLine;
+  }
 }

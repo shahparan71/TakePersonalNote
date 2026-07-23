@@ -9,12 +9,14 @@ class SettingsProvider extends ChangeNotifier {
   bool _isBatteryPromptShown = false;
   ThemeMode _themeMode = ThemeMode.system;
   Locale _locale = const Locale('en');
+  bool _eyeWarmingEnabled = false;
 
   bool get isAppLockEnabled => _isAppLockEnabled;
   bool get isDriveAutoSyncEnabled => _isDriveAutoSyncEnabled;
   bool get isBatteryPromptShown => _isBatteryPromptShown;
   ThemeMode get themeMode => _themeMode;
   Locale get locale => _locale;
+  bool get eyeWarmingEnabled => _eyeWarmingEnabled;
 
   Future<void> loadSettings() async {
     _isAppLockEnabled = await _service.isAppLockEnabled();
@@ -22,6 +24,7 @@ class SettingsProvider extends ChangeNotifier {
     _isBatteryPromptShown = await _service.isBatteryPromptShown();
     final themeStr = await _service.getThemeMode();
     _themeMode = _parseThemeMode(themeStr);
+    _eyeWarmingEnabled = themeStr == 'eye_warming';
     final langStr = await _service.getAppLanguage();
     _locale = Locale(langStr);
     notifyListeners();
@@ -48,6 +51,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setThemeMode(String mode) async {
     await _service.setThemeMode(mode);
     _themeMode = _parseThemeMode(mode);
+    _eyeWarmingEnabled = mode == 'eye_warming';
     notifyListeners();
   }
 
@@ -61,11 +65,13 @@ class SettingsProvider extends ChangeNotifier {
     switch (mode) {
       case 'light': return ThemeMode.light;
       case 'dark': return ThemeMode.dark;
+      case 'eye_warming': return ThemeMode.light;
       default: return ThemeMode.system;
     }
   }
 
   String get themeModeString {
+    if (_eyeWarmingEnabled) return 'eye_warming';
     if (_themeMode == ThemeMode.light) return 'light';
     if (_themeMode == ThemeMode.dark) return 'dark';
     return 'system';

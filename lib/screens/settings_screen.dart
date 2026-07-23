@@ -208,6 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DropdownMenuItem(value: 'system', child: Text(AppLocalizations.of(context)!.system)),
                     DropdownMenuItem(value: 'light', child: Text(AppLocalizations.of(context)!.light)),
                     DropdownMenuItem(value: 'dark', child: Text(AppLocalizations.of(context)!.dark)),
+                    const DropdownMenuItem(value: 'eye_warming', child: Text('Eye Warming')),
                   ],
                 ),
               ),
