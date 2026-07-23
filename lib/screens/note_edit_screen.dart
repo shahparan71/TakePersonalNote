@@ -41,8 +41,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
   final FocusNode _contentFocusNode = FocusNode();
-  final RegExp _phoneNumberRegex = RegExp(r'(?<!\w)(\+?\d[\d\s().-]{7,}\d)(?!\w)');
+  final RegExp _phoneNumberRegex = RegExp(r'\b\d{10,}\b');
+  final RegExp _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
   final Set<int> _phoneNumberRanges = <int>{};
+  final Set<int> _emailRanges = <int>{};
 
   @override
   void initState() {
@@ -193,27 +195,93 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void _refreshPhoneNumberStyles() {
     if (!mounted) return;
     final text = _contentController.document.toPlainText();
-    final matches = _phoneNumberRegex.allMatches(text);
-    final nextRanges = <int>{};
-    for (final match in matches) {
-      final start = match.start;
-      final end = match.end;
-      for (var index = start; index < end; index++) {
-        nextRanges.add(index);
+    final phoneMatches = _phoneNumberRegex.allMatches(text);
+    final emailMatches = _emailRegex.allMatches(text);
+    
+    final nextPhoneRanges = <int>{};
+    for (final match in phoneMatches) {
+      for (var index = match.start; index < match.end; index++) {
+        nextPhoneRanges.add(index);
       }
     }
-    if (!setEquals(_phoneNumberRanges, nextRanges)) {
+    
+    final nextEmailRanges = <int>{};
+    for (final match in emailMatches) {
+      for (var index = match.start; index < match.end; index++) {
+        nextEmailRanges.add(index);
+      }
+    }
+
+    bool rangesChanged = !setEquals(_phoneNumberRanges, nextPhoneRanges) || 
+                         !setEquals(_emailRanges, nextEmailRanges);
+
+    if (rangesChanged) {
+      final oldPhoneRanges = _phoneNumberRanges.toSet();
+      final oldEmailRanges = _emailRanges.toSet();
+
       setState(() {
         _phoneNumberRanges.clear();
-        _phoneNumberRanges.addAll(nextRanges);
+        _phoneNumberRanges.addAll(nextPhoneRanges);
+        _emailRanges.clear();
+        _emailRanges.addAll(nextEmailRanges);
       });
+
+      _contentController.removeListener(_refreshPhoneNumberStyles);
+
+      final oldRanges = oldPhoneRanges.union(oldEmailRanges);
+      final newRanges = nextPhoneRanges.union(nextEmailRanges);
+
+      final toRemove = oldRanges.difference(newRanges);
+      final toAdd = newRanges.difference(oldRanges);
+
+      _applyFormatToIndices(toRemove, false);
+      _applyFormatToIndices(toAdd, true);
+
+      _contentController.addListener(_refreshPhoneNumberStyles);
+    }
+  }
+
+  void _applyFormatToIndices(Set<int> indices, bool apply) {
+    if (indices.isEmpty) return;
+    final sorted = indices.toList()..sort();
+    int start = sorted.first;
+    int length = 1;
+    
+    for (int i = 1; i < sorted.length; i++) {
+      if (sorted[i] == sorted[i - 1] + 1) {
+        length++;
+      } else {
+        _formatRange(start, length, apply);
+        start = sorted[i];
+        length = 1;
+      }
+    }
+    _formatRange(start, length, apply);
+  }
+
+  void _formatRange(int start, int length, bool apply) {
+    if (apply) {
+      _contentController.formatText(start, length, quill.ColorAttribute('#FFA500'));
+      // Using flutter_quill's standard attribute for underline
+      _contentController.formatText(start, length, quill.Attribute.underline);
+    } else {
+      _contentController.formatText(start, length, quill.ColorAttribute(null));
+      // Passing null clears the boolean attribute in flutter_quill
+      _contentController.formatText(start, length, quill.Attribute.clone(quill.Attribute.underline, null));
     }
   }
 
   void _handlePhoneNumberTap(String value) async {
     final cleaned = value.replaceAll(RegExp(r'[^+\d]'), '');
-    if (cleaned.length < 7) return;
+    if (cleaned.length < 10) return;
     final uri = Uri(scheme: 'tel', path: cleaned);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _handleEmailTap(String value) async {
+    final uri = Uri(scheme: 'mailto', path: value);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -227,14 +295,25 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final offset = position.offset;
     final plainText = _contentController.document.toPlainText();
 
-    if (offset >= 0 && offset < plainText.length && _phoneNumberRanges.contains(offset)) {
-      final start = _findPhoneNumberStart(plainText, offset);
-      final end = _findPhoneNumberEnd(plainText, offset);
+    if (offset >= 0 && offset < plainText.length) {
+      if (_phoneNumberRanges.contains(offset)) {
+        final start = _findTokenStart(plainText, offset);
+        final end = _findTokenEnd(plainText, offset);
 
-      if (start != null && end != null && start < end) {
-        final text = plainText.substring(start, end);
-        _handlePhoneNumberTap(text);
-        return true;
+        if (start != null && end != null && start < end) {
+          final text = plainText.substring(start, end);
+          _handlePhoneNumberTap(text);
+          return true;
+        }
+      } else if (_emailRanges.contains(offset)) {
+        final start = _findTokenStart(plainText, offset);
+        final end = _findTokenEnd(plainText, offset);
+
+        if (start != null && end != null && start < end) {
+          final text = plainText.substring(start, end);
+          _handleEmailTap(text);
+          return true;
+        }
       }
     }
 
@@ -439,7 +518,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     );
   }
 
-  int? _findPhoneNumberStart(String text, int index) {
+  int? _findTokenStart(String text, int index) {
     for (var i = index; i >= 0; i--) {
       final char = text[i];
       if (char.contains(RegExp(r'\s')) || char == '\n') {
@@ -449,7 +528,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return 0;
   }
 
-  int? _findPhoneNumberEnd(String text, int index) {
+  int? _findTokenEnd(String text, int index) {
     for (var i = index; i < text.length; i++) {
       final char = text[i];
       if (char.contains(RegExp(r'\s')) || char == '\n') {
