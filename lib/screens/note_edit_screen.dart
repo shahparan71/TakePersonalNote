@@ -110,7 +110,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
     if (widget.note == null) {
       final newNote = Note(
-        title: _titleController.text.isEmpty ? AppLocalizations.of(context)!.untitled : _titleController.text,
+        title: _titleController.text.isEmpty ? "" : _titleController.text,
         content: _currentContent,
         type: NoteType.text,
         // Always text now
