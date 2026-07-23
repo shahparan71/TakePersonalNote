@@ -234,17 +234,6 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildGridView(List<Note> notes) {
-    return MasonryGridView.count(
-      padding: const EdgeInsets.all(16),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      itemCount: notes.length,
-      itemBuilder: (context, index) => _buildNoteCard(notes[index]),
-    );
-  }
-
   Widget _buildSliverGridView(List<Note> notes) {
     return SliverPadding(
       padding: const EdgeInsets.all(16),
@@ -255,15 +244,6 @@ class _NotesScreenState extends State<NotesScreen> {
         childCount: notes.length,
         itemBuilder: (context, index) => _buildNoteCard(notes[index]),
       ),
-    );
-  }
-
-  Widget _buildListView(List<Note> notes) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: notes.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _buildNoteListTile(notes[index]),
     );
   }
 
@@ -422,7 +402,7 @@ class _NotesScreenState extends State<NotesScreen> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (note.isPinned) Icon(Icons.push_pin, size: 14, color: Theme.of(context).primaryColor),
+        if (note.isPinned) Icon(Icons.push_pin, size: 14, color: Colors.orange),
       ],
     );
   }

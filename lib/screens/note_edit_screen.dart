@@ -522,7 +522,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         showFontSize: false,
                         showUndo: true,
                         showRedo: true,
-                        showFontFamily: false,
+                        showFontFamily: true,
                         showStrikeThrough: false,
                         showInlineCode: false,
                         showColorButton: true,
