@@ -219,50 +219,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
-  InlineSpan _buildStyledTextSpan(
-    String text,
-    TextStyle baseStyle,
-    Map<String, dynamic> attributes,
-  ) {
-    final phoneColor = Colors.orange;
-    final phoneStyle = baseStyle.copyWith(
-      color: phoneColor,
-      decoration: TextDecoration.underline,
-      decorationColor: phoneColor,
-    );
-
-    final children = <InlineSpan>[];
-    int charOffset = 0;
-
-    for (int i = 0; i < text.length; i++) {
-      final isPhoneChar = _phoneNumberRanges.contains(charOffset + i);
-      int runEnd = i;
-
-      while (runEnd < text.length &&
-          _phoneNumberRanges.contains(charOffset + runEnd) == isPhoneChar) {
-        runEnd++;
-      }
-
-      final run = text.substring(i, runEnd);
-      if (isPhoneChar) {
-        children.add(
-          TextSpan(
-            text: run,
-            style: phoneStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => _handlePhoneNumberTap(run),
-          ),
-        );
-      } else {
-        children.add(TextSpan(text: run, style: baseStyle));
-      }
-
-      i = runEnd - 1;
-    }
-
-    return TextSpan(children: children);
-  }
-
   bool _handleEditorTap(
     quill.TapUpDetails details,
     TextPosition Function(Offset offset) getPositionForOffset,
