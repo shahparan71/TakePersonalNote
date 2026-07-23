@@ -144,9 +144,10 @@ class GoogleDriveSyncService extends ChangeNotifier {
       }
 
       final jsonString = await BackupService().exportAllToJson(folders: folders);
+      final jsonBytes = utf8.encode(jsonString);
       final media = drive.Media(
-        Stream.value(utf8.encode(jsonString)),
-        jsonString.length,
+        Stream.value(jsonBytes),
+        jsonBytes.length,
         contentType: 'application/json',
       );
 

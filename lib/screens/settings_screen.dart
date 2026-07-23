@@ -260,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: _driveBusy ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
                 onTap: _driveBusy ? null : _openDriveBackupSheet,
               ),
-              SwitchListTile(
+              /*SwitchListTile(
                 secondary: Icon(Icons.sync, color: colors.fabDark),
                 title: Text(AppLocalizations.of(context)!.autoSyncDrive),
                 subtitle: Text(
@@ -268,7 +268,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 value: settings.isDriveAutoSyncEnabled,
                 onChanged: settings.toggleDriveAutoSync,
-              ),
+              ),*/
               ListTile(
                 leading: const Icon(Icons.file_download),
                 title: Text(AppLocalizations.of(context)!.exportData),
