@@ -4,6 +4,7 @@ import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -320,20 +321,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return false;
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final index = _contentController.selection.baseOffset;
-      final length = _contentController.selection.extentOffset - index;
-      _contentController.replaceText(
-        index,
-        length,
-        quill.BlockEmbed.image(pickedFile.path),
-        null,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +441,63 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                               ...FlutterQuillEmbeds.editorBuilders(),
                             ],
                             onTapUp: _handleEditorTap,
+                            contextMenuBuilder: (context, rawEditorState) {
+                              final defaultItems = rawEditorState.contextMenuButtonItems;
+                              final selection = rawEditorState.textEditingValue.selection;
+
+                              if (selection.isCollapsed) {
+                                return AdaptiveTextSelectionToolbar.buttonItems(
+                                  anchors: rawEditorState.contextMenuAnchors,
+                                  buttonItems: defaultItems,
+                                );
+                              }
+
+                              final text = rawEditorState.textEditingValue.text;
+                              final selectedText = selection.textInside(text).trim();
+
+                              final isPhone = _phoneNumberRegex.hasMatch(selectedText);
+                              final isEmail = _emailRegex.hasMatch(selectedText);
+
+                              if (isPhone || isEmail) {
+                                final customItems = <ContextMenuButtonItem>[];
+
+                                if (isPhone) {
+                                  customItems.add(
+                                    ContextMenuButtonItem(
+                                      onPressed: () {
+                                        _handlePhoneNumberTap(selectedText);
+                                        rawEditorState.hideToolbar();
+                                      },
+                                      type: ContextMenuButtonType.custom,
+                                      label: 'Call',
+                                    ),
+                                  );
+                                }
+
+                                if (isEmail) {
+                                  customItems.add(
+                                    ContextMenuButtonItem(
+                                      onPressed: () {
+                                        _handleEmailTap(selectedText);
+                                        rawEditorState.hideToolbar();
+                                      },
+                                      type: ContextMenuButtonType.custom,
+                                      label: 'Email',
+                                    ),
+                                  );
+                                }
+
+                                return AdaptiveTextSelectionToolbar.buttonItems(
+                                  anchors: rawEditorState.contextMenuAnchors,
+                                  buttonItems: [...customItems, ...defaultItems],
+                                );
+                              }
+
+                              return AdaptiveTextSelectionToolbar.buttonItems(
+                                anchors: rawEditorState.contextMenuAnchors,
+                                buttonItems: defaultItems,
+                              );
+                            },
                           ),
                         ),
                       ),
