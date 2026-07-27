@@ -6,16 +6,15 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:take_personal_note/services/reminder_permission_service.dart';
 import 'package:take_personal_note/services/tab_provider.dart';
+import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
-import '../services/reminder_permission_service.dart';
-import '../services/task_provider.dart';
 import 'archive_screen.dart';
 import 'trash_screen.dart';
 import 'settings_screen.dart';
