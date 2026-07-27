@@ -14,6 +14,7 @@ import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../services/reminder_permission_service.dart';
 import '../services/task_provider.dart';
 import 'archive_screen.dart';
 import 'trash_screen.dart';
@@ -34,6 +35,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _maybeShowReminderPermissionDialog();
+    });
   }
 
   String _getGreeting() {
@@ -52,6 +57,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await applyDriveSyncResult(context, result);
     if (!mounted) return;
     showDriveSyncSnackBar(context, result);
+
+    if (result.success) {
+      await _maybeShowReminderPermissionDialog();
+    }
   }
 
   Future<void> _syncLocalDataToGoogleDrive() async {
@@ -100,6 +109,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     return task.reminderTime;
   }
+
+  Future<void> _maybeShowReminderPermissionDialog() async {
+    if (!mounted) return;
+    final hasReminders = await ReminderPermissionService.instance.hasScheduledTaskReminders();
+    if (!mounted || !hasReminders) return;
+
+    await ReminderPermissionService.instance.showReminderPermissionDialog(
+      context: context,
+      hasExistingReminders: true,
+      markAsSeen: true,
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
