@@ -13,6 +13,21 @@ import '../utils/date_utils.dart';
 import 'database_service.dart';
 import 'notification_channels.dart';
 
+List<AndroidScheduleMode> getReminderScheduleModeCandidates({required bool canUseExactAlarms}) {
+  if (canUseExactAlarms) {
+    return const [
+      AndroidScheduleMode.exactAllowWhileIdle,
+      AndroidScheduleMode.allowWhileIdle,
+      AndroidScheduleMode.inexact,
+    ];
+  }
+
+  return const [
+    AndroidScheduleMode.allowWhileIdle,
+    AndroidScheduleMode.inexact,
+  ];
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -77,7 +92,11 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
         await androidImplementation.requestNotificationsPermission();
-        await androidImplementation.requestExactAlarmsPermission();
+        try {
+          await androidImplementation.requestExactAlarmsPermission();
+        } catch (e) {
+          debugPrint('Could not request exact alarms permission: $e');
+        }
       }
     }
   }
@@ -162,22 +181,29 @@ class NotificationService {
       return false;
     }
 
-    try {
-      await _notificationsPlugin.zonedSchedule(
-        id,
-        title,
-        body,
-        tz.TZDateTime.from(effectiveDate, tz.local),
-        reminderNotificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        payload: payload,
-        matchDateTimeComponents: _matchDateTimeComponents(recurrence),
-      );
-      return true;
-    } catch (e) {
-      return false;
+    Object? lastError;
+    for (final mode in getReminderScheduleModeCandidates(canUseExactAlarms: true)) {
+      try {
+        await _notificationsPlugin.zonedSchedule(
+          id,
+          title,
+          body,
+          tz.TZDateTime.from(effectiveDate, tz.local),
+          reminderNotificationDetails,
+          androidScheduleMode: mode,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          payload: payload,
+          matchDateTimeComponents: _matchDateTimeComponents(recurrence),
+        );
+        return true;
+      } catch (e) {
+        lastError = e;
+        debugPrint('Reminder schedule attempt failed with mode $mode: $e');
+      }
     }
+
+    debugPrint('Failed to schedule reminder after fallback attempts: $lastError');
+    return false;
   }
 
   DateTime _effectiveScheduleDate(

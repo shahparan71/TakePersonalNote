@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -8,6 +9,7 @@ import 'package:take_personal_note/services/export_service.dart';
 import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:take_personal_note/services/note_provider.dart';
+import 'package:take_personal_note/services/notification_service.dart';
 import 'package:take_personal_note/services/settings_provider.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -212,10 +214,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              /*if (kDebugMode)
+              if (kDebugMode)
                 ListTile(
                   leading: const Icon(Icons.notifications_active_outlined),
-                  title: const Text('Test Notification'),
+                  title: const Text('Test Local Notification'),
                   subtitle: const Text('Check if reminders are working'),
                   onTap: () async {
                     await NotificationService().showTestNotification(
@@ -228,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       );
                     }
                   },
-                ),*/
+                ),
               const Divider(height: 1),
               _SettingsSection(title: AppLocalizations.of(context)!.security),
               SwitchListTile(
