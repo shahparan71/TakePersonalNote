@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
+import 'package:take_personal_note/services/note_provider.dart';
+import 'package:take_personal_note/services/task_provider.dart';
 
-import '../services/folder_provider.dart';
-import '../services/google_drive_sync_service.dart';
-import '../services/note_provider.dart';
-import '../services/preference_service.dart';
-import '../services/task_provider.dart';
 
 bool shouldShowLocalBackupBanner({
   required int noteCount,

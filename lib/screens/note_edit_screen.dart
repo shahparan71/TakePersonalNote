@@ -2,14 +2,12 @@ import 'package:flutter/cupertino.dart' as quill;
 import 'package:flutter/foundation.dart';
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/models/note.dart';

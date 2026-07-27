@@ -176,13 +176,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _setRecurrenceInterval(RecurringInterval interval) {
-    setState(() {
-      _isRecurring = true;
-      _recurringInterval = interval;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;

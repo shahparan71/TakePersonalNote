@@ -1,20 +1,18 @@
-import 'package:take_personal_note/l10n/app_localizations.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/note_provider.dart';
-import '../services/task_provider.dart';
-import '../services/folder_provider.dart';
-import '../services/settings_provider.dart';
-import '../services/export_service.dart';
-import '../services/notification_service.dart';
-import '../services/google_drive_sync_service.dart';
-import '../theme/app_colors.dart';
-import '../widgets/sheet_safe_area.dart';
-import '../utils/drive_sync_utils.dart';
-import '../services/battery_optimization_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
+import 'package:take_personal_note/l10n/app_localizations.dart';
+import 'package:take_personal_note/services/battery_optimization_service.dart';
+import 'package:take_personal_note/services/export_service.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
+import 'package:take_personal_note/services/note_provider.dart';
+import 'package:take_personal_note/services/settings_provider.dart';
+import 'package:take_personal_note/services/task_provider.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
+import 'package:take_personal_note/utils/drive_sync_utils.dart';
+import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -70,62 +68,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) {
         final colors = ctx.appColors;
         return SheetSafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(AppLocalizations.of(context)!.googleDriveBackup, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
-              const SizedBox(height: 8),
-              Text(
-                _driveUser ?? 'Not signed in — you will be asked to sign in when syncing',
-                style: TextStyle(color: colors.textSecondary, fontSize: 13),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: _driveBusy
-                    ? null
-                    : () {
-                        Navigator.pop(ctx);
-                        final folders = Provider.of<FolderProvider>(context, listen: false).folders;
-                        _runDriveAction(() => GoogleDriveSyncService().syncToDrive(folders: folders));
-                      },
-                icon: const Icon(Icons.cloud_upload_outlined),
-                label: Text(AppLocalizations.of(context)!.syncToDrive),
-                style: FilledButton.styleFrom(backgroundColor: colors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: _driveBusy
-                    ? null
-                    : () {
-                        Navigator.pop(ctx);
-                        confirmFetchFromDrive(
-                          context,
-                          onConfirm: () => _runDriveAction(
-                            () => GoogleDriveSyncService().fetchFromDrive(merge: true),
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.cloud_download_outlined),
-                label: const Text('Fetch from Drive'),
-              ),
-              if (_driveUser != null) ...[
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () async {
-                    await GoogleDriveSyncService().signOut();
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    setState(() => _driveUser = null);
-                  },
-                  child: Text(AppLocalizations.of(context)!.signOut),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(AppLocalizations.of(context)!.googleDriveBackup,
+                    style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+                const SizedBox(height: 8),
+                Text(
+                  _driveUser ?? 'Not signed in — you will be asked to sign in when syncing',
+                  style: TextStyle(color: colors.textSecondary, fontSize: 13),
                 ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: _driveBusy
+                      ? null
+                      : () {
+                          Navigator.pop(ctx);
+                          final folders = Provider.of<FolderProvider>(context, listen: false).folders;
+                          _runDriveAction(() => GoogleDriveSyncService().syncToDrive(folders: folders));
+                        },
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: Text(AppLocalizations.of(context)!.syncToDrive),
+                  style: FilledButton.styleFrom(backgroundColor: colors.fabDark, padding: const EdgeInsets.symmetric(vertical: 14)),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _driveBusy
+                      ? null
+                      : () {
+                          Navigator.pop(ctx);
+                          confirmFetchFromDrive(
+                            context,
+                            onConfirm: () => _runDriveAction(
+                              () => GoogleDriveSyncService().fetchFromDrive(merge: true),
+                            ),
+                          );
+                        },
+                  icon: const Icon(Icons.cloud_download_outlined),
+                  label: const Text('Fetch from Drive'),
+                ),
+                if (_driveUser != null) ...[
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () async {
+                      await GoogleDriveSyncService().signOut();
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      setState(() => _driveUser = null);
+                    },
+                    child: Text(AppLocalizations.of(context)!.signOut),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      );
+        );
       },
     );
   }
@@ -174,7 +173,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: colors.scaffoldBg,
       appBar: AppBar(
         backgroundColor: colors.scaffoldBg,
-        title: Text(AppLocalizations.of(context)!.settings, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
+        title:
+            Text(AppLocalizations.of(context)!.settings, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: colors.textPrimary)),
       ),
       body: Consumer<SettingsProvider>(
         builder: (context, settings, child) {
@@ -252,12 +252,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 leading: Icon(Icons.cloud, color: colors.fabDark),
                 title: Text(AppLocalizations.of(context)!.syncDrive),
                 subtitle: Text(
-                  _driveBusy
-                      ? AppLocalizations.of(context)!.working
-                      : (_driveUser ?? AppLocalizations.of(context)!.tapToBackup),
+                  _driveBusy ? AppLocalizations.of(context)!.working : (_driveUser ?? AppLocalizations.of(context)!.tapToBackup),
                   style: const TextStyle(fontSize: 12),
                 ),
-                trailing: _driveBusy ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.chevron_right),
+                trailing: _driveBusy
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.chevron_right),
                 onTap: _driveBusy ? null : _openDriveBackupSheet,
               ),
               /*SwitchListTile(
@@ -295,6 +295,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 class _SettingsSection extends StatelessWidget {
   final String title;
+
   const _SettingsSection({required this.title});
 
   @override

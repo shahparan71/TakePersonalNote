@@ -345,39 +345,4 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  void _showQuickActions(BuildContext context, Task task) {
-    final provider = Provider.of<TaskProvider>(context, listen: false);
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => SheetSafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 12, top: 8),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-            ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-              ),
-              title: Text(AppLocalizations.of(context)!.deleteTask, style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
-              onTap: () {
-                provider.deleteTask(task.id!);
-                Navigator.pop(context);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
 }
