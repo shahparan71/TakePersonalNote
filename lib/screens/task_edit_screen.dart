@@ -8,7 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:take_personal_note/models/task.dart';
 import 'package:take_personal_note/services/battery_optimization_service.dart';
 import 'package:take_personal_note/services/notification_service.dart';
-import 'package:take_personal_note/services/reminder_permission_service.dart';
 import 'package:take_personal_note/services/settings_provider.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -407,11 +406,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   }
 
   Future<void> _selectReminder(BuildContext context) async {
-    await ReminderPermissionService.instance.showReminderPermissionDialog(
-      context: context,
-      hasExistingReminders: await ReminderPermissionService.instance.hasScheduledTaskReminders(),
-    );
-
     final now = DateTime.now();
     DateTime initialDate = _reminderTime ?? now;
     if (initialDate.isBefore(now)) initialDate = now;
