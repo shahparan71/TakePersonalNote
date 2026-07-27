@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:take_personal_note/screens/settings_screen.dart';
 import 'package:take_personal_note/services/database_service.dart';
 import 'package:take_personal_note/services/preference_service.dart';
+import 'package:take_personal_note/services/notification_service.dart';
 
 class ReminderPermissionService {
   ReminderPermissionService._();
@@ -32,6 +32,9 @@ class ReminderPermissionService {
     required bool hasExistingReminders,
     bool markAsSeen = false,
   }) async {
+    final hasPermission = await NotificationService().hasExactAlarmsPermission();
+    if (hasPermission) return true;
+
     final shouldOpenSettings = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -65,10 +68,7 @@ class ReminderPermissionService {
 
     if (shouldOpenSettings == true) {
       if (!context.mounted) return false;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-      );
+      await NotificationService().requestExactAlarmsPermission();
       return true;
     }
 

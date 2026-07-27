@@ -89,11 +89,27 @@ class NotificationService {
       final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
         await androidImplementation.requestNotificationsPermission();
-        try {
-          await androidImplementation.requestExactAlarmsPermission();
-        } catch (e) {
-          debugPrint('Could not request exact alarms permission: $e');
-        }
+      }
+    }
+  }
+
+  Future<bool> hasExactAlarmsPermission() async {
+    if (Platform.isAndroid) {
+      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      return (await androidImplementation?.canScheduleExactNotifications()) ?? false;
+    }
+    return true; // Not required on iOS or other platforms
+  }
+
+  Future<void> requestExactAlarmsPermission() async {
+    if (Platform.isAndroid) {
+      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      try {
+        await androidImplementation?.requestExactAlarmsPermission();
+      } catch (e) {
+        debugPrint('Could not request exact alarms permission: $e');
       }
     }
   }
