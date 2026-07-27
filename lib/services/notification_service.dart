@@ -15,15 +15,13 @@ import 'notification_channels.dart';
 
 List<AndroidScheduleMode> getReminderScheduleModeCandidates({required bool canUseExactAlarms}) {
   if (canUseExactAlarms) {
-    return const [
-      AndroidScheduleMode.exactAllowWhileIdle,
-      AndroidScheduleMode.allowWhileIdle,
+    return [
+      AndroidScheduleMode.exact,
       AndroidScheduleMode.inexact,
     ];
   }
 
-  return const [
-    AndroidScheduleMode.allowWhileIdle,
+  return [
     AndroidScheduleMode.inexact,
   ];
 }
