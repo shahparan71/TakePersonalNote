@@ -245,6 +245,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             ),
             style: GoogleFonts.outfit(fontSize: 20, height: 1.4, color: colors.textPrimary),
             maxLines: null,
+            minLines: 3,
           ),
         ],
       ),
