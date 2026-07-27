@@ -35,10 +35,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    /*WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _maybeShowReminderPermissionDialog();
-    });
+    });*/
   }
 
   String _getGreeting() {

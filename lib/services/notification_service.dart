@@ -86,8 +86,7 @@ class NotificationService {
 
     if (Platform.isAndroid) {
       await ensureReminderChannel(_notificationsPlugin);
-      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
         await androidImplementation.requestNotificationsPermission();
         try {
