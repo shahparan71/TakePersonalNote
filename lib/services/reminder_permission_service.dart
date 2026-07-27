@@ -47,10 +47,10 @@ class ReminderPermissionService {
                 : 'Reminders need permission to show on time. Allow “Allow setting alarm” in your device settings to use this feature.',
           ),
           actions: [
-            TextButton(
+            /*TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Later'),
-            ),
+            ),*/
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Open settings'),
