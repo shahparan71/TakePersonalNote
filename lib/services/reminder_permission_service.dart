@@ -39,23 +39,26 @@ class ReminderPermissionService {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Enable reminders'),
-          content: Text(
-            hasExistingReminders
-                ? 'You already have task reminders scheduled. To keep them working, allow “Allow setting alarm” in your device settings.'
-                : 'Reminders need permission to show on time. Allow “Allow setting alarm” in your device settings to use this feature.',
-          ),
-          actions: [
-            /*TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Later'),
-            ),*/
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Open settings'),
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: const Text('Enable reminders'),
+            content: Text(
+              hasExistingReminders
+                  ? 'You already have task reminders scheduled. To keep them working, allow “Allow setting alarm” in your device settings.'
+                  : 'Reminders need permission to show on time. Allow “Allow setting alarm” in your device settings to use this feature.',
             ),
-          ],
+            actions: [
+              /*TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Later'),
+              ),*/
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Open settings'),
+              ),
+            ],
+          ),
         );
       },
     );
