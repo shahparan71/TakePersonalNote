@@ -149,9 +149,9 @@ class _TasksScreenState extends State<TasksScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.withOpacity(0.10) : colors.cardSurface,
+        color: isSelected ? Colors.blue.withValues(alpha: 0.10) : colors.cardSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isSelected ? Colors.blue.withOpacity(0.3) : colors.border),
+        border: Border.all(color: isSelected ? Colors.blue.withValues(alpha: 0.3) : colors.border),
       ),
       child: Material(
         color: Colors.transparent,

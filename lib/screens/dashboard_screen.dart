@@ -225,16 +225,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               gradient: LinearGradient(
                 colors: [
                   colors.cardSurface,
-                  googleDriveColor.withOpacity(0.08),
+                  googleDriveColor.withValues(alpha: 0.08),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: colors.border.withOpacity(0.5)),
+              border: Border.all(color: colors.border.withValues(alpha: 0.5)),
               boxShadow: [
                 BoxShadow(
-                  color: googleDriveColor.withOpacity(0.05),
+                  color: googleDriveColor.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -249,7 +249,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -304,16 +304,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 margin: const EdgeInsets.only(top: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: googleDriveColor.withOpacity(0.05),
+                  color: googleDriveColor.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: googleDriveColor.withOpacity(0.2)),
+                  border: Border.all(color: googleDriveColor.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: googleDriveColor.withOpacity(0.1),
+                        color: googleDriveColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(FontAwesomeIcons.googleDrive, size: 24, color: googleDriveColor),
@@ -347,16 +347,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 gradient: LinearGradient(
                   colors: [
                     colors.cardSurface,
-                    googleDriveColor.withOpacity(0.08),
+                    googleDriveColor.withValues(alpha: 0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: colors.border.withOpacity(0.5)),
+                border: Border.all(color: colors.border.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
-                    color: googleDriveColor.withOpacity(0.05),
+                    color: googleDriveColor.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -371,7 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -518,7 +518,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppPalette.accentTeal.withOpacity(0.15),
+                    color: AppPalette.accentTeal.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(Icons.alarm, color: colors.fabDark, size: 20),
@@ -532,7 +532,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ? Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppPalette.accentGreen.withOpacity(0.2),
+                          color: AppPalette.accentGreen.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -583,7 +583,7 @@ class _StatTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: colors.textPrimary.withOpacity(0.7), size: 22),
+              Icon(icon, color: colors.textPrimary.withValues(alpha: 0.7), size: 22),
               const Spacer(),
               Text(value, style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.bold, color: colors.textPrimary)),
               Text(label, style: GoogleFonts.outfit(fontSize: 12, color: colors.textSecondary)),

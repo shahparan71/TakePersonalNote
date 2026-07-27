@@ -44,10 +44,10 @@ class DesignSearchField extends StatelessWidget {
       style: TextStyle(color: colors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: colors.textSecondary.withOpacity(0.7), fontSize: 14),
+        hintStyle: TextStyle(color: colors.textSecondary.withValues(alpha: 0.7), fontSize: 14),
         filled: true,
         fillColor: colors.cardSurface,
-        prefixIcon: Icon(Icons.search, size: 20, color: colors.textSecondary.withOpacity(0.8)),
+        prefixIcon: Icon(Icons.search, size: 20, color: colors.textSecondary.withValues(alpha: 0.8)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: colors.border)),
         contentPadding: const EdgeInsets.symmetric(vertical: 0),
