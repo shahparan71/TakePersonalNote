@@ -16,12 +16,6 @@ class ReminderPermissionService {
     return tasks.any((task) => task.reminderTime != null);
   }
 
-  Future<bool> shouldShowStartupReminderPrompt() async {
-    if (await _preferenceService.isReminderPermissionPromptSeen()) {
-      return false;
-    }
-    return hasScheduledTaskReminders();
-  }
 
   Future<void> markStartupReminderPromptSeen() async {
     await _preferenceService.setReminderPermissionPromptSeen(true);

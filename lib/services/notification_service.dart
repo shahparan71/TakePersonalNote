@@ -95,8 +95,7 @@ class NotificationService {
 
   Future<bool> hasExactAlarmsPermission() async {
     if (Platform.isAndroid) {
-      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       return (await androidImplementation?.canScheduleExactNotifications()) ?? false;
     }
     return true; // Not required on iOS or other platforms
@@ -104,8 +103,7 @@ class NotificationService {
 
   Future<void> requestExactAlarmsPermission() async {
     if (Platform.isAndroid) {
-      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       try {
         await androidImplementation?.requestExactAlarmsPermission();
       } catch (e) {
