@@ -60,13 +60,13 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       final isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
       if (!isIgnoring && mounted) {
         settings.setBatteryPromptShown(true);
-        _showBatteryOptimizationDialog();
+        await _showBatteryOptimizationDialog();
       }
     }
   }
 
-  void _showBatteryOptimizationDialog() {
-    showDialog(
+  Future<void> _showBatteryOptimizationDialog() async {
+    await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.reliableReminders),
