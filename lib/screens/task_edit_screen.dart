@@ -7,6 +7,7 @@ import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
 import '../services/battery_optimization_service.dart';
+import '../services/reminder_permission_service.dart';
 import '../services/settings_provider.dart';
 import '../utils/date_utils.dart';
 import '../theme/app_colors.dart';
@@ -405,6 +406,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   }
 
   Future<void> _selectReminder(BuildContext context) async {
+    await ReminderPermissionService.instance.showReminderPermissionDialog(
+      context: context,
+      hasExistingReminders: await ReminderPermissionService.instance.hasScheduledTaskReminders(),
+    );
+
     final now = DateTime.now();
     DateTime initialDate = _reminderTime ?? now;
     if (initialDate.isBefore(now)) initialDate = now;

@@ -11,6 +11,7 @@ class PreferenceService {
   static const String _batteryPromptShownKey = 'battery_prompt_shown';
   static const String _updateDismissCountKey = 'update_dismiss_count';
   static const String _appLanguageKey = 'app_language';
+  static const String _reminderPermissionPromptSeenKey = 'reminder_permission_prompt_seen';
 
   Future<void> setAppLanguage(String languageCode) async {
     final prefs = await SharedPreferences.getInstance();
@@ -110,5 +111,15 @@ class PreferenceService {
   Future<int> getUpdateDismissCount() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_updateDismissCountKey) ?? 0;
+  }
+
+  Future<void> setReminderPermissionPromptSeen(bool seen) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_reminderPermissionPromptSeenKey, seen);
+  }
+
+  Future<bool> isReminderPermissionPromptSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_reminderPermissionPromptSeenKey) ?? false;
   }
 }

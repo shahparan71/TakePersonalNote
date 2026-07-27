@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:take_personal_note/services/preference_service.dart';
+import 'package:take_personal_note/services/reminder_permission_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'lock_screen.dart';
 import 'home_screen.dart';
@@ -32,12 +33,25 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         MaterialPageRoute(builder: (_) => const LockScreen()),
       );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      return;
+    }
+
+    final shouldShowPrompt = await ReminderPermissionService.instance.shouldShowStartupReminderPrompt();
+    if (!mounted) return;
+
+    if (shouldShowPrompt) {
+      await ReminderPermissionService.instance.showReminderPermissionDialog(
+        context: context,
+        hasExistingReminders: true,
+        markAsSeen: true,
       );
     }
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
   }
 
   @override
