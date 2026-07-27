@@ -2,7 +2,7 @@ name: take_personal_note
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.5+16
+version: 1.0.5+17
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
