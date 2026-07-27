@@ -432,27 +432,22 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildSelectionActionBar() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Material(
-        elevation: 12,
-        color: Theme.of(context).colorScheme.surface,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _actionButton(Icons.drive_file_move_outline, AppLocalizations.of(context)!.move, _moveToFolder),
-                _actionButton(Icons.archive_outlined, AppLocalizations.of(context)!.archive, _archiveSelected),
-                _actionButton(Icons.push_pin_outlined, AppLocalizations.of(context)!.pin, _pinSelected),
-                _actionButton(Icons.visibility_off_outlined, AppLocalizations.of(context)!.hide, _hideSelected),
-                _actionButton(Icons.delete_outline, AppLocalizations.of(context)!.delete, _deleteSelected, color: Colors.red),
-              ],
-            ),
+    return Material(
+      elevation: 12,
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _actionButton(Icons.drive_file_move_outline, AppLocalizations.of(context)!.move, _moveToFolder),
+              _actionButton(Icons.archive_outlined, AppLocalizations.of(context)!.archive, _archiveSelected),
+              _actionButton(Icons.push_pin_outlined, AppLocalizations.of(context)!.pin, _pinSelected),
+              _actionButton(Icons.visibility_off_outlined, AppLocalizations.of(context)!.hide, _hideSelected),
+              _actionButton(Icons.delete_outline, AppLocalizations.of(context)!.delete, _deleteSelected, color: Colors.red),
+            ],
           ),
         ),
       ),
