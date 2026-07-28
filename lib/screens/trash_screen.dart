@@ -8,6 +8,7 @@ class TrashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.trash)),
       body: Consumer<NoteProvider>(
