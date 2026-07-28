@@ -381,9 +381,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Padding(
+              child: GestureDetector(
+                onTap: () {
+                  if (!_contentFocusNode.hasFocus) {
+                    _contentFocusNode.requestFocus();
+                  }
+                },
+                behavior: HitTestBehavior.translucent,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Padding(
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 0),
                   child: Column(
                     children: [
@@ -505,7 +512,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 ),
               ),
             ),
-            !_contentFocusNode.hasFocus
+          ),
+          !_contentFocusNode.hasFocus
                 ? Container()
                 : Container(
                     color: colors.cardSurface,
