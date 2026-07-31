@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
-import 'lock_screen.dart';
-import 'home_screen.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
+import '../routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -28,15 +28,9 @@ class _SplashScreenState extends State<SplashScreen> {
     final isLocked = await prefs.isAppLockEnabled();
 
     if (isLocked) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LockScreen()),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.lock);
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     }
   }
 

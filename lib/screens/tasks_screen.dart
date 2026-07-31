@@ -9,6 +9,9 @@ import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 
 import '../models/task.dart';
+import '../services/preference_service.dart';
+import '../services/google_drive_sync_service.dart';
+import '../routes/app_routes.dart';
 import 'task_edit_screen.dart';
 
 class TasksScreen extends StatefulWidget {
@@ -50,7 +53,17 @@ class _TasksScreenState extends State<TasksScreen> {
             : null,
         title: _selectionMode
             ? Text('${_selectedTaskIds.length} selected', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 20))
-            : Text(AppLocalizations.of(context)!.tasks, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+            : Consumer<TaskProvider>(
+                builder: (context, _, child) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSyncIcon(),
+                      Text(AppLocalizations.of(context)!.tasks, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                    ],
+                  );
+                },
+              ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -131,10 +144,7 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
       floatingActionButton: DesignFab(
         heroTag: 'tasks_fab',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const TaskEditScreen()),
-        ),
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.taskEdit),
       ),
     );
   }
@@ -170,10 +180,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 }
               });
             } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
-              );
+              Navigator.pushNamed(context, AppRoutes.taskEdit, arguments: {'task': task});
             }
           },
           onLongPress: () {
@@ -345,4 +352,44 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  Widget _buildSyncIcon() {
+    return Consumer<GoogleDriveSyncService>(
+      builder: (context, syncService, _) {
+        if (!syncService.isSignedIn) return const SizedBox.shrink();
+
+        return FutureBuilder<bool>(
+          future: PreferenceService().isTasksPendingDriveSync(),
+          builder: (context, snapshot) {
+            final isPending = snapshot.data ?? false;
+
+            if (syncService.isSyncing) {
+              return const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+
+            if (isPending) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: InkWell(
+                  onTap: () {
+                    syncService.syncToDrive();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Icon(Icons.cloud_upload_outlined, color: Colors.orange, size: 24),
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
+  }
 }

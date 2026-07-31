@@ -14,7 +14,7 @@ import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:take_personal_note/services/google_drive_sync_service.dart';
-import 'screens/splash_screen.dart';
+import 'routes/app_routes.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -67,7 +67,8 @@ class MyApp extends StatelessWidget {
             theme: settings.eyeWarmingEnabled ? AppTheme.eyeWarmingTheme : AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: settings.eyeWarmingEnabled ? ThemeMode.light : settings.themeMode,
-            home: const SplashScreen(),
+            initialRoute: AppRoutes.splash,
+            onGenerateRoute: AppRoutes.generateRoute,
           );
         },
       ),

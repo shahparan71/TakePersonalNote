@@ -19,6 +19,7 @@ import 'archive_screen.dart';
 import 'trash_screen.dart';
 import 'settings_screen.dart';
 import 'task_edit_screen.dart';
+import '../routes/app_routes.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -160,25 +161,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   IconButton(
                     icon: Icon(Icons.archive_outlined, color: colors.textPrimary),
                     tooltip: AppLocalizations.of(context)!.archive,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-                    ),
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.archive),
                   ),
                   IconButton(
                     icon: Icon(Icons.delete_outline, color: colors.textPrimary),
                     tooltip: AppLocalizations.of(context)!.trash,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TrashScreen()),
-                    ),
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.trash),
                   ),
                   IconButton(
                     icon: Icon(Icons.settings_outlined, color: colors.textPrimary),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    ),
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.settings_screen),
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -541,10 +533,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       )
                     : Icon(Icons.chevron_right, size: 20, color: colors.textSecondary),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
-                ),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.taskEdit, arguments: {'task': task}),
               ),
             );
           }).toList(),

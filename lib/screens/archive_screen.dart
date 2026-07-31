@@ -7,7 +7,7 @@ import '../services/note_provider.dart';
 import '../models/note.dart';
 import '../theme/app_colors.dart';
 import '../utils/note_utils.dart';
-import 'note_edit_screen.dart';
+import '../routes/app_routes.dart';
 
 class ArchiveScreen extends StatelessWidget {
   const ArchiveScreen({super.key});
@@ -49,10 +49,7 @@ class ArchiveScreen extends StatelessWidget {
               return _ArchiveCard(
                 note: note,
                 onUnarchive: () => provider.unarchiveNote(note),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
-                ),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.noteEdit, arguments: {'note': note}),
               );
             },
           );

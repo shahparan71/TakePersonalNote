@@ -7,11 +7,13 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../services/note_provider.dart';
 import '../services/folder_provider.dart';
 import '../services/preference_service.dart';
+import '../services/google_drive_sync_service.dart';
 import '../models/note.dart';
 import '../widgets/sheet_safe_area.dart';
 import '../widgets/design_widgets.dart';
 import '../theme/app_colors.dart';
 import '../utils/note_utils.dart';
+import '../routes/app_routes.dart';
 import 'note_edit_screen.dart';
 import 'hidden_notes_screen.dart';
 
@@ -107,7 +109,17 @@ class _NotesScreenState extends State<NotesScreen> {
             leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
             title: _selectionMode
                 ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
-                : Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                : Consumer<NoteProvider>(
+                    builder: (context, _, child) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildSyncIcon(),
+                          Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                        ],
+                      );
+                    },
+                  ),
             actions: [
               if (!_selectionMode) ...[
                 Consumer<NoteProvider>(
@@ -116,7 +128,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     return IconButton(
                       icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.visibility_off_outlined)),
                       tooltip: AppLocalizations.of(context)!.hiddenNotesTooltip,
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
+                      onPressed: () => Navigator.pushNamed(context, AppRoutes.hiddenNotes).then((_) => _refreshNotes()),
                     );
                   },
                 ),
@@ -180,7 +192,7 @@ class _NotesScreenState extends State<NotesScreen> {
           ? null
           : DesignFab(
               heroTag: 'notes_fab',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NoteEditScreen())).then((_) => _refreshNotes()),
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.noteEdit).then((_) => _refreshNotes()),
             ),
       bottomNavigationBar: _selectionMode
           ? Container(
@@ -329,7 +341,7 @@ class _NotesScreenState extends State<NotesScreen> {
     final colors = context.appColors;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: isCard ? 140 : 0),
+      constraints: BoxConstraints(minHeight: isCard ? 60 : 0),
       child: Container(
         decoration: BoxDecoration(
           color: colors.noteCardTint(note.color),
@@ -344,7 +356,7 @@ class _NotesScreenState extends State<NotesScreen> {
               if (_selectionMode && note.id != null) {
                 _toggleNoteSelection(note.id!);
               } else if (!_selectionMode) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => NoteEditScreen(note: note))).then((_) => _refreshNotes());
+                Navigator.pushNamed(context, AppRoutes.noteEdit, arguments: {'note': note}).then((_) => _refreshNotes());
               }
             },
             onLongPress: () {
@@ -550,7 +562,7 @@ class _NotesScreenState extends State<NotesScreen> {
         ),
         action: SnackBarAction(
           label: 'View',
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.hiddenNotes).then((_) => _refreshNotes()),
         ),
       ),
     );
@@ -631,5 +643,46 @@ class _NotesScreenState extends State<NotesScreen> {
   void _sort(String criteria) {
     Provider.of<NoteProvider>(context, listen: false).fetchNotes(orderBy: criteria, category: _selectedFolder);
     Navigator.pop(context);
+  }
+
+  Widget _buildSyncIcon() {
+    return Consumer<GoogleDriveSyncService>(
+      builder: (context, syncService, _) {
+        if (!syncService.isSignedIn) return const SizedBox.shrink();
+
+        return FutureBuilder<bool>(
+          future: PreferenceService().isNotesPendingDriveSync(),
+          builder: (context, snapshot) {
+            final isPending = snapshot.data ?? false;
+
+            if (syncService.isSyncing) {
+              return const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+
+            if (isPending) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: InkWell(
+                  onTap: () {
+                    syncService.syncToDrive();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Icon(Icons.cloud_upload_outlined, color: Colors.orange, size: 24),
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
   }
 }

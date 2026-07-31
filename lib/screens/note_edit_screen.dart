@@ -18,6 +18,7 @@ import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NoteEditScreen extends StatefulWidget {
@@ -134,6 +135,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
           );
         }
+        if (GoogleDriveSyncService().isSignedIn) {
+          GoogleDriveSyncService().syncToDrive();
+        }
       });
     } else {
       final updatedNote = widget.note!.copyWith(
@@ -161,6 +165,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           );
         } else if (widget.note!.reminderTime != null) {
           await NotificationService().cancelNotification(noteId);
+        }
+        if (GoogleDriveSyncService().isSignedIn) {
+          GoogleDriveSyncService().syncToDrive();
         }
       });
     }
@@ -235,6 +242,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
       _applyFormatToIndices(toRemove, false);
       _applyFormatToIndices(toAdd, true);
+
+      if (_contentController.selection.isCollapsed) {
+        final offset = _contentController.selection.baseOffset;
+        if (offset > 0 && !newRanges.contains(offset - 1)) {
+          _contentController.formatText(offset - 1, 1, quill.ColorAttribute(null));
+          _contentController.formatText(offset - 1, 1, quill.Attribute.clone(quill.Attribute.underline, null));
+          _contentController.formatSelection(quill.ColorAttribute(null));
+          _contentController.formatSelection(quill.Attribute.clone(quill.Attribute.underline, null));
+        }
+      }
 
       _contentController.addListener(_refreshPhoneNumberStyles);
     }
@@ -381,9 +398,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Padding(
+              child: GestureDetector(
+                onTap: () {
+                  if (!_contentFocusNode.hasFocus) {
+                    _contentFocusNode.requestFocus();
+                  }
+                },
+                behavior: HitTestBehavior.opaque,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Padding(
                   padding: const EdgeInsets.only(left: 16, right: 16, top: 0),
                   child: Column(
                     children: [
@@ -505,7 +529,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 ),
               ),
             ),
-            !_contentFocusNode.hasFocus
+          ),
+          !_contentFocusNode.hasFocus
                 ? Container()
                 : Container(
                     color: colors.cardSurface,

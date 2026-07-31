@@ -12,6 +12,7 @@ import '../utils/date_utils.dart';
 import '../theme/app_colors.dart';
 import '../widgets/design_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/google_drive_sync_service.dart';
 
 class TaskEditScreen extends StatefulWidget {
   final Task? task;
@@ -59,13 +60,13 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       final isIgnoring = await BatteryOptimizationService.isIgnoringBatteryOptimizations();
       if (!isIgnoring && mounted) {
         settings.setBatteryPromptShown(true);
-        _showBatteryOptimizationDialog();
+        await _showBatteryOptimizationDialog();
       }
     }
   }
 
-  void _showBatteryOptimizationDialog() {
-    showDialog(
+  Future<void> _showBatteryOptimizationDialog() async {
+    await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.reliableReminders),
@@ -151,6 +152,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         await provider.updateTask(task);
         await _scheduleOrCancelNotification(widget.task!.id, generatedTitle);
       }
+
+      if (GoogleDriveSyncService().isSignedIn) {
+        GoogleDriveSyncService().syncToDrive();
+      }
+
       if (mounted) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => _isSaving = false);
