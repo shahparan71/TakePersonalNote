@@ -352,52 +352,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
-  bool _handleEditorTap(
-    quill.TapUpDetails details,
-    TextPosition Function(Offset offset) getPositionForOffset,
-  ) {
-    if (_contentFocusNode.hasFocus) {
-      return false;
-    }
-
-    final position = getPositionForOffset(details.localPosition);
-    final offset = position.offset;
-    final plainText = _contentController.document.toPlainText();
-
-    if (offset >= 0 && offset < plainText.length) {
-      if (_phoneNumberRanges.contains(offset)) {
-        final start = _findTokenStart(plainText, offset);
-        final end = _findTokenEnd(plainText, offset);
-
-        if (start != null && end != null && start < end) {
-          final text = plainText.substring(start, end);
-          _handlePhoneNumberTap(text);
-          return true;
-        }
-      } else if (_emailRanges.contains(offset)) {
-        final start = _findTokenStart(plainText, offset);
-        final end = _findTokenEnd(plainText, offset);
-
-        if (start != null && end != null && start < end) {
-          final text = plainText.substring(start, end);
-          _handleEmailTap(text);
-          return true;
-        }
-      } else if (_urlRanges.contains(offset)) {
-        final start = _findTokenStart(plainText, offset);
-        final end = _findTokenEnd(plainText, offset);
-
-        if (start != null && end != null && start < end) {
-          final text = plainText.substring(start, end);
-          _handleUrlTap(text);
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -524,7 +478,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                             embedBuilders: [
                               ...FlutterQuillEmbeds.editorBuilders(),
                             ],
-                            onTapUp: _handleEditorTap,
+                            onLaunchUrl: (String url) {
+                              if (!_contentFocusNode.hasFocus) {
+                                _contentFocusNode.requestFocus();
+                              }
+                            },
                             contextMenuBuilder: (context, rawEditorState) {
                               final defaultItems = rawEditorState.contextMenuButtonItems;
                               final selection = rawEditorState.textEditingValue.selection;
