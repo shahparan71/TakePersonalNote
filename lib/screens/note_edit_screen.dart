@@ -43,8 +43,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   final FocusNode _contentFocusNode = FocusNode();
   final RegExp _phoneNumberRegex = RegExp(r'\b\d{10,}\b');
   final RegExp _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
+  final RegExp _urlRegex = RegExp(r'(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)');
   final Set<int> _phoneNumberRanges = <int>{};
   final Set<int> _emailRanges = <int>{};
+  final Set<int> _urlRanges = <int>{};
 
   @override
   void initState() {
@@ -203,6 +205,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final text = _contentController.document.toPlainText();
     final phoneMatches = _phoneNumberRegex.allMatches(text);
     final emailMatches = _emailRegex.allMatches(text);
+    final urlMatches = _urlRegex.allMatches(text);
     
     final nextPhoneRanges = <int>{};
     for (final match in phoneMatches) {
@@ -218,40 +221,69 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       }
     }
 
+    final nextUrlRanges = <int>{};
+    for (final match in urlMatches) {
+      // Avoid overlapping with emails
+      bool overlapsEmail = false;
+      for (var index = match.start; index < match.end; index++) {
+        if (nextEmailRanges.contains(index)) {
+          overlapsEmail = true;
+          break;
+        }
+      }
+      if (!overlapsEmail) {
+        for (var index = match.start; index < match.end; index++) {
+          nextUrlRanges.add(index);
+        }
+      }
+    }
+
+    // Check for character typing to clear formatting if the user breaks the link
+    if (_contentController.selection.isCollapsed) {
+      final offset = _contentController.selection.baseOffset;
+      if (offset > 0 && offset <= text.length) {
+        // Look at previous character to detect a break
+        final prevChar = text.substring(offset - 1, offset);
+        if (prevChar == ' ' || prevChar == '\n') {
+          // If the char before the space was part of a link/phone/email, clear that specific space's formatting
+          if (offset > 1 && (nextPhoneRanges.contains(offset - 2) || nextEmailRanges.contains(offset - 2) || nextUrlRanges.contains(offset - 2))) {
+             _contentController.removeListener(_refreshPhoneNumberStyles);
+             _contentController.formatText(offset - 1, 1, quill.ColorAttribute(null));
+             _contentController.formatText(offset - 1, 1, quill.Attribute.clone(quill.Attribute.underline, null));
+             _contentController.addListener(_refreshPhoneNumberStyles);
+          }
+        }
+      }
+    }
+
     bool rangesChanged = !setEquals(_phoneNumberRanges, nextPhoneRanges) || 
-                         !setEquals(_emailRanges, nextEmailRanges);
+                         !setEquals(_emailRanges, nextEmailRanges) ||
+                         !setEquals(_urlRanges, nextUrlRanges);
 
     if (rangesChanged) {
       final oldPhoneRanges = _phoneNumberRanges.toSet();
       final oldEmailRanges = _emailRanges.toSet();
+      final oldUrlRanges = _urlRanges.toSet();
 
       setState(() {
         _phoneNumberRanges.clear();
         _phoneNumberRanges.addAll(nextPhoneRanges);
         _emailRanges.clear();
         _emailRanges.addAll(nextEmailRanges);
+        _urlRanges.clear();
+        _urlRanges.addAll(nextUrlRanges);
       });
 
       _contentController.removeListener(_refreshPhoneNumberStyles);
 
-      final oldRanges = oldPhoneRanges.union(oldEmailRanges);
-      final newRanges = nextPhoneRanges.union(nextEmailRanges);
+      final oldRanges = oldPhoneRanges.union(oldEmailRanges).union(oldUrlRanges);
+      final newRanges = nextPhoneRanges.union(nextEmailRanges).union(nextUrlRanges);
 
       final toRemove = oldRanges.difference(newRanges);
       final toAdd = newRanges.difference(oldRanges);
 
       _applyFormatToIndices(toRemove, false);
       _applyFormatToIndices(toAdd, true);
-
-      if (_contentController.selection.isCollapsed) {
-        final offset = _contentController.selection.baseOffset;
-        if (offset > 0 && !newRanges.contains(offset - 1)) {
-          _contentController.formatText(offset - 1, 1, quill.ColorAttribute(null));
-          _contentController.formatText(offset - 1, 1, quill.Attribute.clone(quill.Attribute.underline, null));
-          _contentController.formatSelection(quill.ColorAttribute(null));
-          _contentController.formatSelection(quill.Attribute.clone(quill.Attribute.underline, null));
-        }
-      }
 
       _contentController.addListener(_refreshPhoneNumberStyles);
     }
@@ -303,6 +335,13 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
+  void _handleUrlTap(String value) async {
+    final uri = Uri.parse(value.startsWith('http') ? value : 'https://$value');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   bool _handleEditorTap(
     quill.TapUpDetails details,
     TextPosition Function(Offset offset) getPositionForOffset,
@@ -328,6 +367,15 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         if (start != null && end != null && start < end) {
           final text = plainText.substring(start, end);
           _handleEmailTap(text);
+          return true;
+        }
+      } else if (_urlRanges.contains(offset)) {
+        final start = _findTokenStart(plainText, offset);
+        final end = _findTokenEnd(plainText, offset);
+
+        if (start != null && end != null && start < end) {
+          final text = plainText.substring(start, end);
+          _handleUrlTap(text);
           return true;
         }
       }
@@ -479,8 +527,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
                               final isPhone = _phoneNumberRegex.hasMatch(selectedText);
                               final isEmail = _emailRegex.hasMatch(selectedText);
+                              final isUrl = _urlRegex.hasMatch(selectedText);
 
-                              if (isPhone || isEmail) {
+                              if (isPhone || isEmail || isUrl) {
                                 final customItems = <ContextMenuButtonItem>[];
 
                                 if (isPhone) {
@@ -505,6 +554,18 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                                       },
                                       type: ContextMenuButtonType.custom,
                                       label: 'Email',
+                                    ),
+                                  );
+                                }
+                                if (isUrl) {
+                                  customItems.add(
+                                    ContextMenuButtonItem(
+                                      onPressed: () {
+                                        _handleUrlTap(selectedText);
+                                        rawEditorState.hideToolbar();
+                                      },
+                                      type: ContextMenuButtonType.custom,
+                                      label: 'Open Link',
                                     ),
                                   );
                                 }
