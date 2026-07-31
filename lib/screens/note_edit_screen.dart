@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart' as quill;
 import 'package:flutter/foundation.dart';
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
@@ -296,6 +297,38 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       _applyFormatToIndices(toAdd, true);
 
       _contentController.addListener(_refreshPhoneNumberStyles);
+    }
+
+    // --- Auto-Selection Logic ---
+    final selection = _contentController.selection;
+    if (!selection.isCollapsed) {
+      final start = selection.start;
+      final end = selection.end;
+
+      Set<int> targetRanges = const {};
+      if (nextPhoneRanges.contains(start) || nextPhoneRanges.contains(end - 1)) {
+        targetRanges = nextPhoneRanges;
+      } else if (nextEmailRanges.contains(start) || nextEmailRanges.contains(end - 1)) {
+        targetRanges = nextEmailRanges;
+      } else if (nextUrlRanges.contains(start) || nextUrlRanges.contains(end - 1)) {
+        targetRanges = nextUrlRanges;
+      }
+
+      if (targetRanges.isNotEmpty) {
+        int matchedIndex = targetRanges.contains(start) ? start : end - 1;
+        
+        int tokenStart = _findTokenStart(text, matchedIndex) ?? matchedIndex;
+        int tokenEnd = _findTokenEnd(text, matchedIndex) ?? matchedIndex;
+
+        final newStart = math.min(selection.start, tokenStart);
+        final newEnd = math.max(selection.end, tokenEnd);
+
+        if (newStart != selection.start || newEnd != selection.end) {
+          _contentController.removeListener(_refreshPhoneNumberStyles);
+          _contentController.updateSelection(TextSelection(baseOffset: newStart, extentOffset: newEnd), quill.ChangeSource.local);
+          _contentController.addListener(_refreshPhoneNumberStyles);
+        }
+      }
     }
   }
 
