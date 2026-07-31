@@ -411,6 +411,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Expanded(
@@ -564,12 +565,14 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             ),
           ),
           !_contentFocusNode.hasFocus
-                ? Container()
+                ? SafeArea(top: false, child: const SizedBox.shrink())
                 : Container(
                     color: colors.cardSurface,
-                    child: quill.QuillSimpleToolbar(
-                      controller: _contentController,
-                      config: quill.QuillSimpleToolbarConfig(
+                    child: SafeArea(
+                      top: false,
+                      child: quill.QuillSimpleToolbar(
+                        controller: _contentController,
+                        config: quill.QuillSimpleToolbarConfig(
                         multiRowsDisplay: false,
                         showBoldButton: true,
                         showItalicButton: true,
@@ -612,6 +615,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       ),
                     ),
                   ),
+          )
           ],
         ),
       ),
