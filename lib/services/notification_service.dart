@@ -88,7 +88,7 @@ class NotificationService {
     final tasks = await db.getAllTasks();
     for (final task in tasks) {
       if (task.id == null || task.reminderTime == null) continue;
-      if (task.status == TaskStatus.completed) continue;
+      if (task.status == NoteTaskStatus.completed) continue;
       final title = task.title.isNotEmpty ? task.title : 'Task Reminder';
       await scheduleNotificationWithCustomInterval(
         id: task.id! + 10000,

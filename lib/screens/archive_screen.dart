@@ -60,7 +60,7 @@ class ArchiveScreen extends StatelessWidget {
 }
 
 class _ArchiveCard extends StatelessWidget {
-  final Note note;
+  final MyNote note;
   final VoidCallback onUnarchive;
   final VoidCallback onTap;
 

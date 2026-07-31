@@ -96,7 +96,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       await NotificationService().cancelNotification(notifId);
       return;
     }
-    await _checkBatteryOptimization();
+    //await _checkBatteryOptimization();
     final success = await NotificationService().scheduleNotificationWithCustomInterval(
       id: notifId,
       title: AppLocalizations.of(context)!.taskReminder,

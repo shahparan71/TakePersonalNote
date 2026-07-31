@@ -85,12 +85,12 @@ class DatabaseService {
   }
 
   // Note CRUD
-  Future<int> insertNote(Note note) async {
+  Future<int> insertNote(MyNote note) async {
     final db = await database;
     return await db.insert('notes', note.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<List<Note>> getNotes({String? query, String? category, int? color, String? orderBy}) async {
+  Future<List<MyNote>> getNotes({String? query, String? category, int? color, String? orderBy}) async {
     final db = await database;
     String where = 'isTrashed = 0 AND isArchived = 0 AND isHidden = 0';
     List<dynamic> whereArgs = [];
@@ -114,32 +114,32 @@ class DatabaseService {
       whereArgs: whereArgs,
       orderBy: orderBy ?? 'isPinned DESC, updatedAt DESC',
     );
-    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => MyNote.fromMap(maps[i]));
   }
 
-  Future<List<Note>> getHiddenNotes() async {
+  Future<List<MyNote>> getHiddenNotes() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'notes',
       where: 'isHidden = 1 AND isTrashed = 0 AND isArchived = 0',
       orderBy: 'updatedAt DESC',
     );
-    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => MyNote.fromMap(maps[i]));
   }
 
-  Future<List<Note>> getArchivedNotes() async {
+  Future<List<MyNote>> getArchivedNotes() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('notes', where: 'isArchived = 1 AND isTrashed = 0');
-    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => MyNote.fromMap(maps[i]));
   }
 
-  Future<List<Note>> getTrashedNotes() async {
+  Future<List<MyNote>> getTrashedNotes() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('notes', where: 'isTrashed = 1');
-    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => MyNote.fromMap(maps[i]));
   }
 
-  Future<int> updateNote(Note note) async {
+  Future<int> updateNote(MyNote note) async {
     final db = await database;
     return await db.update(
       'notes',
@@ -176,10 +176,10 @@ class DatabaseService {
     );
   }
 
-  Future<Note?> getNoteById(int id) async {
+  Future<MyNote?> getNoteById(int id) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('notes', where: 'id = ?', whereArgs: [id]);
-    if (maps.isNotEmpty) return Note.fromMap(maps.first);
+    if (maps.isNotEmpty) return MyNote.fromMap(maps.first);
     return null;
   }
 
@@ -189,7 +189,7 @@ class DatabaseService {
     return await db.insert('tasks', task.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<List<Task>> getTasks({String? query, TaskPriority? priority, TaskStatus? status, String? orderBy}) async {
+  Future<List<Task>> getTasks({String? query, TaskPriority? priority, NoteTaskStatus? status, String? orderBy}) async {
     final db = await database;
     String where = '1=1';
     List<dynamic> whereArgs = [];
@@ -242,10 +242,10 @@ class DatabaseService {
     return null;
   }
 
-  Future<List<Note>> getAllNotes() async {
+  Future<List<MyNote>> getAllNotes() async {
     final db = await database;
     final maps = await db.query('notes', orderBy: 'updatedAt DESC');
-    return List.generate(maps.length, (i) => Note.fromMap(maps[i]));
+    return List.generate(maps.length, (i) => MyNote.fromMap(maps[i]));
   }
 
   Future<List<Task>> getAllTasks() async {

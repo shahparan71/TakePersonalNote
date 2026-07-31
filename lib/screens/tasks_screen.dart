@@ -9,10 +9,11 @@ import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 
 import '../models/task.dart';
-import '../services/preference_service.dart';
-import '../services/google_drive_sync_service.dart';
 import '../routes/app_routes.dart';
-import 'task_edit_screen.dart';
+import '../services/google_drive_sync_service.dart';
+import '../services/preference_service.dart';
+
+
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -114,9 +115,9 @@ class _TasksScreenState extends State<TasksScreen> {
             );
           }
 
-          final active = provider.tasks.where((t) => t.status != TaskStatus.completed).toList()
+          final active = provider.tasks.where((t) => t.status != NoteTaskStatus.completed).toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          final completed = provider.tasks.where((t) => t.status == TaskStatus.completed).toList()
+          final completed = provider.tasks.where((t) => t.status == NoteTaskStatus.completed).toList()
             ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
           return ListView(
@@ -150,7 +151,7 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Widget _buildTaskTile(BuildContext context, Task task, {bool isCompletedSection = false}) {
-    final isCompleted = task.status == TaskStatus.completed;
+    final isCompleted = task.status == NoteTaskStatus.completed;
     final priorityColor = _priorityColor(task.priority);
     final colors = context.appColors;
 
@@ -199,7 +200,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   onChanged: (val) {
                     final updated = task.copyWith(
-                      status: val == true ? TaskStatus.completed : TaskStatus.pending,
+                      status: val == true ? NoteTaskStatus.completed : NoteTaskStatus.pending,
                       updatedAt: DateTime.now(),
                     );
                     Provider.of<TaskProvider>(context, listen: false).updateTask(updated);
@@ -329,7 +330,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
               const Divider(),
               ListTile(title: Text(AppLocalizations.of(context)!.filterByStatus, style: TextStyle(fontWeight: FontWeight.bold))),
-              ...TaskStatus.values.map(
+              ...NoteTaskStatus.values.map(
                 (s) => ListTile(
                   title: Text(s.name[0].toUpperCase() + s.name.substring(1)),
                   onTap: () {

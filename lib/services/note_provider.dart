@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import '../models/note.dart';
+import 'package:take_personal_note/models/note.dart';
 import 'database_service.dart';
 import 'google_drive_sync_service.dart';
 import 'preference_service.dart';
 
 class NoteProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
-  List<Note> _notes = [];
-  List<Note> _archivedNotes = [];
-  List<Note> _trashedNotes = [];
-  List<Note> _hiddenNotes = [];
+  List<MyNote> _notes = [];
+  List<MyNote> _archivedNotes = [];
+  List<MyNote> _trashedNotes = [];
+  List<MyNote> _hiddenNotes = [];
 
-  List<Note> get notes => _notes;
-  List<Note> get archivedNotes => _archivedNotes;
-  List<Note> get trashedNotes => _trashedNotes;
-  List<Note> get hiddenNotes => _hiddenNotes;
+  List<MyNote> get notes => _notes;
+  List<MyNote> get archivedNotes => _archivedNotes;
+  List<MyNote> get trashedNotes => _trashedNotes;
+  List<MyNote> get hiddenNotes => _hiddenNotes;
 
   Future<void> fetchNotes({String? query, String? category, int? color, String? orderBy}) async {
     _notes = await _dbService.getNotes(query: query, category: category, color: color, orderBy: orderBy);
@@ -24,20 +24,20 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<int?> addNote(Note note) async {
+  Future<int?> addNote(MyNote note) async {
     final id = await _dbService.insertNote(note);    await PreferenceService().setNotesPendingDriveSync(true);    await fetchNotes();
     _triggerSyncIfSignedIn();
     return id;
   }
 
-  Future<void> updateNote(Note note) async {
+  Future<void> updateNote(MyNote note) async {
     await _dbService.updateNote(note);
     await PreferenceService().setNotesPendingDriveSync(true);
     await fetchNotes();
     _triggerSyncIfSignedIn();
   }
 
-  Future<void> archiveNote(Note note) async {
+  Future<void> archiveNote(MyNote note) async {
     final archivedNote = note.copyWith(isArchived: true, isPinned: false);
     await _dbService.updateNote(archivedNote);
     await PreferenceService().setNotesPendingDriveSync(true);
@@ -45,7 +45,7 @@ class NoteProvider with ChangeNotifier {
     _triggerSyncIfSignedIn();
   }
 
-  Future<void> unarchiveNote(Note note) async {
+  Future<void> unarchiveNote(MyNote note) async {
     final unarchivedNote = note.copyWith(isArchived: false);
     await _dbService.updateNote(unarchivedNote);
     await PreferenceService().setNotesPendingDriveSync(true);
@@ -53,7 +53,7 @@ class NoteProvider with ChangeNotifier {
     _triggerSyncIfSignedIn();
   }
 
-  Future<void> trashNote(Note note) async {
+  Future<void> trashNote(MyNote note) async {
     final trashedNote = note.copyWith(
       isTrashed: true,
       isPinned: false,
@@ -66,7 +66,7 @@ class NoteProvider with ChangeNotifier {
     _triggerSyncIfSignedIn();
   }
 
-  Future<void> restoreNote(Note note) async {
+  Future<void> restoreNote(MyNote note) async {
     final restoredNote = note.copyWith(isTrashed: false, deletedAt: null);
     await _dbService.updateNote(restoredNote);
     await PreferenceService().setNotesPendingDriveSync(true);
@@ -85,11 +85,11 @@ class NoteProvider with ChangeNotifier {
     return _dbService.getNoteCategories();
   }
 
-  Future<void> hideNote(Note note) async {
+  Future<void> hideNote(MyNote note) async {
     await updateNote(note.copyWith(isHidden: true, isPinned: false));
   }
 
-  Future<void> unhideNote(Note note) async {
+  Future<void> unhideNote(MyNote note) async {
     await updateNote(note.copyWith(isHidden: false));
   }
 

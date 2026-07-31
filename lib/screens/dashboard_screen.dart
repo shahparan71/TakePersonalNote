@@ -15,10 +15,6 @@ import 'package:take_personal_note/services/preference_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../services/task_provider.dart';
-import 'archive_screen.dart';
-import 'trash_screen.dart';
-import 'settings_screen.dart';
-import 'task_edit_screen.dart';
 import '../routes/app_routes.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -77,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final now = DateTime.now();
     final upcoming = <Task>[];
     for (final t in tasks) {
-      if (t.status == TaskStatus.completed || t.reminderTime == null) continue;
+      if (t.status == NoteTaskStatus.completed || t.reminderTime == null) continue;
       DateTime? sortTime = t.reminderTime;
       if (t.isRecurring && t.reminderTime!.isBefore(now)) {
         sortTime = AppDateUtils.calculateNextOccurrence(t.reminderTime, t.recurringInterval);
@@ -449,7 +445,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             _StatTile(
               label: AppLocalizations.of(context)!.pending,
-              value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
+              value: taskProvider.getTasksByStatus(NoteTaskStatus.pending).length.toString(),
               tint: context.appColors.statTileTint(4),
               icon: Icons.assignment_outlined,
               onTap: () => tabProvider.setIndex(2),
@@ -463,7 +459,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             _StatTile(
               label: AppLocalizations.of(context)!.done,
-              value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
+              value: taskProvider.getTasksByStatus(NoteTaskStatus.completed).length.toString(),
               tint: context.appColors.statTileTint(3),
               icon: Icons.task_alt_outlined,
               onTap: () => tabProvider.setIndex(2),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:take_personal_note/routes/app_routes.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
-import 'package:take_personal_note/theme/app_colors.dart';
-import '../routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

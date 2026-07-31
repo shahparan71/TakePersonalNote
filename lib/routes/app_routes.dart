@@ -30,7 +30,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case noteEdit:
         final args = settings.arguments as Map<String, dynamic>?;
-        final Note? note = args?['note'];
+        final MyNote? note = args?['note'];
         final String? initialText = args?['initialText'];
         return MaterialPageRoute(builder: (_) => NoteEditScreen(note: note, initialText: initialText));
       case taskEdit:

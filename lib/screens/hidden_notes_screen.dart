@@ -68,7 +68,7 @@ class HiddenNotesScreen extends StatelessWidget {
 }
 
 class _HiddenNoteCard extends StatelessWidget {
-  final Note note;
+  final MyNote note;
   final VoidCallback onUnhide;
   final VoidCallback onTap;
 

@@ -22,7 +22,7 @@ import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NoteEditScreen extends StatefulWidget {
-  final Note? note;
+  final MyNote? note;
   final String? initialText;
 
   const NoteEditScreen({super.key, this.note, this.initialText});
@@ -113,7 +113,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final now = DateTime.now();
 
     if (widget.note == null) {
-      final newNote = Note(
+      final newNote = MyNote(
         title: _titleController.text.isEmpty ? "" : _titleController.text,
         content: _currentContent,
         type: NoteType.text,

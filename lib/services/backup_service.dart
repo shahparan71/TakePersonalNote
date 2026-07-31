@@ -6,7 +6,7 @@ import 'database_service.dart';
 class BackupService {
   final DatabaseService _db = DatabaseService();
 
-  Map<String, dynamic> buildBackupPayload(List<Note> notes, List<Task> tasks, {List<String>? folders}) {
+  Map<String, dynamic> buildBackupPayload(List<MyNote> notes, List<Task> tasks, {List<String>? folders}) {
     return {
       'version': 1,
       'exportedAt': DateTime.now().toIso8601String(),
@@ -16,7 +16,7 @@ class BackupService {
     };
   }
 
-  String encodeBackup(List<Note> notes, List<Task> tasks, {List<String>? folders}) {
+  String encodeBackup(List<MyNote> notes, List<Task> tasks, {List<String>? folders}) {
     return jsonEncode(buildBackupPayload(notes, tasks, folders: folders));
   }
 

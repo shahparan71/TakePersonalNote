@@ -2,7 +2,7 @@ import 'recurring_interval.dart';
 
 enum NoteType { text, checklist, voice, image }
 
-class Note {
+class MyNote {
   final int? id;
   final String title;
   final String content;
@@ -22,7 +22,7 @@ class Note {
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  Note({
+  MyNote({
     this.id,
     required this.title,
     required this.content,
@@ -45,7 +45,7 @@ class Note {
 
   static const Object _unset = Object();
 
-  Note copyWith({
+  MyNote copyWith({
     int? id,
     String? title,
     String? content,
@@ -65,7 +65,7 @@ class Note {
     DateTime? updatedAt,
     Object? deletedAt = _unset,
   }) {
-    return Note(
+    return MyNote(
       id: id ?? this.id,
       title: title ?? this.title,
       content: content ?? this.content,
@@ -110,8 +110,8 @@ class Note {
     };
   }
 
-  factory Note.fromMap(Map<String, dynamic> map) {
-    return Note(
+  factory MyNote.fromMap(Map<String, dynamic> map) {
+    return MyNote(
       id: map['id'],
       title: map['title'],
       content: map['content'],
