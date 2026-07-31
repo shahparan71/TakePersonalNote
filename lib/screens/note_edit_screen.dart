@@ -43,7 +43,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   final FocusNode _contentFocusNode = FocusNode();
   final RegExp _phoneNumberRegex = RegExp(r'\b\d{10,}\b');
   final RegExp _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
-  final RegExp _urlRegex = RegExp(r'(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)');
+  final RegExp _urlRegex = RegExp(r'(https?:\/\/[^\s]+)|(www\.[^\s]+)');
   final Set<int> _phoneNumberRanges = <int>{};
   final Set<int> _emailRanges = <int>{};
   final Set<int> _urlRanges = <int>{};
@@ -87,6 +87,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _contentFocusNode.addListener(() {
       setState(() {});
     });
+
+    if (widget.note == null) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _contentFocusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -250,6 +256,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
              _contentController.removeListener(_refreshPhoneNumberStyles);
              _contentController.formatText(offset - 1, 1, quill.ColorAttribute(null));
              _contentController.formatText(offset - 1, 1, quill.Attribute.clone(quill.Attribute.underline, null));
+             _contentController.formatText(offset - 1, 1, quill.LinkAttribute(null));
+             _contentController.formatSelection(quill.ColorAttribute(null));
+             _contentController.formatSelection(quill.Attribute.clone(quill.Attribute.underline, null));
+             _contentController.formatSelection(quill.LinkAttribute(null));
              _contentController.addListener(_refreshPhoneNumberStyles);
           }
         }
@@ -346,6 +356,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     quill.TapUpDetails details,
     TextPosition Function(Offset offset) getPositionForOffset,
   ) {
+    if (_contentFocusNode.hasFocus) {
+      return false;
+    }
+
     final position = getPositionForOffset(details.localPosition);
     final offset = position.offset;
     final plainText = _contentController.document.toPlainText();
