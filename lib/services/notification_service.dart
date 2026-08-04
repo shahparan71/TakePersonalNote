@@ -101,17 +101,6 @@ class NotificationService {
     return true; // Not required on iOS or other platforms
   }
 
-  Future<void> requestExactAlarmsPermission() async {
-    if (Platform.isAndroid) {
-      final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      try {
-        await androidImplementation?.requestExactAlarmsPermission();
-      } catch (e) {
-        debugPrint('Could not request exact alarms permission: $e');
-      }
-    }
-  }
-
   /// Re-schedules all pending reminders from the database (e.g. after reboot).
   Future<void> rescheduleAllReminders() async {
     final db = DatabaseService();
