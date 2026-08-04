@@ -6,19 +6,16 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:take_personal_note/services/reminder_permission_service.dart';
 import 'package:take_personal_note/services/tab_provider.dart';
-import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'archive_screen.dart';
-import 'trash_screen.dart';
-import 'settings_screen.dart';
-import 'task_edit_screen.dart';
+
+import '../services/task_provider.dart';
+import '../routes/app_routes.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -27,31 +24,13 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
+class _DashboardScreenState extends State<DashboardScreen> {
   bool _isFetching = false;
   bool _isSyncingToDrive = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _maybeShowReminderPermissionDialog();
-    });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _maybeShowReminderPermissionDialog();
-    }
   }
 
   String _getGreeting() {
@@ -70,10 +49,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     await applyDriveSyncResult(context, result);
     if (!mounted) return;
     showDriveSyncSnackBar(context, result);
-
-    if (result.success) {
-      await _maybeShowReminderPermissionDialog();
-    }
   }
 
   Future<void> _syncLocalDataToGoogleDrive() async {
@@ -98,7 +73,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     final now = DateTime.now();
     final upcoming = <Task>[];
     for (final t in tasks) {
-      if (t.status == TaskStatus.completed || t.reminderTime == null) continue;
+      if (t.status == NoteTaskStatus.completed || t.reminderTime == null) continue;
       DateTime? sortTime = t.reminderTime;
       if (t.isRecurring && t.reminderTime!.isBefore(now)) {
         sortTime = AppDateUtils.calculateNextOccurrence(t.reminderTime, t.recurringInterval);
@@ -122,19 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     }
     return task.reminderTime;
   }
-
-  Future<void> _maybeShowReminderPermissionDialog() async {
-    if (!mounted) return;
-    final hasReminders = await ReminderPermissionService.instance.hasScheduledTaskReminders();
-    if (!mounted || !hasReminders) return;
-
-    await ReminderPermissionService.instance.showReminderPermissionDialog(
-      context: context,
-      hasExistingReminders: true,
-      markAsSeen: true,
-    );
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -195,25 +157,16 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   IconButton(
                     icon: Icon(Icons.archive_outlined, color: colors.textPrimary),
                     tooltip: AppLocalizations.of(context)!.archive,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-                    ),
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.archive),
                   ),
                   IconButton(
                     icon: Icon(Icons.delete_outline, color: colors.textPrimary),
                     tooltip: AppLocalizations.of(context)!.trash,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TrashScreen()),
-                    ),
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.trash),
                   ),
                   IconButton(
                     icon: Icon(Icons.settings_outlined, color: colors.textPrimary),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    ),
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.settings_screen),
                   ),
                   const SizedBox(width: 4),
                 ],
@@ -492,7 +445,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             ),
             _StatTile(
               label: AppLocalizations.of(context)!.pending,
-              value: taskProvider.getTasksByStatus(TaskStatus.pending).length.toString(),
+              value: taskProvider.getTasksByStatus(NoteTaskStatus.pending).length.toString(),
               tint: context.appColors.statTileTint(4),
               icon: Icons.assignment_outlined,
               onTap: () => tabProvider.setIndex(2),
@@ -506,7 +459,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             ),
             _StatTile(
               label: AppLocalizations.of(context)!.done,
-              value: taskProvider.getTasksByStatus(TaskStatus.completed).length.toString(),
+              value: taskProvider.getTasksByStatus(NoteTaskStatus.completed).length.toString(),
               tint: context.appColors.statTileTint(3),
               icon: Icons.task_alt_outlined,
               onTap: () => tabProvider.setIndex(2),
@@ -576,10 +529,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                         ),
                       )
                     : Icon(Icons.chevron_right, size: 20, color: colors.textSecondary),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
-                ),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.taskEdit, arguments: {'task': task}),
               ),
             );
           }).toList(),

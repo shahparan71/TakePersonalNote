@@ -4,16 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import '../services/note_provider.dart';
-import '../services/folder_provider.dart';
-import '../services/preference_service.dart';
-import '../models/note.dart';
-import '../widgets/sheet_safe_area.dart';
-import '../widgets/design_widgets.dart';
-import '../theme/app_colors.dart';
-import '../utils/note_utils.dart';
-import 'note_edit_screen.dart';
-import 'hidden_notes_screen.dart';
+import 'package:take_personal_note/models/note.dart';
+import 'package:take_personal_note/routes/app_routes.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
+import 'package:take_personal_note/services/note_provider.dart';
+import 'package:take_personal_note/services/preference_service.dart';
+import 'package:take_personal_note/theme/app_colors.dart';
+import 'package:take_personal_note/utils/note_utils.dart';
+import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -61,7 +61,7 @@ class _NotesScreenState extends State<NotesScreen> {
     });
   }
 
-  void _enterSelectionMode(Note note) {
+  void _enterSelectionMode(MyNote note) {
     setState(() {
       _selectionMode = true;
       if (note.id != null) _selectedNoteIds.add(note.id!);
@@ -79,7 +79,7 @@ class _NotesScreenState extends State<NotesScreen> {
     });
   }
 
-  List<Note> _filteredNotes(List<Note> notes) {
+  List<MyNote> _filteredNotes(List<MyNote> notes) {
     if (_selectedFolder == null) return notes;
     return notes.where((n) => n.category == _selectedFolder).toList();
   }
@@ -107,7 +107,17 @@ class _NotesScreenState extends State<NotesScreen> {
             leading: _selectionMode ? IconButton(icon: const Icon(Icons.close), onPressed: _exitSelectionMode) : null,
             title: _selectionMode
                 ? Text('${_selectedNoteIds.length} selected', style: GoogleFonts.outfit(fontWeight: FontWeight.bold))
-                : Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                : Consumer<NoteProvider>(
+                    builder: (context, _, child) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildSyncIcon(),
+                          Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                        ],
+                      );
+                    },
+                  ),
             actions: [
               if (!_selectionMode) ...[
                 Consumer<NoteProvider>(
@@ -116,7 +126,7 @@ class _NotesScreenState extends State<NotesScreen> {
                     return IconButton(
                       icon: Badge(isLabelVisible: count > 0, label: Text('$count'), child: const Icon(Icons.visibility_off_outlined)),
                       tooltip: AppLocalizations.of(context)!.hiddenNotesTooltip,
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
+                      onPressed: () => Navigator.pushNamed(context, AppRoutes.hiddenNotes).then((_) => _refreshNotes()),
                     );
                   },
                 ),
@@ -180,7 +190,7 @@ class _NotesScreenState extends State<NotesScreen> {
           ? null
           : DesignFab(
               heroTag: 'notes_fab',
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NoteEditScreen())).then((_) => _refreshNotes()),
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.noteEdit).then((_) => _refreshNotes()),
             ),
       bottomNavigationBar: _selectionMode
           ? Container(
@@ -234,7 +244,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildSliverGridView(List<Note> notes) {
+  Widget _buildSliverGridView(List<MyNote> notes) {
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverMasonryGrid.count(
@@ -247,7 +257,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildSliverListView(List<Note> notes) {
+  Widget _buildSliverListView(List<MyNote> notes) {
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverList.separated(
@@ -258,7 +268,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildNoteCard(Note note) {
+  Widget _buildNoteCard(MyNote note) {
     final colors = context.appColors;
     return _buildNoteItem(
       note,
@@ -284,7 +294,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildNoteListTile(Note note) {
+  Widget _buildNoteListTile(MyNote note) {
     final colors = context.appColors;
     return _buildNoteItem(
       note,
@@ -324,12 +334,12 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildNoteItem(Note note, {required bool isCard, required Widget child}) {
+  Widget _buildNoteItem(MyNote note, {required bool isCard, required Widget child}) {
     final isSelected = note.id != null && _selectedNoteIds.contains(note.id);
     final colors = context.appColors;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: isCard ? 140 : 0),
+      constraints: BoxConstraints(minHeight: isCard ? 60 : 0),
       child: Container(
         decoration: BoxDecoration(
           color: colors.noteCardTint(note.color),
@@ -344,7 +354,7 @@ class _NotesScreenState extends State<NotesScreen> {
               if (_selectionMode && note.id != null) {
                 _toggleNoteSelection(note.id!);
               } else if (!_selectionMode) {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => NoteEditScreen(note: note))).then((_) => _refreshNotes());
+                Navigator.pushNamed(context, AppRoutes.noteEdit, arguments: {'note': note}).then((_) => _refreshNotes());
               }
             },
             onLongPress: () {
@@ -389,7 +399,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildNoteHeader(Note note) {
+  Widget _buildNoteHeader(MyNote note) {
     final colors = context.appColors;
     final displayTitle = NoteUtils.getDisplayTitle(title: note.title, content: note.content);
     return Row(
@@ -407,7 +417,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Widget _buildNoteFooter(Note note) {
+  Widget _buildNoteFooter(MyNote note) {
     final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.only(top: 6),
@@ -473,7 +483,7 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  List<Note> _getSelectedNotes(NoteProvider provider) {
+  List<MyNote> _getSelectedNotes(NoteProvider provider) {
     return provider.notes.where((n) => n.id != null && _selectedNoteIds.contains(n.id)).toList();
   }
 
@@ -550,7 +560,7 @@ class _NotesScreenState extends State<NotesScreen> {
         ),
         action: SnackBarAction(
           label: 'View',
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HiddenNotesScreen())).then((_) => _refreshNotes()),
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.hiddenNotes).then((_) => _refreshNotes()),
         ),
       ),
     );
@@ -631,5 +641,46 @@ class _NotesScreenState extends State<NotesScreen> {
   void _sort(String criteria) {
     Provider.of<NoteProvider>(context, listen: false).fetchNotes(orderBy: criteria, category: _selectedFolder);
     Navigator.pop(context);
+  }
+
+  Widget _buildSyncIcon() {
+    return Consumer<GoogleDriveSyncService>(
+      builder: (context, syncService, _) {
+        if (!syncService.isSignedIn) return const SizedBox.shrink();
+
+        return FutureBuilder<bool>(
+          future: PreferenceService().isNotesPendingDriveSync(),
+          builder: (context, snapshot) {
+            final isPending = snapshot.data ?? false;
+
+            if (syncService.isSyncing) {
+              return const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+
+            if (isPending) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: InkWell(
+                  onTap: () {
+                    syncService.syncToDrive();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Icon(Icons.cloud_upload_outlined, color: Colors.orange, size: 24),
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
   }
 }

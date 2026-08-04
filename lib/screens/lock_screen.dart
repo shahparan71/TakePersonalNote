@@ -1,7 +1,7 @@
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import '../services/security_service.dart';
-import 'home_screen.dart';
+import '../routes/app_routes.dart';
 
 class LockScreen extends StatefulWidget {
   const LockScreen({super.key});
@@ -26,10 +26,7 @@ class _LockScreenState extends State<LockScreen> {
       bool authenticated = await _securityService.authenticate();
       if (authenticated) {
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
+          Navigator.pushReplacementNamed(context, AppRoutes.home);
         }
       } else {
         setState(() => _errorMessage = 'Authentication failed. Please try again.');

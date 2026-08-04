@@ -8,6 +8,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 
 import '../config/google_auth_config.dart';
 import 'backup_service.dart';
+import 'notification_service.dart';
 import 'preference_service.dart';
 
 class GoogleDriveSyncResult {
@@ -218,6 +219,10 @@ class GoogleDriveSyncService extends ChangeNotifier {
       final jsonString = utf8.decode(chunks);
 
       final result = await BackupService().importFromJson(jsonString, merge: merge);
+      
+      // Reschedule any local notifications that were restored
+      await NotificationService().rescheduleAllReminders();
+
       final preferenceService = PreferenceService();
       await preferenceService.setNotesPendingDriveSync(false);
       await preferenceService.setTasksPendingDriveSync(false);

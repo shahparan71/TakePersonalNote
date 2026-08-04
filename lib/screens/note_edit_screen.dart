@@ -1,17 +1,16 @@
-import 'package:flutter/cupertino.dart' as quill;
-import 'package:flutter/foundation.dart';
-import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'dart:convert';
+import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:take_personal_note/models/note.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
+import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -21,7 +20,7 @@ import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NoteEditScreen extends StatefulWidget {
-  final Note? note;
+  final MyNote? note;
   final String? initialText;
 
   const NoteEditScreen({super.key, this.note, this.initialText});
@@ -42,8 +41,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   final FocusNode _contentFocusNode = FocusNode();
   final RegExp _phoneNumberRegex = RegExp(r'\b\d{10,}\b');
   final RegExp _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
+  final RegExp _urlRegex = RegExp(r'(https?:\/\/[^\s]+)|(www\.[^\s]+)');
   final Set<int> _phoneNumberRanges = <int>{};
   final Set<int> _emailRanges = <int>{};
+  final Set<int> _urlRanges = <int>{};
 
   @override
   void initState() {
@@ -84,6 +85,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _contentFocusNode.addListener(() {
       setState(() {});
     });
+
+    if (widget.note == null) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) _contentFocusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -110,7 +117,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final now = DateTime.now();
 
     if (widget.note == null) {
-      final newNote = Note(
+      final newNote = MyNote(
         title: _titleController.text.isEmpty ? "" : _titleController.text,
         content: _currentContent,
         type: NoteType.text,
@@ -133,6 +140,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             payload: 'note_$id',
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
           );
+        }
+        if (GoogleDriveSyncService().isSignedIn) {
+          GoogleDriveSyncService().syncToDrive();
         }
       });
     } else {
@@ -162,6 +172,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         } else if (widget.note!.reminderTime != null) {
           await NotificationService().cancelNotification(noteId);
         }
+        if (GoogleDriveSyncService().isSignedIn) {
+          GoogleDriveSyncService().syncToDrive();
+        }
       });
     }
   }
@@ -174,8 +187,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       lastDate: DateTime(2030),
     );
     if (pickedDate != null && mounted) {
-      final TimeOfDay? pickedTime =
-          await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
+      final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
       if (pickedTime != null) {
         setState(() {
           _reminderTime = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
@@ -196,14 +208,15 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final text = _contentController.document.toPlainText();
     final phoneMatches = _phoneNumberRegex.allMatches(text);
     final emailMatches = _emailRegex.allMatches(text);
-    
+    final urlMatches = _urlRegex.allMatches(text);
+
     final nextPhoneRanges = <int>{};
     for (final match in phoneMatches) {
       for (var index = match.start; index < match.end; index++) {
         nextPhoneRanges.add(index);
       }
     }
-    
+
     final nextEmailRanges = <int>{};
     for (final match in emailMatches) {
       for (var index = match.start; index < match.end; index++) {
@@ -211,24 +224,66 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       }
     }
 
-    bool rangesChanged = !setEquals(_phoneNumberRanges, nextPhoneRanges) || 
-                         !setEquals(_emailRanges, nextEmailRanges);
+    final nextUrlRanges = <int>{};
+    for (final match in urlMatches) {
+      // Avoid overlapping with emails
+      bool overlapsEmail = false;
+      for (var index = match.start; index < match.end; index++) {
+        if (nextEmailRanges.contains(index)) {
+          overlapsEmail = true;
+          break;
+        }
+      }
+      if (!overlapsEmail) {
+        for (var index = match.start; index < match.end; index++) {
+          nextUrlRanges.add(index);
+        }
+      }
+    }
+
+    // Check for character typing to clear formatting if the user breaks the link
+    if (_contentController.selection.isCollapsed) {
+      final offset = _contentController.selection.baseOffset;
+      if (offset > 0 && offset <= text.length) {
+        // Look at previous character to detect a break
+        final prevChar = text.substring(offset - 1, offset);
+        if (prevChar == ' ' || prevChar == '\n') {
+          // If the char before the space was part of a link/phone/email, clear that specific space's formatting
+          if (offset > 1 && (nextPhoneRanges.contains(offset - 2) || nextEmailRanges.contains(offset - 2) || nextUrlRanges.contains(offset - 2))) {
+            _contentController.removeListener(_refreshPhoneNumberStyles);
+            _contentController.formatText(offset - 1, 1, quill.ColorAttribute(null));
+            _contentController.formatText(offset - 1, 1, quill.Attribute.clone(quill.Attribute.underline, null));
+            _contentController.formatText(offset - 1, 1, quill.LinkAttribute(null));
+            _contentController.formatSelection(quill.ColorAttribute(null));
+            _contentController.formatSelection(quill.Attribute.clone(quill.Attribute.underline, null));
+            _contentController.formatSelection(quill.LinkAttribute(null));
+            _contentController.addListener(_refreshPhoneNumberStyles);
+          }
+        }
+      }
+    }
+
+    bool rangesChanged =
+        !setEquals(_phoneNumberRanges, nextPhoneRanges) || !setEquals(_emailRanges, nextEmailRanges) || !setEquals(_urlRanges, nextUrlRanges);
 
     if (rangesChanged) {
       final oldPhoneRanges = _phoneNumberRanges.toSet();
       final oldEmailRanges = _emailRanges.toSet();
+      final oldUrlRanges = _urlRanges.toSet();
 
       setState(() {
         _phoneNumberRanges.clear();
         _phoneNumberRanges.addAll(nextPhoneRanges);
         _emailRanges.clear();
         _emailRanges.addAll(nextEmailRanges);
+        _urlRanges.clear();
+        _urlRanges.addAll(nextUrlRanges);
       });
 
       _contentController.removeListener(_refreshPhoneNumberStyles);
 
-      final oldRanges = oldPhoneRanges.union(oldEmailRanges);
-      final newRanges = nextPhoneRanges.union(nextEmailRanges);
+      final oldRanges = oldPhoneRanges.union(oldEmailRanges).union(oldUrlRanges);
+      final newRanges = nextPhoneRanges.union(nextEmailRanges).union(nextUrlRanges);
 
       final toRemove = oldRanges.difference(newRanges);
       final toAdd = newRanges.difference(oldRanges);
@@ -238,6 +293,38 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
       _contentController.addListener(_refreshPhoneNumberStyles);
     }
+
+    // --- Auto-Selection Logic ---
+    final selection = _contentController.selection;
+    if (!selection.isCollapsed) {
+      final start = selection.start;
+      final end = selection.end;
+
+      Set<int> targetRanges = const {};
+      if (nextPhoneRanges.contains(start) || nextPhoneRanges.contains(end - 1)) {
+        targetRanges = nextPhoneRanges;
+      } else if (nextEmailRanges.contains(start) || nextEmailRanges.contains(end - 1)) {
+        targetRanges = nextEmailRanges;
+      } else if (nextUrlRanges.contains(start) || nextUrlRanges.contains(end - 1)) {
+        targetRanges = nextUrlRanges;
+      }
+
+      if (targetRanges.isNotEmpty) {
+        int matchedIndex = targetRanges.contains(start) ? start : end - 1;
+
+        int tokenStart = _findTokenStart(text, matchedIndex) ?? matchedIndex;
+        int tokenEnd = _findTokenEnd(text, matchedIndex) ?? matchedIndex;
+
+        final newStart = math.min(selection.start, tokenStart);
+        final newEnd = math.max(selection.end, tokenEnd);
+
+        if (newStart != selection.start || newEnd != selection.end) {
+          _contentController.removeListener(_refreshPhoneNumberStyles);
+          _contentController.updateSelection(TextSelection(baseOffset: newStart, extentOffset: newEnd), quill.ChangeSource.local);
+          _contentController.addListener(_refreshPhoneNumberStyles);
+        }
+      }
+    }
   }
 
   void _applyFormatToIndices(Set<int> indices, bool apply) {
@@ -245,7 +332,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final sorted = indices.toList()..sort();
     int start = sorted.first;
     int length = 1;
-    
+
     for (int i = 1; i < sorted.length; i++) {
       if (sorted[i] == sorted[i - 1] + 1) {
         length++;
@@ -286,39 +373,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
   }
 
-  bool _handleEditorTap(
-    quill.TapUpDetails details,
-    TextPosition Function(Offset offset) getPositionForOffset,
-  ) {
-    final position = getPositionForOffset(details.localPosition);
-    final offset = position.offset;
-    final plainText = _contentController.document.toPlainText();
-
-    if (offset >= 0 && offset < plainText.length) {
-      if (_phoneNumberRanges.contains(offset)) {
-        final start = _findTokenStart(plainText, offset);
-        final end = _findTokenEnd(plainText, offset);
-
-        if (start != null && end != null && start < end) {
-          final text = plainText.substring(start, end);
-          _handlePhoneNumberTap(text);
-          return true;
-        }
-      } else if (_emailRanges.contains(offset)) {
-        final start = _findTokenStart(plainText, offset);
-        final end = _findTokenEnd(plainText, offset);
-
-        if (start != null && end != null && start < end) {
-          final text = plainText.substring(start, end);
-          _handleEmailTap(text);
-          return true;
-        }
-      }
+  void _handleUrlTap(String value) async {
+    final uri = Uri.parse(value.startsWith('http') ? value : 'https://$value');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
-
-    return false;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -378,6 +438,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Expanded(
@@ -387,181 +448,201 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                     _contentFocusNode.requestFocus();
                   }
                 },
-                behavior: HitTestBehavior.translucent,
+                behavior: HitTestBehavior.opaque,
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   child: Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _titleController,
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.addTitle,
-                          filled: true,
-                          fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                          hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textSecondary),
+                    padding: const EdgeInsets.only(left: 16, right: 16, top: 0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _titleController,
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context)!.addTitle,
+                            filled: true,
+                            fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                            hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textSecondary),
+                          ),
+                          style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
                         ),
-                        style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildMetadataRow(),
-                      if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
-                      const SizedBox(height: 12),
-                      Theme(
-                        data: Theme.of(context).copyWith(
-                          textTheme: Theme.of(context).textTheme.apply(
-                                bodyColor: colors.textPrimary,
-                                displayColor: colors.textPrimary,
+                        const SizedBox(height: 8),
+                        _buildMetadataRow(),
+                        if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
+                        const SizedBox(height: 12),
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            textTheme: Theme.of(context).textTheme.apply(
+                                  bodyColor: colors.textPrimary,
+                                  displayColor: colors.textPrimary,
+                                ),
+                          ),
+                          child: quill.QuillEditor.basic(
+                            controller: _contentController,
+                            focusNode: _contentFocusNode,
+                            config: quill.QuillEditorConfig(
+                              placeholder: AppLocalizations.of(context)!.startTypingNote,
+                              scrollable: false,
+                              expands: false,
+                              customStyles: quill.DefaultStyles(
+                                paragraph: quill.DefaultTextBlockStyle(
+                                  GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.5),
+                                  const quill.HorizontalSpacing(0, 0),
+                                  const quill.VerticalSpacing(0, 0),
+                                  const quill.VerticalSpacing(0, 0),
+                                  null,
+                                ),
+                                placeHolder: quill.DefaultTextBlockStyle(
+                                  GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary, height: 1.5),
+                                  const quill.HorizontalSpacing(0, 0),
+                                  const quill.VerticalSpacing(0, 0),
+                                  const quill.VerticalSpacing(0, 0),
+                                  null,
+                                ),
                               ),
-                        ),
-                        child: quill.QuillEditor.basic(
-                          controller: _contentController,
-                          focusNode: _contentFocusNode,
-                          config: quill.QuillEditorConfig(
-                            placeholder: AppLocalizations.of(context)!.startTypingNote,
-                            scrollable: false,
-                            expands: false,
-                            customStyles: quill.DefaultStyles(
-                              paragraph: quill.DefaultTextBlockStyle(
-                                GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.5),
-                                const quill.HorizontalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                null,
-                              ),
-                              placeHolder: quill.DefaultTextBlockStyle(
-                                GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary, height: 1.5),
-                                const quill.HorizontalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                null,
-                              ),
-                            ),
-                            embedBuilders: [
-                              ...FlutterQuillEmbeds.editorBuilders(),
-                            ],
-                            onTapUp: _handleEditorTap,
-                            contextMenuBuilder: (context, rawEditorState) {
-                              final defaultItems = rawEditorState.contextMenuButtonItems;
-                              final selection = rawEditorState.textEditingValue.selection;
+                              embedBuilders: [
+                                ...FlutterQuillEmbeds.editorBuilders(),
+                              ],
+                              onLaunchUrl: (String url) {
+                                if (!_contentFocusNode.hasFocus) {
+                                  _contentFocusNode.requestFocus();
+                                }
+                              },
+                              contextMenuBuilder: (context, rawEditorState) {
+                                final defaultItems = rawEditorState.contextMenuButtonItems;
+                                final selection = rawEditorState.textEditingValue.selection;
 
-                              if (selection.isCollapsed) {
+                                if (selection.isCollapsed) {
+                                  return AdaptiveTextSelectionToolbar.buttonItems(
+                                    anchors: rawEditorState.contextMenuAnchors,
+                                    buttonItems: defaultItems,
+                                  );
+                                }
+
+                                final text = rawEditorState.textEditingValue.text;
+                                final selectedText = selection.textInside(text).trim();
+
+                                final isPhone = _phoneNumberRegex.hasMatch(selectedText);
+                                final isEmail = _emailRegex.hasMatch(selectedText);
+                                final isUrl = _urlRegex.hasMatch(selectedText);
+
+                                if (isPhone || isEmail || isUrl) {
+                                  final customItems = <ContextMenuButtonItem>[];
+
+                                  if (isPhone) {
+                                    customItems.add(
+                                      ContextMenuButtonItem(
+                                        onPressed: () {
+                                          _handlePhoneNumberTap(selectedText);
+                                          rawEditorState.hideToolbar();
+                                        },
+                                        type: ContextMenuButtonType.custom,
+                                        label: 'Call',
+                                      ),
+                                    );
+                                  }
+
+                                  if (isEmail) {
+                                    customItems.add(
+                                      ContextMenuButtonItem(
+                                        onPressed: () {
+                                          _handleEmailTap(selectedText);
+                                          rawEditorState.hideToolbar();
+                                        },
+                                        type: ContextMenuButtonType.custom,
+                                        label: 'Email',
+                                      ),
+                                    );
+                                  }
+                                  if (isUrl) {
+                                    customItems.add(
+                                      ContextMenuButtonItem(
+                                        onPressed: () {
+                                          _handleUrlTap(selectedText);
+                                          rawEditorState.hideToolbar();
+                                        },
+                                        type: ContextMenuButtonType.custom,
+                                        label: 'Open Link',
+                                      ),
+                                    );
+                                  }
+
+                                  return AdaptiveTextSelectionToolbar.buttonItems(
+                                    anchors: rawEditorState.contextMenuAnchors,
+                                    buttonItems: [...customItems, ...defaultItems],
+                                  );
+                                }
+
                                 return AdaptiveTextSelectionToolbar.buttonItems(
                                   anchors: rawEditorState.contextMenuAnchors,
                                   buttonItems: defaultItems,
                                 );
-                              }
-
-                              final text = rawEditorState.textEditingValue.text;
-                              final selectedText = selection.textInside(text).trim();
-
-                              final isPhone = _phoneNumberRegex.hasMatch(selectedText);
-                              final isEmail = _emailRegex.hasMatch(selectedText);
-
-                              if (isPhone || isEmail) {
-                                final customItems = <ContextMenuButtonItem>[];
-
-                                if (isPhone) {
-                                  customItems.add(
-                                    ContextMenuButtonItem(
-                                      onPressed: () {
-                                        _handlePhoneNumberTap(selectedText);
-                                        rawEditorState.hideToolbar();
-                                      },
-                                      type: ContextMenuButtonType.custom,
-                                      label: 'Call',
-                                    ),
-                                  );
-                                }
-
-                                if (isEmail) {
-                                  customItems.add(
-                                    ContextMenuButtonItem(
-                                      onPressed: () {
-                                        _handleEmailTap(selectedText);
-                                        rawEditorState.hideToolbar();
-                                      },
-                                      type: ContextMenuButtonType.custom,
-                                      label: 'Email',
-                                    ),
-                                  );
-                                }
-
-                                return AdaptiveTextSelectionToolbar.buttonItems(
-                                  anchors: rawEditorState.contextMenuAnchors,
-                                  buttonItems: [...customItems, ...defaultItems],
-                                );
-                              }
-
-                              return AdaptiveTextSelectionToolbar.buttonItems(
-                                anchors: rawEditorState.contextMenuAnchors,
-                                buttonItems: defaultItems,
-                              );
-                            },
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          !_contentFocusNode.hasFocus
-                ? Container()
+            !_contentFocusNode.hasFocus
+                ? SafeArea(top: false, child: const SizedBox.shrink())
                 : Container(
                     color: colors.cardSurface,
-                    child: quill.QuillSimpleToolbar(
-                      controller: _contentController,
-                      config: quill.QuillSimpleToolbarConfig(
-                        multiRowsDisplay: false,
-                        showBoldButton: true,
-                        showItalicButton: true,
-                        showListBullets: true,
-                        showBackgroundColorButton: true,
-                        showFontSize: false,
-                        showUndo: true,
-                        showRedo: true,
-                        showFontFamily: true,
-                        showStrikeThrough: false,
-                        showInlineCode: false,
-                        showColorButton: true,
-                        showClearFormat: false,
-                        showAlignmentButtons: false,
-                        showLeftAlignment: false,
-                        showCenterAlignment: false,
-                        showRightAlignment: false,
-                        showJustifyAlignment: false,
-                        showHeaderStyle: false,
-                        showListNumbers: true,
-                        showListCheck: false,
-                        showCodeBlock: false,
-                        showQuote: true,
-                        showIndent: false,
-                        showLink: false,
-                        showDirection: false,
-                        showSearchButton: false,
-                        showSubscript: false,
-                        showSuperscript: false,
-                        showClipboardCopy: false,
-                        showClipboardCut: false,
-                        showClipboardPaste: false,
-                        /*customButtons: [
+                    child: SafeArea(
+                      top: false,
+                      child: quill.QuillSimpleToolbar(
+                        controller: _contentController,
+                        config: quill.QuillSimpleToolbarConfig(
+                          multiRowsDisplay: false,
+                          showBoldButton: true,
+                          showItalicButton: true,
+                          showListBullets: true,
+                          showBackgroundColorButton: true,
+                          showFontSize: false,
+                          showUndo: true,
+                          showRedo: true,
+                          showFontFamily: true,
+                          showStrikeThrough: false,
+                          showInlineCode: false,
+                          showColorButton: true,
+                          showClearFormat: false,
+                          showAlignmentButtons: false,
+                          showLeftAlignment: false,
+                          showCenterAlignment: false,
+                          showRightAlignment: false,
+                          showJustifyAlignment: false,
+                          showHeaderStyle: false,
+                          showListNumbers: true,
+                          showListCheck: false,
+                          showCodeBlock: false,
+                          showQuote: true,
+                          showIndent: false,
+                          showLink: false,
+                          showDirection: false,
+                          showSearchButton: false,
+                          showSubscript: false,
+                          showSuperscript: false,
+                          showClipboardCopy: false,
+                          showClipboardCut: false,
+                          showClipboardPaste: false,
+                          /*customButtons: [
                           quill.QuillToolbarCustomButtonOptions(
                             icon: const Icon(Icons.image),
                             onPressed: _pickImage,
                             tooltip: 'Insert Image',
                           ),
                         ],*/
+                        ),
                       ),
                     ),
-                  ),
+                  )
           ],
         ),
       ),
@@ -653,12 +734,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               ),
             ],
           ),
-          if (_isRecurring) ...[
-            const SizedBox(height: 8),
-            _buildRecurrenceChips(),
-            const SizedBox(height: 4),
-            _buildNextOccurrenceDisplay()
-          ],
+          if (_isRecurring) ...[const SizedBox(height: 8), _buildRecurrenceChips(), const SizedBox(height: 4), _buildNextOccurrenceDisplay()],
         ],
       ),
     );
@@ -745,9 +821,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         width: isSelected ? 2 : 1,
                       ),
                     ),
-                    child: isThemeDefault
-                        ? Icon(Icons.brightness_auto, size: 18, color: sheetColors.textSecondary)
-                        : null,
+                    child: isThemeDefault ? Icon(Icons.brightness_auto, size: 18, color: sheetColors.textSecondary) : null,
                   ),
                 );
               },

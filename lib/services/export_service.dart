@@ -7,7 +7,7 @@ import '../models/note.dart';
 import '../models/task.dart';
 
 class ExportService {
-  Future<void> exportToJSON(List<Note> notes, List<Task> tasks) async {
+  Future<void> exportToJSON(List<MyNote> notes, List<Task> tasks) async {
     final data = {
       'notes': notes.map((n) => n.toMap()).toList(),
       'tasks': tasks.map((t) => t.toMap()).toList(),
@@ -16,7 +16,7 @@ class ExportService {
     await Share.share(jsonString, subject: 'App Data Export (JSON)');
   }
 
-  Future<void> exportToText(List<Note> notes, List<Task> tasks) async {
+  Future<void> exportToText(List<MyNote> notes, List<Task> tasks) async {
     StringBuffer buffer = StringBuffer();
     buffer.writeln('--- PERSONAL NOTES ---\n');
     for (var note in notes) {
@@ -35,7 +35,7 @@ class ExportService {
     await Share.share(buffer.toString(), subject: 'App Data Export (Text)');
   }
 
-  Future<void> exportToPDF(List<Note> notes, List<Task> tasks) async {
+  Future<void> exportToPDF(List<MyNote> notes, List<Task> tasks) async {
     final pdf = pw.Document();
 
     pdf.addPage(

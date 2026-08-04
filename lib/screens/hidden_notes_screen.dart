@@ -7,7 +7,7 @@ import '../services/note_provider.dart';
 import '../models/note.dart';
 import '../theme/app_colors.dart';
 import '../utils/note_utils.dart';
-import 'note_edit_screen.dart';
+import '../routes/app_routes.dart';
 
 class HiddenNotesScreen extends StatelessWidget {
   const HiddenNotesScreen({super.key});
@@ -57,10 +57,7 @@ class HiddenNotesScreen extends StatelessWidget {
               return _HiddenNoteCard(
                 note: note,
                 onUnhide: () => provider.unhideNote(note),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
-                ),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.noteEdit, arguments: {'note': note}),
               );
             },
           );
@@ -71,7 +68,7 @@ class HiddenNotesScreen extends StatelessWidget {
 }
 
 class _HiddenNoteCard extends StatelessWidget {
-  final Note note;
+  final MyNote note;
   final VoidCallback onUnhide;
   final VoidCallback onTap;
 

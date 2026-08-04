@@ -1,7 +1,7 @@
 import 'recurring_interval.dart';
 
 enum TaskPriority { low, medium, high }
-enum TaskStatus { pending, inProgress, completed }
+enum NoteTaskStatus { pending, inProgress, completed }
 
 class Task {
   final int? id;
@@ -9,7 +9,7 @@ class Task {
   final String description;
   final DateTime? reminderTime;
   final TaskPriority priority;
-  final TaskStatus status;
+  final NoteTaskStatus status;
   final bool isRecurring;
   final RecurringInterval recurringInterval;
   final int? customIntervalValue;
@@ -23,7 +23,7 @@ class Task {
     this.description = '',
     this.reminderTime,
     this.priority = TaskPriority.low,
-    this.status = TaskStatus.pending,
+    this.status = NoteTaskStatus.pending,
     this.isRecurring = false,
     this.recurringInterval = RecurringInterval.none,
     this.customIntervalValue,
@@ -38,7 +38,7 @@ class Task {
     String? description,
     DateTime? reminderTime,
     TaskPriority? priority,
-    TaskStatus? status,
+    NoteTaskStatus? status,
     bool? isRecurring,
     RecurringInterval? recurringInterval,
     int? customIntervalValue,
@@ -86,7 +86,7 @@ class Task {
       description: map['description'] ?? '',
       reminderTime: map['reminderTime'] != null ? DateTime.parse(map['reminderTime']) : null,
       priority: TaskPriority.values[map['priority']],
-      status: TaskStatus.values[map['status']],
+      status: NoteTaskStatus.values[map['status']],
       isRecurring: map['isRecurring'] == 1,
       recurringInterval: RecurringInterval.values[map['recurringInterval'] ?? 0],
       customIntervalValue: map['customIntervalValue'],

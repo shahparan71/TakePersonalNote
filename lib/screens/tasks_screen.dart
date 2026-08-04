@@ -9,7 +9,11 @@ import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 
 import '../models/task.dart';
-import 'task_edit_screen.dart';
+import '../routes/app_routes.dart';
+import '../services/google_drive_sync_service.dart';
+import '../services/preference_service.dart';
+
+
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -50,7 +54,17 @@ class _TasksScreenState extends State<TasksScreen> {
             : null,
         title: _selectionMode
             ? Text('${_selectedTaskIds.length} selected', style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 20))
-            : Text(AppLocalizations.of(context)!.tasks, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+            : Consumer<TaskProvider>(
+                builder: (context, _, child) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSyncIcon(),
+                      Text(AppLocalizations.of(context)!.tasks, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                    ],
+                  );
+                },
+              ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -101,9 +115,9 @@ class _TasksScreenState extends State<TasksScreen> {
             );
           }
 
-          final active = provider.tasks.where((t) => t.status != TaskStatus.completed).toList()
+          final active = provider.tasks.where((t) => t.status != NoteTaskStatus.completed).toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          final completed = provider.tasks.where((t) => t.status == TaskStatus.completed).toList()
+          final completed = provider.tasks.where((t) => t.status == NoteTaskStatus.completed).toList()
             ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
           return ListView(
@@ -131,16 +145,13 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
       floatingActionButton: DesignFab(
         heroTag: 'tasks_fab',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const TaskEditScreen()),
-        ),
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.taskEdit),
       ),
     );
   }
 
   Widget _buildTaskTile(BuildContext context, Task task, {bool isCompletedSection = false}) {
-    final isCompleted = task.status == TaskStatus.completed;
+    final isCompleted = task.status == NoteTaskStatus.completed;
     final priorityColor = _priorityColor(task.priority);
     final colors = context.appColors;
 
@@ -170,10 +181,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 }
               });
             } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
-              );
+              Navigator.pushNamed(context, AppRoutes.taskEdit, arguments: {'task': task});
             }
           },
           onLongPress: () {
@@ -192,7 +200,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   onChanged: (val) {
                     final updated = task.copyWith(
-                      status: val == true ? TaskStatus.completed : TaskStatus.pending,
+                      status: val == true ? NoteTaskStatus.completed : NoteTaskStatus.pending,
                       updatedAt: DateTime.now(),
                     );
                     Provider.of<TaskProvider>(context, listen: false).updateTask(updated);
@@ -322,7 +330,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
               const Divider(),
               ListTile(title: Text(AppLocalizations.of(context)!.filterByStatus, style: TextStyle(fontWeight: FontWeight.bold))),
-              ...TaskStatus.values.map(
+              ...NoteTaskStatus.values.map(
                 (s) => ListTile(
                   title: Text(s.name[0].toUpperCase() + s.name.substring(1)),
                   onTap: () {
@@ -345,4 +353,44 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
+  Widget _buildSyncIcon() {
+    return Consumer<GoogleDriveSyncService>(
+      builder: (context, syncService, _) {
+        if (!syncService.isSignedIn) return const SizedBox.shrink();
+
+        return FutureBuilder<bool>(
+          future: PreferenceService().isTasksPendingDriveSync(),
+          builder: (context, snapshot) {
+            final isPending = snapshot.data ?? false;
+
+            if (syncService.isSyncing) {
+              return const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              );
+            }
+
+            if (isPending) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: InkWell(
+                  onTap: () {
+                    syncService.syncToDrive();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Icon(Icons.cloud_upload_outlined, color: Colors.orange, size: 24),
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
+  }
 }

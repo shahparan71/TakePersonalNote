@@ -14,8 +14,7 @@ import 'dashboard_screen.dart';
 import 'notes_screen.dart';
 import 'tasks_screen.dart';
 import 'calendar_screen.dart';
-import 'note_edit_screen.dart';
-import 'task_edit_screen.dart';
+import '../routes/app_routes.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 
 
@@ -96,24 +95,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NoteEditScreen(initialText: text),
-                ),
-              );
+              Navigator.pushNamed(context, AppRoutes.noteEdit, arguments: {'initialText': text});
             },
             child: Text(AppLocalizations.of(context)!.asNote),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TaskEditScreen(initialText: text),
-                ),
-              );
+              Navigator.pushNamed(context, AppRoutes.taskEdit, arguments: {'initialText': text});
             },
             child: Text(AppLocalizations.of(context)!.asTask),
           ),

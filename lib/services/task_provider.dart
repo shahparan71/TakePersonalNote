@@ -11,7 +11,7 @@ class TaskProvider with ChangeNotifier {
 
   List<Task> get tasks => _tasks;
 
-  Future<void> fetchTasks({String? query, TaskPriority? priority, TaskStatus? status, String? orderBy}) async {
+  Future<void> fetchTasks({String? query, TaskPriority? priority, NoteTaskStatus? status, String? orderBy}) async {
     _tasks = await _dbService.getTasks(query: query, priority: priority, status: status, orderBy: orderBy);
     notifyListeners();
   }
@@ -55,7 +55,7 @@ class TaskProvider with ChangeNotifier {
     _triggerSyncIfSignedIn();
   }
 
-  List<Task> getTasksByStatus(TaskStatus status) {
+  List<Task> getTasksByStatus(NoteTaskStatus status) {
     return _tasks.where((task) => task.status == status).toList();
   }
 

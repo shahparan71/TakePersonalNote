@@ -1,18 +1,18 @@
-import 'package:googleapis/batch/v1.dart' hide Task, Container;
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
+import '../models/task.dart';
+import '../services/task_provider.dart';
+import '../services/notification_service.dart';
+import '../services/battery_optimization_service.dart';
+import '../services/settings_provider.dart';
+import '../utils/date_utils.dart';
+import '../theme/app_colors.dart';
+import '../widgets/design_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:take_personal_note/models/task.dart';
-import 'package:take_personal_note/services/battery_optimization_service.dart';
-import 'package:take_personal_note/services/notification_service.dart';
-import 'package:take_personal_note/services/settings_provider.dart';
-import 'package:take_personal_note/services/task_provider.dart';
-import 'package:take_personal_note/theme/app_colors.dart';
-import 'package:take_personal_note/utils/date_utils.dart';
-import 'package:take_personal_note/widgets/design_widgets.dart';
+import '../services/google_drive_sync_service.dart';
 
 class TaskEditScreen extends StatefulWidget {
   final Task? task;
@@ -96,7 +96,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       await NotificationService().cancelNotification(notifId);
       return;
     }
-    await _checkBatteryOptimization();
+    //await _checkBatteryOptimization();
     final success = await NotificationService().scheduleNotificationWithCustomInterval(
       id: notifId,
       title: AppLocalizations.of(context)!.taskReminder,
@@ -152,6 +152,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         await provider.updateTask(task);
         await _scheduleOrCancelNotification(widget.task!.id, generatedTitle);
       }
+
+      if (GoogleDriveSyncService().isSignedIn) {
+        GoogleDriveSyncService().syncToDrive();
+      }
+
       if (mounted) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -246,6 +251,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             ),
             style: GoogleFonts.outfit(fontSize: 20, height: 1.4, color: colors.textPrimary),
             maxLines: null,
+            minLines: 3,
           ),
         ],
       ),
