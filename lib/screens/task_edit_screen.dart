@@ -5,57 +5,19 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/task.dart';
 import '../services/task_provider.dart';
 import '../services/notification_service.dart';
-import '../utils/date_utils.dart';
 import '../theme/app_colors.dart';
 import '../widgets/design_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/date_utils.dart';
 import '../services/google_drive_sync_service.dart';
+import '../utils/url_utils.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-enum SocialPlatform {
-  facebook,
-  youtube,
-  instagram,
-  whatsapp,
-  tiktok,
-  telegram,
-  messenger,
-  wechat,
-  other,
-}
-
-/// Identifies the social platform from a URL.
-SocialPlatform _identifyPlatform(String url) {
-  try {
-    final host = Uri.parse(url).host.toLowerCase();
-    
-    if (host.contains('facebook.com') || host.contains('fb.com') || host.contains('fb.me')) {
-      return SocialPlatform.facebook;
-    } else if (host.contains('youtube.com') || host.contains('youtu.be')) {
-      return SocialPlatform.youtube;
-    } else if (host.contains('instagram.com') || host.contains('instagr.am')) {
-      return SocialPlatform.instagram;
-    } else if (host.contains('whatsapp.com') || host.contains('wa.me')) {
-      return SocialPlatform.whatsapp;
-    } else if (host.contains('tiktok.com')) {
-      return SocialPlatform.tiktok;
-    } else if (host.contains('t.me') || host.contains('telegram.org') || host.contains('telegram.me')) {
-      return SocialPlatform.telegram;
-    } else if (host.contains('messenger.com') || host.contains('m.me')) {
-      return SocialPlatform.messenger;
-    } else if (host.contains('wechat.com') || host.contains('weixin.qq.com')) {
-      return SocialPlatform.wechat;
-    }
-  } catch (_) {}
-  return SocialPlatform.other;
-}
 
 /// Extracts the first URL that overlaps with the current text [selection] in [text].
 String? _urlInSelection(String text, TextSelection selection) {
@@ -136,56 +98,6 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     final url = _urlInSelection(_descController.text, sel);
     if (url != _selectedUrl) {
       setState(() => _selectedUrl = url);
-    }
-  }
-
-  Future<void> _openUrl(String rawUrl) async {
-    final normalized =
-        rawUrl.startsWith('http') ? rawUrl : 'https://$rawUrl';
-    final uri = Uri.parse(normalized);
-
-    final platform = _identifyPlatform(normalized);
-
-    Uri? appUri;
-    switch (platform) {
-      case SocialPlatform.facebook:
-        appUri = Uri.parse('fb://facewebmodal/f?href=${Uri.encodeComponent(normalized)}');
-        break;
-      case SocialPlatform.youtube:
-        appUri = Uri.parse(normalized.replaceFirst(RegExp(r'^https?://'), 'vnd.youtube://'));
-        break;
-      case SocialPlatform.instagram:
-        appUri = Uri.parse('instagram://url?url=${Uri.encodeComponent(normalized)}');
-        break;
-      case SocialPlatform.whatsapp:
-        // wa.me urls usually open fine via intent directly, but we can try whatsapp://send?text=
-        break;
-      case SocialPlatform.tiktok:
-        appUri = Uri.parse('snssdk1128://open?url=${Uri.encodeComponent(normalized)}');
-        break;
-      case SocialPlatform.telegram:
-        appUri = Uri.parse(normalized.replaceFirst(RegExp(r'^https?://(t\.me|telegram\.me|telegram\.org)/'), 'tg://resolve?domain='));
-        break;
-      case SocialPlatform.messenger:
-        appUri = Uri.parse('fb-messenger://share?link=${Uri.encodeComponent(normalized)}');
-        break;
-      case SocialPlatform.wechat:
-        appUri = Uri.parse('weixin://');
-        break;
-      case SocialPlatform.other:
-        break;
-    }
-
-    if (appUri != null && await canLaunchUrl(appUri)) {
-      await launchUrl(appUri, mode: LaunchMode.externalApplication);
-      return;
-    }
-
-    // Fallback: open in default browser.
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
-    } else {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -517,7 +429,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
 
   Widget _buildUrlActionBar(AppPalette colors, String url) {
     final normalizedUrl = url.startsWith('http') ? url : 'https://$url';
-    final platform = _identifyPlatform(normalizedUrl);
+    final platform = UrlUtils.identifyPlatform(normalizedUrl);
     
     Color bgColor = colors.fabDark.withValues(alpha: 0.08);
     Color borderColor = colors.fabDark.withValues(alpha: 0.2);
@@ -658,7 +570,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 icon: const Icon(Icons.arrow_outward_rounded, size: 15),
                 label: Text('Open',
                     style: GoogleFonts.outfit(fontSize: 13, color: fgColor == Colors.white ? Colors.black : Colors.white)),
-                onPressed: () => _openUrl(url),
+                onPressed: () => UrlUtils.openUrl(url),
               ),
             ],
           ),

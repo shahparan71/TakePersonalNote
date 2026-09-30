@@ -18,6 +18,7 @@ import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:take_personal_note/utils/url_utils.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final MyNote? note;
@@ -374,10 +375,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   void _handleUrlTap(String value) async {
-    final uri = Uri.parse(value.startsWith('http') ? value : 'https://$value');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await UrlUtils.openUrl(value);
   }
 
   @override
