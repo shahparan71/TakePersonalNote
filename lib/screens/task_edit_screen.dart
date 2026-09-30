@@ -130,9 +130,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     if (mounted) _showSchedulingFeedback(success);
   }
 
-  Future<void> _saveTask() async {
-    if (_descController.text.trim().isEmpty) return;
-    if (_isSaving) return;
+  /// Saves the task without navigating away. Returns true if saved.
+  Future<bool> _saveTaskOnly() async {
+    if (_descController.text.trim().isEmpty) return false;
+    if (_isSaving) return false;
     setState(() => _isSaving = true);
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
@@ -179,12 +180,12 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
       if (GoogleDriveSyncService().isSignedIn) {
         GoogleDriveSyncService().syncToDrive();
       }
-
-      if (mounted) Navigator.pop(context);
+      return true;
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
 
   void _showSchedulingFeedback(bool success) {
     String message;
@@ -218,52 +219,60 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     final colors = context.appColors;
     final charCount = _descController.text.length;
 
-    return Scaffold(
-      backgroundColor: colors.scaffoldBg,
-      appBar: _buildAppBar(colors),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              children: [
-                if (_reminderTime != null) ...[
-                  _buildReminderCard(),
-                  const SizedBox(height: 16),
-                ],
-                _buildTextInputCard(colors),
-                const SizedBox(height: 8),
-                // Character counter row
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '$charCount characters',
-                    style: GoogleFonts.outfit(
-                      fontSize: 11,
-                      color: colors.textSecondary.withValues(alpha: 0.6),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _saveTaskOnly();
+        if (mounted) Navigator.pop(context, result);
+      },
+      child: Scaffold(
+        backgroundColor: colors.scaffoldBg,
+        appBar: _buildAppBar(colors),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                children: [
+                  if (_reminderTime != null) ...[
+                    _buildReminderCard(),
+                    const SizedBox(height: 16),
+                  ],
+                  _buildTextInputCard(colors),
+                  const SizedBox(height: 8),
+                  // Character counter row
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$charCount characters',
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        color: colors.textSecondary.withValues(alpha: 0.6),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // URL action bar — shown when a URL is selected
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            transitionBuilder: (child, anim) =>
-                SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 1),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                      parent: anim, curve: Curves.easeOutCubic)),
-                  child: child,
-                ),
-            child: _selectedUrl != null
-                ? _buildUrlActionBar(colors, _selectedUrl!)
-                : const SizedBox.shrink(),
-          ),
-        ],
+            // URL action bar — shown when a URL is selected
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (child, anim) =>
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 1),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                        parent: anim, curve: Curves.easeOutCubic)),
+                    child: child,
+                  ),
+              child: _selectedUrl != null
+                  ? _buildUrlActionBar(colors, _selectedUrl!)
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -324,7 +333,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                   icon: Icons.check,
                   color: AppColors.actionSave,
                   size: 40,
-                  onPressed: _saveTask,
+                  onPressed: () => Navigator.pop(context),
                 ),
         ),
       ],

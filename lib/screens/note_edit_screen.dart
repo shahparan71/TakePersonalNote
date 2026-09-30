@@ -384,9 +384,18 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final colors = context.appColors;
     final scaffoldColor = colors.noteEditorBackground(_selectedColor);
 
-    return Scaffold(
-      backgroundColor: scaffoldColor,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _saveNote();
+        if (mounted) {
+          Navigator.pop(context, result);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: scaffoldColor,
+        appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
@@ -427,10 +436,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               icon: Icons.check,
               color: AppColors.actionSave,
               size: 40,
-              onPressed: () {
-                _saveNote();
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
@@ -643,6 +649,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   )
           ],
         ),
+      ),
       ),
     );
   }
