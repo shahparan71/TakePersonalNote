@@ -333,7 +333,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                   icon: Icons.check,
                   color: AppColors.actionSave,
                   size: 40,
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.maybePop(context),
                 ),
         ),
       ],

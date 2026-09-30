@@ -405,7 +405,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             icon: Icons.close,
             color: colors.textSecondary,
             size: 40,
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.maybePop(context),
           ),
         ),
         actions: [
@@ -436,7 +436,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               icon: Icons.check,
               color: AppColors.actionSave,
               size: 40,
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.maybePop(context),
             ),
           ),
         ],
