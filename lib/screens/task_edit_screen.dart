@@ -19,20 +19,42 @@ import '../services/google_drive_sync_service.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Returns `true` when [url] is a Facebook URL.
-bool _isFacebookUrl(String url) {
+enum SocialPlatform {
+  facebook,
+  youtube,
+  instagram,
+  whatsapp,
+  tiktok,
+  telegram,
+  messenger,
+  wechat,
+  other,
+}
+
+/// Identifies the social platform from a URL.
+SocialPlatform _identifyPlatform(String url) {
   try {
     final host = Uri.parse(url).host.toLowerCase();
-    return host == 'facebook.com' ||
-        host == 'www.facebook.com' ||
-        host == 'm.facebook.com' ||
-        host == 'fb.com' ||
-        host == 'www.fb.com' ||
-        host == 'fb.me' ||
-        host == 'www.fb.me';
-  } catch (_) {
-    return false;
-  }
+    
+    if (host.contains('facebook.com') || host.contains('fb.com') || host.contains('fb.me')) {
+      return SocialPlatform.facebook;
+    } else if (host.contains('youtube.com') || host.contains('youtu.be')) {
+      return SocialPlatform.youtube;
+    } else if (host.contains('instagram.com') || host.contains('instagr.am')) {
+      return SocialPlatform.instagram;
+    } else if (host.contains('whatsapp.com') || host.contains('wa.me')) {
+      return SocialPlatform.whatsapp;
+    } else if (host.contains('tiktok.com')) {
+      return SocialPlatform.tiktok;
+    } else if (host.contains('t.me') || host.contains('telegram.org') || host.contains('telegram.me')) {
+      return SocialPlatform.telegram;
+    } else if (host.contains('messenger.com') || host.contains('m.me')) {
+      return SocialPlatform.messenger;
+    } else if (host.contains('wechat.com') || host.contains('weixin.qq.com')) {
+      return SocialPlatform.wechat;
+    }
+  } catch (_) {}
+  return SocialPlatform.other;
 }
 
 /// Extracts the first URL that overlaps with the current text [selection] in [text].
@@ -122,15 +144,41 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
         rawUrl.startsWith('http') ? rawUrl : 'https://$rawUrl';
     final uri = Uri.parse(normalized);
 
-    if (_isFacebookUrl(normalized)) {
-      // Try opening in the Facebook app first (fb:// deep-link).
-      final fbAppUri = Uri.parse(
-        'fb://facewebmodal/f?href=${Uri.encodeComponent(normalized)}',
-      );
-      if (await canLaunchUrl(fbAppUri)) {
-        await launchUrl(fbAppUri, mode: LaunchMode.externalApplication);
-        return;
-      }
+    final platform = _identifyPlatform(normalized);
+
+    Uri? appUri;
+    switch (platform) {
+      case SocialPlatform.facebook:
+        appUri = Uri.parse('fb://facewebmodal/f?href=${Uri.encodeComponent(normalized)}');
+        break;
+      case SocialPlatform.youtube:
+        appUri = Uri.parse(normalized.replaceFirst(RegExp(r'^https?://'), 'vnd.youtube://'));
+        break;
+      case SocialPlatform.instagram:
+        appUri = Uri.parse('instagram://url?url=${Uri.encodeComponent(normalized)}');
+        break;
+      case SocialPlatform.whatsapp:
+        // wa.me urls usually open fine via intent directly, but we can try whatsapp://send?text=
+        break;
+      case SocialPlatform.tiktok:
+        appUri = Uri.parse('snssdk1128://open?url=${Uri.encodeComponent(normalized)}');
+        break;
+      case SocialPlatform.telegram:
+        appUri = Uri.parse(normalized.replaceFirst(RegExp(r'^https?://(t\.me|telegram\.me|telegram\.org)/'), 'tg://resolve?domain='));
+        break;
+      case SocialPlatform.messenger:
+        appUri = Uri.parse('fb-messenger://share?link=${Uri.encodeComponent(normalized)}');
+        break;
+      case SocialPlatform.wechat:
+        appUri = Uri.parse('weixin://');
+        break;
+      case SocialPlatform.other:
+        break;
+    }
+
+    if (appUri != null && await canLaunchUrl(appUri)) {
+      await launchUrl(appUri, mode: LaunchMode.externalApplication);
+      return;
     }
 
     // Fallback: open in default browser.
@@ -467,10 +515,69 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     );
   }
 
-  /// Pill-shaped bar that slides up from the bottom when a URL is selected.
   Widget _buildUrlActionBar(AppPalette colors, String url) {
-    final isFb = _isFacebookUrl(
-        url.startsWith('http') ? url : 'https://$url');
+    final normalizedUrl = url.startsWith('http') ? url : 'https://$url';
+    final platform = _identifyPlatform(normalizedUrl);
+    
+    Color bgColor = colors.fabDark.withValues(alpha: 0.08);
+    Color borderColor = colors.fabDark.withValues(alpha: 0.2);
+    Color fgColor = colors.fabDark;
+    IconData iconData = Icons.open_in_browser_rounded;
+    String label = 'Open in browser';
+    
+    switch (platform) {
+      case SocialPlatform.facebook:
+        fgColor = const Color(0xFF1877F2);
+        iconData = FontAwesomeIcons.facebook;
+        label = 'Open in Facebook app';
+        break;
+      case SocialPlatform.youtube:
+        fgColor = const Color(0xFFFF0000);
+        iconData = FontAwesomeIcons.youtube;
+        label = 'Open in YouTube app';
+        break;
+      case SocialPlatform.instagram:
+        fgColor = const Color(0xFFE1306C);
+        iconData = FontAwesomeIcons.instagram;
+        label = 'Open in Instagram app';
+        break;
+      case SocialPlatform.whatsapp:
+        fgColor = const Color(0xFF25D366);
+        iconData = FontAwesomeIcons.whatsapp;
+        label = 'Open in WhatsApp';
+        break;
+      case SocialPlatform.tiktok:
+        fgColor = const Color(0xFF000000); // Or white in dark mode
+        iconData = FontAwesomeIcons.tiktok;
+        label = 'Open in TikTok app';
+        break;
+      case SocialPlatform.telegram:
+        fgColor = const Color(0xFF0088CC);
+        iconData = FontAwesomeIcons.telegram;
+        label = 'Open in Telegram';
+        break;
+      case SocialPlatform.messenger:
+        fgColor = const Color(0xFF0084FF);
+        iconData = FontAwesomeIcons.facebookMessenger;
+        label = 'Open in Messenger';
+        break;
+      case SocialPlatform.wechat:
+        fgColor = const Color(0xFF07C160);
+        iconData = FontAwesomeIcons.weixin;
+        label = 'Open in WeChat';
+        break;
+      case SocialPlatform.other:
+        break;
+    }
+    
+    if (platform != SocialPlatform.other) {
+      bgColor = fgColor.withValues(alpha: 0.10);
+      borderColor = fgColor.withValues(alpha: 0.25);
+      
+      if (fgColor == const Color(0xFF000000) && colors.scaffoldBg.computeLuminance() < 0.2) {
+        fgColor = Colors.white;
+      }
+    }
 
     return Container(
       key: const ValueKey('url_bar'),
@@ -483,25 +590,17 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isFb
-                ? const Color(0xFF1877F2).withValues(alpha: 0.10)
-                : colors.fabDark.withValues(alpha: 0.08),
+            color: bgColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isFb
-                  ? const Color(0xFF1877F2).withValues(alpha: 0.25)
-                  : colors.fabDark.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Row(
             children: [
               // Icon
-              if (isFb)
-                const FaIcon(FontAwesomeIcons.facebook,
-                    size: 20, color: Color(0xFF1877F2))
+              if (platform != SocialPlatform.other)
+                FaIcon(iconData, size: 20, color: fgColor)
               else
-                Icon(Icons.open_in_browser_rounded,
-                    size: 20, color: colors.fabDark),
+                Icon(iconData, size: 20, color: fgColor),
               const SizedBox(width: 10),
               // Label + URL preview
               Expanded(
@@ -510,15 +609,11 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isFb
-                          ? 'Open in Facebook app'
-                          : 'Open in browser',
+                      label,
                       style: GoogleFonts.outfit(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isFb
-                            ? const Color(0xFF1877F2)
-                            : colors.fabDark,
+                        color: fgColor,
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -554,9 +649,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
               // Open button
               FilledButton.icon(
                 style: FilledButton.styleFrom(
-                  backgroundColor: isFb
-                      ? const Color(0xFF1877F2)
-                      : colors.fabDark,
+                  backgroundColor: fgColor,
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 8),
                   minimumSize: Size.zero,
@@ -564,7 +657,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
                 ),
                 icon: const Icon(Icons.arrow_outward_rounded, size: 15),
                 label: Text('Open',
-                    style: GoogleFonts.outfit(fontSize: 13)),
+                    style: GoogleFonts.outfit(fontSize: 13, color: fgColor == Colors.white ? Colors.black : Colors.white)),
                 onPressed: () => _openUrl(url),
               ),
             ],
