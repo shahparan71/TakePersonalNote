@@ -22,4 +22,5 @@ flutter pub run build_runner build --delete-conflicting-outputs
 flutter build apk --release
 flutter build appbundle --release
 flutter run --release
+
 explorer build\app\outputs\bundle\release
