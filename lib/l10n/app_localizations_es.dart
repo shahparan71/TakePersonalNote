@@ -87,17 +87,17 @@ class AppLocalizationsEs extends AppLocalizations {
       'Has iniciado sesión. Todos los datos se sincronizan automáticamente con Google Drive en tiempo real.';
 
   @override
-  String get localDataReady => 'Datos locales listos para copia';
+  String get localDataReady => 'Sincronizar datos con Google Drive';
 
   @override
   String get saveLocalNotesDesc =>
-      'Guarda tus notas y tareas locales en Google Drive para mantenerlas seguras y sincronizadas en tus dispositivos.';
+      'Conéctate a Google Drive para combinar tus notas y tareas locales con tu copia en la nube sin perder ningún dato.';
 
   @override
-  String get uploading => 'Subiendo...';
+  String get uploading => 'Sincronizando...';
 
   @override
-  String get saveToGoogleDrive => 'Guardar en Google Drive';
+  String get saveToGoogleDrive => 'Sincronizar con Google Drive';
 
   @override
   String get noUpcomingReminders => 'No hay recordatorios próximos';

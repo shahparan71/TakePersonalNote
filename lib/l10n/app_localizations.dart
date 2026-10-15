@@ -253,25 +253,25 @@ abstract class AppLocalizations {
   /// No description provided for @localDataReady.
   ///
   /// In en, this message translates to:
-  /// **'Local data is ready to back up'**
+  /// **'Sync data with Google Drive'**
   String get localDataReady;
 
   /// No description provided for @saveLocalNotesDesc.
   ///
   /// In en, this message translates to:
-  /// **'Save your local notes and tasks to Google Drive to keep them safe and synced across your devices.'**
+  /// **'Connect to Google Drive to merge your local notes and tasks with your cloud backup so no data is lost.'**
   String get saveLocalNotesDesc;
 
   /// No description provided for @uploading.
   ///
   /// In en, this message translates to:
-  /// **'Uploading...'**
+  /// **'Syncing...'**
   String get uploading;
 
   /// No description provided for @saveToGoogleDrive.
   ///
   /// In en, this message translates to:
-  /// **'Save to Google Drive'**
+  /// **'Sync with Google Drive'**
   String get saveToGoogleDrive;
 
   /// No description provided for @noUpcomingReminders.

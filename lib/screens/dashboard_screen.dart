@@ -12,6 +12,7 @@ import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/preference_service.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../services/task_provider.dart';
@@ -53,7 +54,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _syncLocalDataToGoogleDrive() async {
     setState(() => _isSyncingToDrive = true);
-    final result = await GoogleDriveSyncService().syncToDrive();
+    final folders = Provider.of<FolderProvider>(context, listen: false).folders;
+    final result = await GoogleDriveSyncService().syncToDrive(
+      folders: folders,
+      mergeFirst: true,
+    );
     if (!mounted) return;
     setState(() => _isSyncingToDrive = false);
 

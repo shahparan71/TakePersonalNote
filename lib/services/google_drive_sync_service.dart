@@ -136,7 +136,10 @@ class GoogleDriveSyncService extends ChangeNotifier {
     return 'Google sign-in error ($code): $message';
   }
 
-  Future<GoogleDriveSyncResult> syncToDrive({List<String>? folders}) async {
+  Future<GoogleDriveSyncResult> syncToDrive({
+    List<String>? folders,
+    bool mergeFirst = false,
+  }) async {
     _setSyncing(true);
     try {
       final api = await _driveApi();
@@ -144,28 +147,73 @@ class GoogleDriveSyncService extends ChangeNotifier {
         return GoogleDriveSyncResult(success: false, message: _signInFailureMessage());
       }
 
-      final jsonString = await BackupService().exportAllToJson(folders: folders);
-      final jsonBytes = utf8.encode(jsonString);
-      final media = drive.Media(
-        Stream.value(jsonBytes),
-        jsonBytes.length,
-        contentType: 'application/json',
-      );
-
       final existing = await api.files.list(
         q: "name='$backupFileName' and trashed=false",
         spaces: 'drive',
         $fields: 'files(id,name)',
       );
 
+      List<String>? combinedFolders = folders;
+      int restoredNotes = 0;
+      int restoredTasks = 0;
+
       if (existing.files != null && existing.files!.isNotEmpty) {
         final fileId = existing.files!.first.id!;
+
+        if (mergeFirst) {
+          try {
+            final response = await api.files.get(
+              fileId,
+              downloadOptions: drive.DownloadOptions.fullMedia,
+            ) as drive.Media;
+
+            final chunks = <int>[];
+            await for (final chunk in response.stream) {
+              chunks.addAll(chunk);
+            }
+            final jsonString = utf8.decode(chunks);
+
+            final importResult = await BackupService().importFromJson(jsonString, merge: true);
+            restoredNotes = importResult.notesCount;
+            restoredTasks = importResult.tasksCount;
+
+            await NotificationService().rescheduleAllReminders();
+
+            combinedFolders = <String>{
+              if (folders != null) ...folders,
+              ...importResult.folders,
+            }.toList();
+          } catch (e, st) {
+            debugPrint('Drive fetch before sync error: $e\n$st');
+            return GoogleDriveSyncResult(
+              success: false,
+              message: 'Failed to fetch existing Drive data: $e',
+            );
+          }
+        }
+
+        final jsonString = await BackupService().exportAllToJson(folders: combinedFolders);
+        final jsonBytes = utf8.encode(jsonString);
+        final media = drive.Media(
+          Stream.value(jsonBytes),
+          jsonBytes.length,
+          contentType: 'application/json',
+        );
+
         await api.files.update(
           drive.File()..name = backupFileName,
           fileId,
           uploadMedia: media,
         );
       } else {
+        final jsonString = await BackupService().exportAllToJson(folders: folders);
+        final jsonBytes = utf8.encode(jsonString);
+        final media = drive.Media(
+          Stream.value(jsonBytes),
+          jsonBytes.length,
+          contentType: 'application/json',
+        );
+
         await api.files.create(
           drive.File()..name = backupFileName,
           uploadMedia: media,
@@ -176,9 +224,14 @@ class GoogleDriveSyncService extends ChangeNotifier {
       await preferenceService.setNotesPendingDriveSync(false);
       await preferenceService.setTasksPendingDriveSync(false);
 
+      final message = (mergeFirst && (restoredNotes > 0 || restoredTasks > 0))
+          ? 'Backup synced to Google Drive successfully. Merged $restoredNotes notes and $restoredTasks tasks from Drive.'
+          : 'Backup synced to Google Drive successfully.';
+
       return GoogleDriveSyncResult(
         success: true,
-        message: 'Backup synced to Google Drive successfully.',
+        message: message,
+        folders: combinedFolders ?? const [],
       );
     } catch (e, st) {
       debugPrint('Drive sync error: $e\n$st');

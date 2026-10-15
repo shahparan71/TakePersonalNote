@@ -18,9 +18,12 @@ bool shouldShowLocalBackupBanner({
 Future<void> applyDriveSyncResult(BuildContext context, GoogleDriveSyncResult result) async {
   if (!result.success) return;
   await Provider.of<NoteProvider>(context, listen: false).refreshAll();
+  if (!context.mounted) return;
   await Provider.of<TaskProvider>(context, listen: false).refreshAll();
+  if (!context.mounted) return;
   for (final folder in result.folders) {
     await Provider.of<FolderProvider>(context, listen: false).addFolder(folder);
+    if (!context.mounted) return;
   }
 }
 
