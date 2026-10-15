@@ -24,3 +24,10 @@ flutter build appbundle --release
 flutter run --release
 
 explorer build\app\outputs\bundle\release
+
+## Developer & Agent Guide
+
+- Operating guide and rules: [AGENTS.md](AGENTS.md)
+- Product map: [docs/map/PRODUCT.md](docs/map/PRODUCT.md)
+- Operations map: [docs/map/OPERATIONS.md](docs/map/OPERATIONS.md)
+- Documentation index: [docs/map/DOCS.md](docs/map/DOCS.md)
