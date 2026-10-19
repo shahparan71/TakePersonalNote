@@ -22,6 +22,23 @@ class AppDateUtils {
     }
   }
 
+  static String formatNoteDate(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateToCompare = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (dateToCompare == today) {
+      return 'Today, ${DateFormat('h:mm a').format(dateTime)}';
+    } else if (dateToCompare == yesterday) {
+      return 'Yesterday, ${DateFormat('h:mm a').format(dateTime)}';
+    } else if (dateTime.year == now.year) {
+      return DateFormat('MMM d, h:mm a').format(dateTime);
+    } else {
+      return DateFormat('MMM d, yyyy').format(dateTime);
+    }
+  }
+
   static DateTime? calculateNextOccurrence(
     DateTime? current,
     RecurringInterval interval, {

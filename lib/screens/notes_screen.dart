@@ -1,7 +1,6 @@
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:take_personal_note/models/note.dart';
@@ -11,6 +10,7 @@ import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
+import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/utils/note_utils.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
@@ -26,7 +26,7 @@ class _NotesScreenState extends State<NotesScreen> {
   final TextEditingController _searchController = TextEditingController();
   late ScrollController _scrollController;
   String? _selectedFolder;
-  bool _isListView = false;
+  bool _isListView = true;
   bool _selectionMode = false;
   final Set<int> _selectedNoteIds = {};
 
@@ -39,7 +39,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Future<void> _loadViewMode() async {
     final mode = await PreferenceService().getNotesViewMode();
-    if (mounted) setState(() => _isListView = mode == 'list');
+    if (mounted) setState(() => _isListView = mode != 'card');
   }
 
   Future<void> _toggleViewMode() async {
@@ -203,23 +203,19 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildFolderBar() {
+    final colors = context.appColors;
     return Consumer<FolderProvider>(
       builder: (context, folderProvider, _) {
         final folders = folderProvider.folders;
         return SizedBox(
-          height: 40,
+          height: 38,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               _folderChip(AppLocalizations.of(context)!.all, null),
               ...folders.map((f) => _folderChip(f, f)),
-              ActionChip(
-                avatar: const Icon(Icons.create_new_folder_outlined, size: 16),
-                label: Text(AppLocalizations.of(context)!.newFolder, style: TextStyle(fontSize: 12)),
-                onPressed: _showCreateFolderDialog,
-                visualDensity: VisualDensity.compact,
-              ),
+              _newFolderChip(colors),
             ],
           ),
         );
@@ -229,17 +225,71 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Widget _folderChip(String label, String? folder) {
     final selected = _selectedFolder == folder;
+    final colors = context.appColors;
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w600 : null)),
-        selected: selected,
-        onSelected: (_) {
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
           setState(() => _selectedFolder = folder);
           _refreshNotes();
         },
-        visualDensity: VisualDensity.compact,
-        showCheckmark: false,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFFF6C844)
+                : (Theme.of(context).brightness == Brightness.dark
+                    ? colors.cardSurface
+                    : const Color(0xFFF1F5F9)),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+              color: selected ? Colors.black87 : colors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _newFolderChip(AppPalette colors) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: _showCreateFolderDialog,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? colors.cardSurface
+                : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 16, color: colors.textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                AppLocalizations.of(context)!.newFolder,
+                style: GoogleFonts.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -258,14 +308,323 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildSliverListView(List<MyNote> notes) {
+    final colors = context.appColors;
     return SliverPadding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(top: 4, bottom: 80),
       sliver: SliverList.separated(
         itemCount: notes.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, index) => _buildNoteListTile(notes[index]),
+        separatorBuilder: (_, __) => Divider(
+          height: 1,
+          thickness: 0.8,
+          color: colors.border.withValues(alpha: 0.45),
+          indent: 16,
+          endIndent: 16,
+        ),
+        itemBuilder: (context, index) => _buildNoteListItem(notes[index]),
       ),
     );
+  }
+
+  Widget _buildNoteListItem(MyNote note) {
+    final isSelected = note.id != null && _selectedNoteIds.contains(note.id);
+    final colors = context.appColors;
+    final badgeColor = _getNoteBadgeColor(note, colors);
+    final iconData = _getNoteIcon(note);
+    final displayTitle = NoteUtils.getDisplayTitle(title: note.title, content: note.content);
+    final snippet = NoteUtils.getPlainText(note.content);
+
+    return Material(
+      color: isSelected ? colors.fabDark.withValues(alpha: 0.1) : Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (_selectionMode && note.id != null) {
+            _toggleNoteSelection(note.id!);
+          } else if (!_selectionMode) {
+            Navigator.pushNamed(context, AppRoutes.noteEdit, arguments: {'note': note}).then((_) => _refreshNotes());
+          }
+        },
+        onLongPress: () {
+          if (note.id != null) _enterSelectionMode(note);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Icon Badge container based on note's color
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  iconData,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Note title, preview snippet, created and expiration dates
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            displayTitle,
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: colors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (note.isPinned) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.push_pin, size: 14, color: Colors.orange),
+                        ],
+                      ],
+                    ),
+                    if (snippet.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        snippet,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13,
+                          color: colors.textSecondary.withValues(alpha: 0.85),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    _buildNoteDatesRow(note, colors),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_selectionMode)
+                Checkbox(
+                  value: isSelected,
+                  shape: const CircleBorder(),
+                  onChanged: (_) {
+                    if (note.id != null) _toggleNoteSelection(note.id!);
+                  },
+                )
+              else
+                _buildNoteTrailingMenu(note, colors),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteDatesRow(MyNote note, AppPalette colors) {
+    return Row(
+      children: [
+        Text(
+          AppDateUtils.formatNoteDate(note.createdAt),
+          style: GoogleFonts.outfit(
+            fontSize: 12,
+            color: colors.textSecondary.withValues(alpha: 0.75),
+          ),
+        ),
+        if (note.reminderTime != null) ...[
+          const SizedBox(width: 6),
+          Text(
+            '•',
+            style: TextStyle(
+              fontSize: 12,
+              color: colors.textSecondary.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.notifications_active_outlined,
+            size: 13,
+            color: note.reminderTime!.isBefore(DateTime.now())
+                ? Colors.red.shade400
+                : Colors.amber.shade800,
+          ),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              AppDateUtils.formatReminder(note.reminderTime!),
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: note.reminderTime!.isBefore(DateTime.now())
+                    ? Colors.red.shade400
+                    : Colors.amber.shade800,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+        if (note.category != null && note.category!.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          Text(
+            '•',
+            style: TextStyle(
+              fontSize: 12,
+              color: colors.textSecondary.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Icon(Icons.folder_outlined, size: 12, color: colors.textSecondary.withValues(alpha: 0.6)),
+          const SizedBox(width: 2),
+          Flexible(
+            child: Text(
+              note.category!,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                color: colors.textSecondary.withValues(alpha: 0.75),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNoteTrailingMenu(MyNote note, AppPalette colors) {
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert_rounded, color: colors.textSecondary, size: 20),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: colors.cardSurface,
+      elevation: 4,
+      onSelected: (value) async {
+        final provider = Provider.of<NoteProvider>(context, listen: false);
+        if (value == 'archive') {
+          await provider.archiveNote(note);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Note archived'),
+                action: SnackBarAction(
+                  label: 'Undo',
+                  onPressed: () => provider.unarchiveNote(note),
+                ),
+              ),
+            );
+          }
+        } else if (value == 'delete') {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(AppLocalizations.of(ctx)!.deleteNotesTitle),
+              content: const Text('Move note to trash?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(AppLocalizations.of(ctx)!.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(
+                    AppLocalizations.of(ctx)!.delete,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && mounted) {
+            await provider.trashNote(note);
+          }
+        }
+      },
+      itemBuilder: (ctx) => [
+        PopupMenuItem<String>(
+          value: 'archive',
+          child: Row(
+            children: [
+              Icon(Icons.archive_outlined, size: 20, color: colors.textPrimary),
+              const SizedBox(width: 12),
+              Text(
+                AppLocalizations.of(ctx)!.archive,
+                style: GoogleFonts.outfit(color: colors.textPrimary, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+              const SizedBox(width: 12),
+              Text(
+                AppLocalizations.of(ctx)!.delete,
+                style: GoogleFonts.outfit(color: Colors.red, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getNoteBadgeColor(MyNote note, AppPalette colors) {
+    switch (note.color) {
+      case 0xFFFFCDD2:
+      case 0xFFF8BBD0:
+        return const Color(0xFFF87171); // Red / Coral
+      case 0xFFE1BEE7:
+      case 0xFFC5CAE9:
+        return const Color(0xFF8B5CF6); // Purple
+      case 0xFFBBDEFB:
+      case 0xFFB2EBF2:
+        return const Color(0xFF3B82F6); // Blue
+      case 0xFFC8E6C9:
+      case 0xFFDCEDC8:
+        return const Color(0xFF10B981); // Green
+      case 0xFFF0F4C3:
+      case 0xFFFFF9C4:
+      case 0xFFFFE0B2:
+        return const Color(0xFFF59E0B); // Amber / Yellow
+      case 0xFFFFFFFF:
+      default:
+        if (note.color != 0xFFFFFFFF && note.color != AppPalette.themeDefaultNoteColor) {
+          return Color(note.color);
+        }
+        const defaultPalette = [
+          Color(0xFF3B82F6), // Blue
+          Color(0xFFF59E0B), // Yellow
+          Color(0xFF10B981), // Green
+          Color(0xFFF87171), // Red
+          Color(0xFF8B5CF6), // Purple
+        ];
+        final id = note.id ?? 0;
+        return defaultPalette[id.abs() % defaultPalette.length];
+    }
+  }
+
+  IconData _getNoteIcon(MyNote note) {
+    switch (note.type) {
+      case NoteType.checklist:
+        return Icons.checklist_rounded;
+      case NoteType.image:
+        return Icons.image_rounded;
+      case NoteType.voice:
+        return Icons.mic_rounded;
+      case NoteType.text:
+        return Icons.description_rounded;
+    }
   }
 
   Widget _buildNoteCard(MyNote note) {
@@ -288,46 +647,6 @@ class _NotesScreenState extends State<NotesScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             _buildNoteFooter(note),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoteListTile(MyNote note) {
-    final colors = context.appColors;
-    return _buildNoteItem(
-      note,
-      isCard: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 48,
-              decoration: BoxDecoration(
-                color: note.color == AppPalette.themeDefaultNoteColor ? colors.fabDark : Color(note.color),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildNoteHeader(note),
-                  const SizedBox(height: 4),
-                  Text(
-                    NoteUtils.getPlainText(note.content),
-                    style: TextStyle(fontSize: 13, color: colors.textSecondary),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  _buildNoteFooter(note),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -423,7 +742,7 @@ class _NotesScreenState extends State<NotesScreen> {
       padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          Text(DateFormat('MMM d, yyyy').format(note.updatedAt), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+          Text(AppDateUtils.formatNoteDate(note.updatedAt), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
           if (note.category != null && note.category!.isNotEmpty) ...[
             const SizedBox(width: 8),
             Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary),
@@ -567,21 +886,22 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Future<void> _deleteSelected() async {
+    final count = _selectedNoteIds.length;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.deleteNotesTitle),
-        content: Text('Move ${_selectedNoteIds.length} note(s) to trash?'),
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.of(ctx)!.deleteNotesTitle),
+        content: Text('Move $count note(s) to trash?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(ctx)!.cancel)),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(AppLocalizations.of(ctx)!.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     final provider = Provider.of<NoteProvider>(context, listen: false);
     for (final note in _getSelectedNotes(provider)) {
       await provider.trashNote(note);

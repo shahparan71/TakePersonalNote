@@ -50,7 +50,7 @@ class PreferenceService {
 
   Future<String> getNotesViewMode() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_notesViewModeKey) ?? 'card';
+    return prefs.getString(_notesViewModeKey) ?? 'list';
   }
 
   Future<void> setDriveAutoSyncEnabled(bool enabled) async {

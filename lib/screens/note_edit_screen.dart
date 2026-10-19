@@ -117,6 +117,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     final provider = Provider.of<NoteProvider>(context, listen: false);
     final now = DateTime.now();
 
+    final l10n = AppLocalizations.of(context)!;
+    final noteReminderTitle = l10n.noteReminder;
+    final untitledTitle = l10n.untitled;
+
     if (widget.note == null) {
       final newNote = MyNote(
         title: _titleController.text.isEmpty ? "" : _titleController.text,
@@ -135,8 +139,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         if (_reminderTime != null && id != null) {
           await NotificationService().scheduleNotification(
             id: id,
-            title: AppLocalizations.of(context)!.noteReminder,
-            body: _titleController.text.isEmpty ? AppLocalizations.of(context)!.untitled : _titleController.text,
+            title: noteReminderTitle,
+            body: _titleController.text.isEmpty ? untitledTitle : _titleController.text,
             scheduledDate: _reminderTime!,
             payload: 'note_$id',
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
@@ -164,7 +168,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         if (_reminderTime != null) {
           await NotificationService().scheduleNotification(
             id: noteId,
-            title: AppLocalizations.of(context)!.noteReminder,
+            title: noteReminderTitle,
             body: _titleController.text,
             scheduledDate: _reminderTime!,
             payload: 'note_$noteId',
@@ -181,14 +185,21 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Future<void> _selectReminder() async {
+    final now = DateTime.now();
+    DateTime initialDate = _reminderTime ?? now;
+    if (initialDate.isBefore(now)) initialDate = now;
+
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: _reminderTime ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: now,
       lastDate: DateTime(2030),
     );
     if (pickedDate != null && mounted) {
-      final TimeOfDay? pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()));
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_reminderTime ?? DateTime.now()),
+      );
       if (pickedTime != null) {
         setState(() {
           _reminderTime = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
@@ -421,6 +432,23 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             color: AppColors.actionPin,
             size: 40,
             onPressed: () => setState(() => _isPinned = !_isPinned),
+          ),
+          const SizedBox(width: 6),
+          CircleActionButton(
+            icon: _reminderTime == null ? Icons.notifications_none_outlined : Icons.notifications_active,
+            color: _reminderTime == null ? colors.textSecondary.withValues(alpha: 0.35) : Colors.amber.shade700,
+            size: 40,
+            onPressed: () {
+              if (_reminderTime == null) {
+                _selectReminder();
+              } else {
+                setState(() {
+                  _reminderTime = null;
+                  _isRecurring = false;
+                  _recurringInterval = RecurringInterval.none;
+                });
+              }
+            },
           ),
           const SizedBox(width: 6),
           CircleActionButton(
