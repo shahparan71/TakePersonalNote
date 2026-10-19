@@ -717,6 +717,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.11"
+  lottie:
+    dependency: "direct main"
+    description:
+      name: lottie
+      sha256: "8b6359a7422167014aa73ce763fa133fb832065dcc0ac4d1dec1f603a5cef7d0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.3"
   markdown:
     dependency: transitive
     description:
@@ -1371,5 +1379,5 @@ packages:
     source: hosted
     version: "6.6.1"
 sdks:
-  dart: ">=3.8.0 <4.0.0"
-  flutter: ">=3.32.0"
+  dart: ">=3.9.0 <4.0.0"
+  flutter: ">=3.35.0"

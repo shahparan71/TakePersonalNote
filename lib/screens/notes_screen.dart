@@ -12,6 +12,7 @@ import 'package:take_personal_note/services/preference_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/utils/note_utils.dart';
+import 'package:take_personal_note/widgets/delete_animation_dialog.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 
@@ -583,7 +584,10 @@ class _NotesScreenState extends State<NotesScreen> {
           );
           if (confirmed == true && mounted) {
             final l10n = AppLocalizations.of(context)!;
-            await provider.trashNote(note);
+            await DeleteAnimationDialog.show(
+              context,
+              onDelete: () => provider.trashNote(note),
+            );
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -955,9 +959,14 @@ class _NotesScreenState extends State<NotesScreen> {
     final l10n = AppLocalizations.of(context)!;
     final provider = Provider.of<NoteProvider>(context, listen: false);
     final selectedNotes = _getSelectedNotes(provider);
-    for (final note in selectedNotes) {
-      await provider.trashNote(note);
-    }
+    await DeleteAnimationDialog.show(
+      context,
+      onDelete: () async {
+        for (final note in selectedNotes) {
+          await provider.trashNote(note);
+        }
+      },
+    );
     _exitSelectionMode();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

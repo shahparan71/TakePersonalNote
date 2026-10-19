@@ -1,6 +1,7 @@
-import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:take_personal_note/l10n/app_localizations.dart';
+import 'package:take_personal_note/widgets/delete_animation_dialog.dart';
 import '../services/note_provider.dart';
 
 class TrashScreen extends StatelessWidget {
@@ -33,7 +34,10 @@ class TrashScreen extends StatelessWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_forever, color: Colors.red),
-                        onPressed: () => provider.deleteNotePermanent(note.id!),
+                        onPressed: () => DeleteAnimationDialog.show(
+                          context,
+                          onDelete: () => provider.deleteNotePermanent(note.id!),
+                        ),
                       ),
                     ],
                   ),

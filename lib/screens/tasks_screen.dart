@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
+import 'package:take_personal_note/widgets/delete_animation_dialog.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -263,9 +264,14 @@ class _TasksScreenState extends State<TasksScreen> {
         ],
       ),
     );
-    if (ok != true) return;
+    if (ok != true || !mounted) return;
     final count = _selectedTaskIds.length;
-    await provider.deleteTasks(_selectedTaskIds.toList());
+    final idsToDelete = _selectedTaskIds.toList();
+    await DeleteAnimationDialog.show(
+      context,
+      onDelete: () => provider.deleteTasks(idsToDelete),
+    );
+    if (!mounted) return;
     setState(() {
       _selectionMode = false;
       _selectedTaskIds.clear();
