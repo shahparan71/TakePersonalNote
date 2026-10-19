@@ -23,8 +23,9 @@ import 'package:take_personal_note/utils/url_utils.dart';
 class NoteEditScreen extends StatefulWidget {
   final MyNote? note;
   final String? initialText;
+  final String? initialCategory;
 
-  const NoteEditScreen({super.key, this.note, this.initialText});
+  const NoteEditScreen({super.key, this.note, this.initialText, this.initialCategory});
 
   @override
   State<NoteEditScreen> createState() => _NoteEditScreenState();
@@ -129,6 +130,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         // Always text now
         color: _selectedColor,
         isPinned: _isPinned,
+        category: widget.initialCategory,
         reminderTime: _reminderTime,
         isRecurring: _reminderTime == null ? false : _isRecurring,
         recurringInterval: _reminderTime == null ? RecurringInterval.none : _recurringInterval,

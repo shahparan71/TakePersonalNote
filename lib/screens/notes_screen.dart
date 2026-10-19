@@ -190,7 +190,11 @@ class _NotesScreenState extends State<NotesScreen> {
           ? null
           : DesignFab(
               heroTag: 'notes_fab',
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.noteEdit).then((_) => _refreshNotes()),
+              onPressed: () => Navigator.pushNamed(
+                context,
+                AppRoutes.noteEdit,
+                arguments: _selectedFolder != null ? {'initialCategory': _selectedFolder} : null,
+              ).then((_) => _refreshNotes()),
             ),
       bottomNavigationBar: _selectionMode
           ? Container(
@@ -429,72 +433,64 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Widget _buildNoteDatesRow(MyNote note, AppPalette colors) {
-    return Row(
+    final secondaryStyle = GoogleFonts.outfit(
+      fontSize: 11,
+      color: colors.textSecondary.withValues(alpha: 0.75),
+    );
+    final hasReminder = note.reminderTime != null;
+    final hasCategory = note.category != null && note.category!.isNotEmpty;
+    final reminderPast = hasReminder && note.reminderTime!.isBefore(DateTime.now());
+    final reminderColor = reminderPast ? Colors.red.shade400 : Colors.amber.shade800;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Row 1: created date (always visible)
         Text(
           AppDateUtils.formatNoteDate(note.createdAt),
-          style: GoogleFonts.outfit(
-            fontSize: 12,
-            color: colors.textSecondary.withValues(alpha: 0.75),
-          ),
+          style: secondaryStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        if (note.reminderTime != null) ...[
-          const SizedBox(width: 6),
-          Text(
-            '•',
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.textSecondary.withValues(alpha: 0.5),
-            ),
+        // Row 2: reminder + folder (only if at least one exists)
+        if (hasReminder || hasCategory)
+          Row(
+            children: [
+              if (hasReminder) ...[
+                Icon(
+                  Icons.notifications_active_outlined,
+                  size: 12,
+                  color: reminderColor,
+                ),
+                const SizedBox(width: 3),
+                Flexible(
+                  child: Text(
+                    AppDateUtils.formatReminder(note.reminderTime!),
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: reminderColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+              if (hasReminder && hasCategory) const SizedBox(width: 6),
+              if (hasCategory) ...[
+                Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary.withValues(alpha: 0.55)),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(
+                    note.category!,
+                    style: secondaryStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(width: 6),
-          Icon(
-            Icons.notifications_active_outlined,
-            size: 13,
-            color: note.reminderTime!.isBefore(DateTime.now())
-                ? Colors.red.shade400
-                : Colors.amber.shade800,
-          ),
-          const SizedBox(width: 3),
-          Flexible(
-            child: Text(
-              AppDateUtils.formatReminder(note.reminderTime!),
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: note.reminderTime!.isBefore(DateTime.now())
-                    ? Colors.red.shade400
-                    : Colors.amber.shade800,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-        if (note.category != null && note.category!.isNotEmpty) ...[
-          const SizedBox(width: 6),
-          Text(
-            '•',
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.textSecondary.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Icon(Icons.folder_outlined, size: 12, color: colors.textSecondary.withValues(alpha: 0.6)),
-          const SizedBox(width: 2),
-          Flexible(
-            child: Text(
-              note.category!,
-              style: GoogleFonts.outfit(
-                fontSize: 12,
-                color: colors.textSecondary.withValues(alpha: 0.75),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
       ],
     );
   }

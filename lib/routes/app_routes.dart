@@ -32,7 +32,8 @@ class AppRoutes {
         final args = settings.arguments as Map<String, dynamic>?;
         final MyNote? note = args?['note'];
         final String? initialText = args?['initialText'];
-        return MaterialPageRoute(builder: (_) => NoteEditScreen(note: note, initialText: initialText));
+        final String? initialCategory = args?['initialCategory'];
+        return MaterialPageRoute(builder: (_) => NoteEditScreen(note: note, initialText: initialText, initialCategory: initialCategory));
       case taskEdit:
         final args = settings.arguments as Map<String, dynamic>?;
         final Task? task = args?['task'];
