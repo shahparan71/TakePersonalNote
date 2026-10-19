@@ -480,7 +480,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
     // When expire/reminder date IS available:
     // Row 1: created date
-    // Row 2: reminder date + folder name
+    // Row 2: folder name + reminder date
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -492,6 +492,27 @@ class _NotesScreenState extends State<NotesScreen> {
         ),
         Row(
           children: [
+            if (hasCategory) ...[
+              Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary.withValues(alpha: 0.55)),
+              const SizedBox(width: 2),
+              Flexible(
+                child: Text(
+                  note.category!,
+                  style: secondaryStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '•',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colors.textSecondary.withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             Icon(
               Icons.notifications_active_outlined,
               size: 12,
@@ -510,19 +531,6 @@ class _NotesScreenState extends State<NotesScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (hasCategory) ...[
-              const SizedBox(width: 6),
-              Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary.withValues(alpha: 0.55)),
-              const SizedBox(width: 2),
-              Flexible(
-                child: Text(
-                  note.category!,
-                  style: secondaryStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
           ],
         ),
       ],
