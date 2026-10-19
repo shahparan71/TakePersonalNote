@@ -2,6 +2,7 @@ import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:take_personal_note/services/task_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
@@ -233,6 +234,7 @@ class _TasksScreenState extends State<TasksScreen> {
                           ),
                         ),
                       if (task.reminderTime != null) _buildReminderRow(task),
+                      _buildCreatedDateRow(task),
                     ],
                   ),
                 ),
@@ -247,24 +249,48 @@ class _TasksScreenState extends State<TasksScreen> {
 
   Future<void> _confirmAndDeleteSelected() async {
     if (_selectedTaskIds.isEmpty) return;
+    // Capture context-dependent objects before the first async gap.
+    final provider = Provider.of<TaskProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete selected tasks?'),
         content: Text('Delete ${_selectedTaskIds.length} selected task(s)? This cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppLocalizations.of(context)!.cancel)),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppLocalizations.of(context)!.delete)),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete)),
         ],
       ),
     );
     if (ok != true) return;
-    final provider = Provider.of<TaskProvider>(context, listen: false);
     await provider.deleteTasks(_selectedTaskIds.toList());
     setState(() {
       _selectionMode = false;
       _selectedTaskIds.clear();
     });
+  }
+
+  Widget _buildCreatedDateRow(Task task) {
+    final now = DateTime.now();
+    final created = task.createdAt;
+    final String formatted = created.year == now.year
+        ? DateFormat('MMM d').format(created)
+        : DateFormat('MMM d, yyyy').format(created);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today_outlined, size: 11, color: Colors.grey[500]),
+          const SizedBox(width: 4),
+          Text(
+            formatted,
+            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildReminderRow(Task task) {
