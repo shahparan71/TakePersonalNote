@@ -381,4 +381,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get asTask => 'AS TASK';
+
+  @override
+  String get noteDeleted => 'Note deleted';
+
+  @override
+  String get notesDeleted => 'Notes deleted';
+
+  @override
+  String get taskDeleted => 'Task deleted';
+
+  @override
+  String get tasksDeleted => 'Tasks deleted';
 }

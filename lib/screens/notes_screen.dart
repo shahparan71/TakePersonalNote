@@ -582,7 +582,19 @@ class _NotesScreenState extends State<NotesScreen> {
             ),
           );
           if (confirmed == true && mounted) {
+            final l10n = AppLocalizations.of(context)!;
             await provider.trashNote(note);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(l10n.noteDeleted),
+                  action: SnackBarAction(
+                    label: 'Undo',
+                    onPressed: () => provider.restoreNote(note),
+                  ),
+                ),
+              );
+            }
           }
         }
       },
@@ -940,11 +952,28 @@ class _NotesScreenState extends State<NotesScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     final provider = Provider.of<NoteProvider>(context, listen: false);
-    for (final note in _getSelectedNotes(provider)) {
+    final selectedNotes = _getSelectedNotes(provider);
+    for (final note in selectedNotes) {
       await provider.trashNote(note);
     }
     _exitSelectionMode();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(count > 1 ? l10n.notesDeleted : l10n.noteDeleted),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              for (final note in selectedNotes) {
+                provider.restoreNote(note);
+              }
+            },
+          ),
+        ),
+      );
+    }
   }
 
   void _showCreateFolderDialog() {

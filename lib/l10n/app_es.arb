@@ -120,5 +120,9 @@
   "newShareReceived": "Nuevo Compartido Recibido",
   "saveTextAsNoteOrTask": "¿Quieres guardar este texto como Nota o Tarea?",
   "asNote": "COMO NOTA",
-  "asTask": "COMO TAREA"
+  "asTask": "COMO TAREA",
+  "noteDeleted": "Nota eliminada",
+  "notesDeleted": "Notas eliminadas",
+  "taskDeleted": "Tarea eliminada",
+  "tasksDeleted": "Tareas eliminadas"
 }

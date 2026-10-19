@@ -264,11 +264,19 @@ class _TasksScreenState extends State<TasksScreen> {
       ),
     );
     if (ok != true) return;
+    final count = _selectedTaskIds.length;
     await provider.deleteTasks(_selectedTaskIds.toList());
     setState(() {
       _selectionMode = false;
       _selectedTaskIds.clear();
     });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(count > 1 ? l10n.tasksDeleted : l10n.taskDeleted),
+        ),
+      );
+    }
   }
 
   Widget _buildCreatedDateRow(Task task) {

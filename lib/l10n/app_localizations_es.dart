@@ -381,4 +381,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get asTask => 'COMO TAREA';
+
+  @override
+  String get noteDeleted => 'Nota eliminada';
+
+  @override
+  String get notesDeleted => 'Notas eliminadas';
+
+  @override
+  String get taskDeleted => 'Tarea eliminada';
+
+  @override
+  String get tasksDeleted => 'Tareas eliminadas';
 }

@@ -120,5 +120,9 @@
   "newShareReceived": "New Share Received",
   "saveTextAsNoteOrTask": "Would you like to save this text as a Note or a Task?",
   "asNote": "AS NOTE",
-  "asTask": "AS TASK"
+  "asTask": "AS TASK",
+  "noteDeleted": "Note deleted",
+  "notesDeleted": "Notes deleted",
+  "taskDeleted": "Task deleted",
+  "tasksDeleted": "Tasks deleted"
 }

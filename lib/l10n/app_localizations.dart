@@ -831,6 +831,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AS TASK'**
   String get asTask;
+
+  /// No description provided for @noteDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Note deleted'**
+  String get noteDeleted;
+
+  /// No description provided for @notesDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes deleted'**
+  String get notesDeleted;
+
+  /// No description provided for @taskDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deleted'**
+  String get taskDeleted;
+
+  /// No description provided for @tasksDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks deleted'**
+  String get tasksDeleted;
 }
 
 class _AppLocalizationsDelegate
