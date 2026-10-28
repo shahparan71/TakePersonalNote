@@ -15,7 +15,6 @@ import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
-import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:take_personal_note/utils/url_utils.dart';
@@ -409,134 +408,159 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       child: Scaffold(
         backgroundColor: scaffoldColor,
         appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: colors.textPrimary),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: CircleActionButton(
-            icon: Icons.close,
-            color: colors.textSecondary,
-            size: 40,
-            onPressed: () => Navigator.maybePop(context),
-          ),
-        ),
-        actions: [
-          /*if (_contentController.hasUndo)
-            IconButton(
-              icon: const Icon(Icons.undo, color: AppColors.actionEdit),
-              onPressed: () {
-                _contentController.undo();
-              },
-            ),*/
-          CircleActionButton(
-            icon: _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-            color: AppColors.actionPin,
-            size: 40,
-            onPressed: () => setState(() => _isPinned = !_isPinned),
-          ),
-          const SizedBox(width: 6),
-          CircleActionButton(
-            icon: _reminderTime == null ? Icons.notifications_none_outlined : Icons.notifications_active,
-            color: _reminderTime == null ? colors.textSecondary.withValues(alpha: 0.35) : Colors.amber.shade700,
-            size: 40,
-            onPressed: () {
-              if (_reminderTime == null) {
-                _selectReminder();
-              } else {
-                setState(() {
-                  _reminderTime = null;
-                  _isRecurring = false;
-                  _recurringInterval = RecurringInterval.none;
-                });
-              }
-            },
-          ),
-          const SizedBox(width: 6),
-          CircleActionButton(
-            icon: Icons.palette_outlined,
-            color: AppColors.actionEdit,
-            size: 40,
-            onPressed: _showColorPicker,
-          ),
-          const SizedBox(width: 6),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CircleActionButton(
-              icon: Icons.check,
-              color: AppColors.actionSave,
-              size: 40,
-              onPressed: () => Navigator.maybePop(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leadingWidth: 54,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 14),
+            child: Center(
+              child: _EditorActionButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Close',
+                onPressed: () => Navigator.maybePop(context),
+              ),
             ),
           ),
-        ],
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  if (!_contentFocusNode.hasFocus) {
-                    _contentFocusNode.requestFocus();
-                  }
-                },
-                behavior: HitTestBehavior.opaque,
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 16, top: 0),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.addTitle,
-                            filled: true,
-                            fillColor: context.appColors.cardSurface.withValues(alpha: 0.0),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                            hintStyle: GoogleFonts.outfit(fontSize: 20, color: colors.textSecondary),
-                          ),
-                          style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: colors.textPrimary),
+          actions: [
+            _EditorActionButton(
+              icon: _isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+              tooltip: _isPinned ? 'Unpin' : 'Pin',
+              isActive: _isPinned,
+              activeColor: AppColors.actionPin,
+              activeIconColor: AppColors.actionPin,
+              onPressed: () => setState(() => _isPinned = !_isPinned),
+            ),
+            const SizedBox(width: 8),
+            _EditorActionButton(
+              icon: _reminderTime == null ? Icons.notifications_none_rounded : Icons.notifications_active_rounded,
+              tooltip: _reminderTime == null ? 'Set reminder' : 'Clear reminder',
+              isActive: _reminderTime != null,
+              activeColor: Colors.amber.shade700,
+              activeIconColor: Colors.amber.shade800,
+              onPressed: () {
+                if (_reminderTime == null) {
+                  _selectReminder();
+                } else {
+                  setState(() {
+                    _reminderTime = null;
+                    _isRecurring = false;
+                    _recurringInterval = RecurringInterval.none;
+                  });
+                }
+              },
+            ),
+            const SizedBox(width: 8),
+            _EditorActionButton(
+              icon: Icons.palette_outlined,
+              tooltip: 'Note color',
+              isActive: _selectedColor != AppPalette.themeDefaultNoteColor,
+              activeColor: Color(_selectedColor),
+              customIcon: _selectedColor != AppPalette.themeDefaultNoteColor
+                  ? Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: Color(_selectedColor),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colors.textPrimary.withValues(alpha: 0.35),
+                          width: 1.5,
                         ),
-                        const SizedBox(height: 8),
-                        _buildMetadataRow(),
-                        if (_reminderTime != null) ...[_buildReminderBanner(), _buildRecurrenceRow()],
-                        const SizedBox(height: 12),
-                        Theme(
-                          data: Theme.of(context).copyWith(
-                            textTheme: Theme.of(context).textTheme.apply(
-                                  bodyColor: colors.textPrimary,
-                                  displayColor: colors.textPrimary,
-                                ),
-                          ),
-                          child: quill.QuillEditor.basic(
-                            controller: _contentController,
-                            focusNode: _contentFocusNode,
-                            config: quill.QuillEditorConfig(
-                              placeholder: AppLocalizations.of(context)!.startTypingNote,
-                              scrollable: false,
-                              expands: false,
-                              customStyles: quill.DefaultStyles(
-                                paragraph: quill.DefaultTextBlockStyle(
-                                  GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.5),
-                                  const quill.HorizontalSpacing(0, 0),
-                                  const quill.VerticalSpacing(0, 0),
-                                  const quill.VerticalSpacing(0, 0),
-                                  null,
-                                ),
-                                placeHolder: quill.DefaultTextBlockStyle(
-                                  GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary, height: 1.5),
-                                  const quill.HorizontalSpacing(0, 0),
-                                  const quill.VerticalSpacing(0, 0),
-                                  const quill.VerticalSpacing(0, 0),
-                                  null,
-                                ),
+                      ),
+                    )
+                  : null,
+              onPressed: _showColorPicker,
+            ),
+            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Center(
+                child: _EditorPrimaryButton(
+                  icon: Icons.check_rounded,
+                  tooltip: 'Save',
+                  onPressed: () => Navigator.maybePop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    if (!_contentFocusNode.hasFocus) {
+                      _contentFocusNode.requestFocus();
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 18, right: 18, top: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _titleController,
+                            textAlign: TextAlign.start,
+                            textCapitalization: TextCapitalization.sentences,
+                            decoration: InputDecoration(
+                              hintText: AppLocalizations.of(context)!.addTitle,
+                              filled: false,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+                              hintStyle: GoogleFonts.outfit(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: colors.textSecondary.withValues(alpha: 0.38),
                               ),
+                            ),
+                            style: GoogleFonts.outfit(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: colors.textPrimary,
+                              height: 1.25,
+                            ),
+                          ),
+                          _buildMetadataRow(),
+                          const Divider(height: 16, thickness: 0.5),
+                          if (_reminderTime != null) _buildReminderCard(colors),
+                          Theme(
+                            data: Theme.of(context).copyWith(
+                              textTheme: Theme.of(context).textTheme.apply(
+                                    bodyColor: colors.textPrimary,
+                                    displayColor: colors.textPrimary,
+                                  ),
+                            ),
+                            child: quill.QuillEditor.basic(
+                              controller: _contentController,
+                              focusNode: _contentFocusNode,
+                              config: quill.QuillEditorConfig(
+                                placeholder: AppLocalizations.of(context)!.startTypingNote,
+                                scrollable: false,
+                                expands: false,
+                                customStyles: quill.DefaultStyles(
+                                  paragraph: quill.DefaultTextBlockStyle(
+                                    GoogleFonts.outfit(fontSize: 16, color: colors.textPrimary, height: 1.6),
+                                    const quill.HorizontalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    null,
+                                  ),
+                                  placeHolder: quill.DefaultTextBlockStyle(
+                                    GoogleFonts.outfit(fontSize: 16, color: colors.textSecondary.withValues(alpha: 0.45), height: 1.6),
+                                    const quill.HorizontalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    null,
+                                  ),
+                                ),
                               embedBuilders: [
                                 ...FlutterQuillEmbeds.editorBuilders(),
                               ],
@@ -628,7 +652,19 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             !_contentFocusNode.hasFocus
                 ? SafeArea(top: false, child: const SizedBox.shrink())
                 : Container(
-                    color: colors.cardSurface,
+                    decoration: BoxDecoration(
+                      color: colors.cardSurface,
+                      border: Border(
+                        top: BorderSide(color: colors.border.withValues(alpha: 0.7), width: 1),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
                     child: SafeArea(
                       top: false,
                       child: quill.QuillSimpleToolbar(
@@ -706,105 +742,277 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Widget _buildMetadataRow() {
     final colors = context.appColors;
+    final category = widget.note?.category ?? widget.initialCategory;
+    final dateStr = DateFormat('MMM d, yyyy • h:mm a').format(widget.note?.updatedAt ?? DateTime.now());
+    final charCount = _contentController.document.toPlainText().trim().length;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 4.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            DateFormat('MMMM d, yyyy h:mm a').format(widget.note?.updatedAt ?? DateTime.now()),
-            style: TextStyle(fontSize: 12, color: colors.textSecondary),
+          Icon(
+            Icons.access_time_rounded,
+            size: 13,
+            color: colors.textSecondary.withValues(alpha: 0.7),
           ),
+          const SizedBox(width: 5),
           Text(
-            '${_contentController.document.toPlainText().trim().length} characters',
-            style: TextStyle(fontSize: 12, color: colors.textSecondary),
+            dateStr,
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: colors.textSecondary.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w500,
+            ),
           ),
+          const SizedBox(width: 8),
+          Text(
+            '•',
+            style: TextStyle(
+              color: colors.textSecondary.withValues(alpha: 0.5),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$charCount characters',
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: colors.textSecondary.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (category != null && category.trim().isNotEmpty) ...[
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: colors.cardSurface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.folder_outlined,
+                    size: 12,
+                    color: colors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    category,
+                    style: GoogleFonts.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildReminderBanner() {
-    final accent = Theme.of(context).colorScheme.primary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: _selectReminder,
-        borderRadius: BorderRadius.circular(8),
-        child: Row(
-          children: [
-            Icon(Icons.alarm, size: 16, color: accent),
-            const SizedBox(width: 6),
-            Text(
-              AppDateUtils.formatReminder(_reminderTime!),
-              style: TextStyle(fontSize: 13, color: accent, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildReminderCard(AppPalette colors) {
+    if (_reminderTime == null) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
 
-  Widget _buildRecurrenceRow() {
-    final colors = context.appColors;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: colors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.amber.shade700.withValues(alpha: 0.28),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.repeat, size: 18, color: colors.textSecondary),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.repeat, style: TextStyle(fontWeight: FontWeight.w500, color: colors.textPrimary)),
-              const Spacer(),
-              Switch.adaptive(
-                value: _isRecurring,
-                onChanged: (val) => setState(() {
-                  _isRecurring = val;
-                  if (val && _recurringInterval == RecurringInterval.none) {
-                    _recurringInterval = RecurringInterval.daily;
-                  }
-                }),
-              ),
-            ],
+          // Main reminder info row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade700.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.notifications_active_rounded,
+                    color: Colors.amber.shade800,
+                    size: 19,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: InkWell(
+                    onTap: _selectReminder,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                AppDateUtils.formatReminder(_reminderTime!),
+                                style: GoogleFonts.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.edit_rounded,
+                                size: 13,
+                                color: colors.textSecondary.withValues(alpha: 0.6),
+                              ),
+                            ],
+                          ),
+                          if (_isRecurring && _recurringInterval != RecurringInterval.none) ...[
+                            const SizedBox(height: 2),
+                            _buildNextOccurrenceDisplay(colors),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Remove button
+                IconButton(
+                  tooltip: 'Remove reminder',
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: colors.textSecondary.withValues(alpha: 0.8),
+                  ),
+                  splashRadius: 18,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    setState(() {
+                      _reminderTime = null;
+                      _isRecurring = false;
+                      _recurringInterval = RecurringInterval.none;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
-          if (_isRecurring) ...[const SizedBox(height: 8), _buildRecurrenceChips(), const SizedBox(height: 4), _buildNextOccurrenceDisplay()],
+          const Divider(height: 1, thickness: 0.5),
+          // Recurrence row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 10, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.repeat_rounded, size: 17, color: colors.textSecondary),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.repeat,
+                      style: GoogleFonts.outfit(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Transform.scale(
+                      scale: 0.82,
+                      child: Switch.adaptive(
+                        activeTrackColor: colors.fabDark,
+                        value: _isRecurring,
+                        onChanged: (val) => setState(() {
+                          _isRecurring = val;
+                          if (val && _recurringInterval == RecurringInterval.none) {
+                            _recurringInterval = RecurringInterval.daily;
+                          }
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_isRecurring) ...[
+                  const SizedBox(height: 6),
+                  _buildRecurrenceChips(colors),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildRecurrenceChips() {
-    return Row(
-      children: [
-        _recurrenceChip(AppLocalizations.of(context)!.daily, RecurringInterval.daily),
-        const SizedBox(width: 8),
-        _recurrenceChip(AppLocalizations.of(context)!.weekly, RecurringInterval.weekly),
-        const SizedBox(width: 8),
-        _recurrenceChip(AppLocalizations.of(context)!.monthly, RecurringInterval.monthly),
-      ],
+  Widget _buildRecurrenceChips(AppPalette colors) {
+    final l10n = AppLocalizations.of(context)!;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _recurrenceChip(l10n.daily, RecurringInterval.daily, colors),
+          const SizedBox(width: 8),
+          _recurrenceChip(l10n.weekly, RecurringInterval.weekly, colors),
+          const SizedBox(width: 8),
+          _recurrenceChip(l10n.monthly, RecurringInterval.monthly, colors),
+        ],
+      ),
     );
   }
 
-  Widget _recurrenceChip(String label, RecurringInterval interval) {
+  Widget _recurrenceChip(String label, RecurringInterval interval, AppPalette colors) {
     final selected = _recurringInterval == interval;
-    final primary = Theme.of(context).colorScheme.primary;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : context.appColors.textPrimary)),
+      label: Text(
+        label,
+        style: GoogleFonts.outfit(
+          fontSize: 12,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          color: selected ? Colors.white : colors.textPrimary,
+        ),
+      ),
       selected: selected,
-      selectedColor: primary,
+      selectedColor: colors.fabDark,
+      backgroundColor: colors.scaffoldBg,
+      side: BorderSide(
+        color: selected ? Colors.transparent : colors.border,
+        width: 1,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onSelected: (_) => _setRecurrenceInterval(interval),
       visualDensity: VisualDensity.compact,
     );
   }
 
-  Widget _buildNextOccurrenceDisplay() {
+  Widget _buildNextOccurrenceDisplay(AppPalette colors) {
     final nextDate = AppDateUtils.calculateNextOccurrence(_reminderTime, _recurringInterval);
     if (nextDate == null) return const SizedBox.shrink();
     return Text(
       'Next: ${AppDateUtils.formatReminder(nextDate)}',
-      style: TextStyle(fontSize: 11, color: context.appColors.textSecondary),
+      style: GoogleFonts.outfit(
+        fontSize: 11,
+        color: colors.textSecondary,
+        fontWeight: FontWeight.w400,
+      ),
     );
   }
 
@@ -829,41 +1037,206 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       context: context,
       useRootNavigator: true,
       backgroundColor: sheetColors.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
         return SheetSafeArea(
           includeNavBar: false,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            height: 200,
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6, crossAxisSpacing: 8, mainAxisSpacing: 8),
-              itemCount: colors.length,
-              itemBuilder: (context, index) {
-                final isThemeDefault = colors[index] == AppPalette.themeDefaultNoteColor;
-                final swatchColor = isThemeDefault ? sheetColors.scaffoldBg : Color(colors[index]);
-                final isSelected = _selectedColor == colors[index];
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedColor = colors[index]);
-                    Navigator.pop(context);
-                  },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
                   child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: swatchColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? sheetColors.fabDark : sheetColors.border,
-                        width: isSelected ? 2 : 1,
-                      ),
+                      color: sheetColors.textSecondary.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    child: isThemeDefault ? Icon(Icons.brightness_auto, size: 18, color: sheetColors.textSecondary) : null,
                   ),
-                );
-              },
+                ),
+                Text(
+                  'Note Color',
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: sheetColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 6,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: colors.length,
+                  itemBuilder: (context, index) {
+                    final isThemeDefault = colors[index] == AppPalette.themeDefaultNoteColor;
+                    final swatchColor = isThemeDefault ? sheetColors.scaffoldBg : Color(colors[index]);
+                    final isSelected = _selectedColor == colors[index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedColor = colors[index]);
+                        Navigator.pop(context);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        decoration: BoxDecoration(
+                          color: swatchColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? sheetColors.fabDark : sheetColors.border,
+                            width: isSelected ? 2.5 : 1,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: sheetColors.fabDark.withValues(alpha: 0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Center(
+                          child: isThemeDefault
+                              ? Icon(
+                                  Icons.brightness_auto,
+                                  size: 16,
+                                  color: sheetColors.textSecondary,
+                                )
+                              : (isSelected
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      size: 16,
+                                      color: ThemeData.estimateBrightnessForColor(Color(colors[index])) == Brightness.dark
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    )
+                                  : null),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _EditorActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String tooltip;
+  final bool isActive;
+  final Color? activeColor;
+  final Color? activeIconColor;
+  final Widget? customIcon;
+
+  const _EditorActionButton({
+    required this.icon,
+    required this.onPressed,
+    required this.tooltip,
+    this.isActive = false,
+    this.activeColor,
+    this.activeIconColor,
+    this.customIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final Color bgColor;
+    final Color borderColor;
+    final Color iconColor;
+
+    if (isActive) {
+      final base = activeColor ?? colors.fabDark;
+      bgColor = base.withValues(alpha: 0.16);
+      borderColor = base.withValues(alpha: 0.38);
+      iconColor = activeIconColor ?? base;
+    } else {
+      bgColor = colors.textSecondary.withValues(alpha: 0.08);
+      borderColor = colors.border.withValues(alpha: 0.6);
+      iconColor = colors.textSecondary;
+    }
+
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            alignment: Alignment.center,
+            child: customIcon ?? Icon(icon, size: 19, color: iconColor),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditorPrimaryButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String tooltip;
+
+  const _EditorPrimaryButton({
+    required this.icon,
+    required this.onPressed,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.actionSave,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.actionSave.withValues(alpha: 0.28),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 20, color: Colors.white),
+          ),
+        ),
+      ),
     );
   }
 }
