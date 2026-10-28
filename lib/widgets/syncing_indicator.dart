@@ -20,7 +20,7 @@ class _SyncingIndicatorState extends State<SyncingIndicator>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..repeat();
+    )..repeat(reverse: false);
   }
 
   @override
@@ -33,7 +33,10 @@ class _SyncingIndicatorState extends State<SyncingIndicator>
   Widget build(BuildContext context) {
     return RotationTransition(
       turns: _controller,
-      child: Icon(Icons.sync, color: widget.color, size: widget.size),
+      child: Transform.scale(
+        scaleX: -1,
+        child: Icon(Icons.sync, color: widget.color, size: widget.size),
+      )
     );
   }
 }
