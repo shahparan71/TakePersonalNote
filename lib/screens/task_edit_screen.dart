@@ -12,7 +12,6 @@ import '../theme/app_colors.dart';
 import '../widgets/design_widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/date_utils.dart';
-import '../services/google_drive_sync_service.dart';
 import '../utils/url_utils.dart';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +53,12 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   int? _customIntervalValue;
   CustomIntervalUnit? _customIntervalUnit;
   bool _isSaving = false;
+  late final String _initialDescription;
+  late final DateTime? _initialReminderTime;
+  late final bool _initialIsRecurring;
+  late final RecurringInterval _initialRecurringInterval;
+  late final int? _initialCustomIntervalValue;
+  late final CustomIntervalUnit? _initialCustomIntervalUnit;
 
   /// The URL currently detected in the text selection (null = none).
   String? _selectedUrl;
@@ -73,6 +78,12 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     if (_isRecurring && _recurringInterval == RecurringInterval.none) {
       _recurringInterval = RecurringInterval.daily;
     }
+    _initialDescription = _descController.text;
+    _initialReminderTime = _reminderTime;
+    _initialIsRecurring = _isRecurring;
+    _initialRecurringInterval = _recurringInterval;
+    _initialCustomIntervalValue = _customIntervalValue;
+    _initialCustomIntervalUnit = _customIntervalUnit;
 
     _descController.addListener(_onTextChanged);
   }
@@ -134,6 +145,7 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
   Future<bool> _saveTaskOnly() async {
     if (_descController.text.trim().isEmpty) return false;
     if (_isSaving) return false;
+    if (widget.task != null && !_hasTaskChanges) return false;
     setState(() => _isSaving = true);
 
     final provider = Provider.of<TaskProvider>(context, listen: false);
@@ -177,14 +189,19 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
             widget.task!.id, generatedTitle);
       }
 
-      if (GoogleDriveSyncService().isSignedIn) {
-        GoogleDriveSyncService().syncToDrive();
-      }
       return true;
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  bool get _hasTaskChanges =>
+      _descController.text != _initialDescription ||
+      _reminderTime != _initialReminderTime ||
+      _isRecurring != _initialIsRecurring ||
+      _recurringInterval != _initialRecurringInterval ||
+      _customIntervalValue != _initialCustomIntervalValue ||
+      _customIntervalUnit != _initialCustomIntervalUnit;
 
 
   void _showSchedulingFeedback(bool success) {

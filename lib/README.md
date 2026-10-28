@@ -13,7 +13,7 @@ Client-side application codebase for Take Personal Note. UI is built with Flutte
 | `services/` | Business logic & providers: SQLite DB, state providers, notifications, security, Google Drive sync | [database_service.dart](services/database_service.dart) |
 | `theme/` | Color constants (`AppColors`) and Light, Dark, Eye Warming ThemeData (`AppTheme`) | [app_theme.dart](theme/app_theme.dart) |
 | `utils/` | Helpers: URL extraction & deep-linking, checklist parsing, date formatting, custom text controller | [url_utils.dart](utils/url_utils.dart) |
-| `widgets/` | Reusable UI components: cards, dialogs, banners, bottom sheet safe area | [design_widgets.dart](widgets/design_widgets.dart) |
+| `widgets/` | Reusable UI components: cards, dialogs, banners, bottom sheet safe area, sync indicator | [design_widgets.dart](widgets/design_widgets.dart), [syncing_indicator.dart](widgets/syncing_indicator.dart) |
 
 ### Area rules
 - **State mutation**: UI widgets must not modify raw database directly; dispatch changes through `NoteProvider`, `TaskProvider`, or `FolderProvider`.

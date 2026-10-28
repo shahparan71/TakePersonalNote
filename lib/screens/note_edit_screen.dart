@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:take_personal_note/models/note.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
-import 'package:take_personal_note/services/google_drive_sync_service.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -39,6 +38,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
+  late final String _initialContent;
   final FocusNode _contentFocusNode = FocusNode();
   final RegExp _phoneNumberRegex = RegExp(r'\b\d{10,}\b');
   final RegExp _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
@@ -75,6 +75,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       document: doc,
       selection: const TextSelection.collapsed(offset: 0),
     );
+    _initialContent = _currentContent;
 
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
     _isPinned = widget.note?.isPinned ?? false;
@@ -112,7 +113,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   void _saveNote() {
-    if (_isEmpty) return;
+    if (widget.note == null && _isEmpty) return;
+    if (widget.note != null && !_hasNoteChanges) return;
 
     final provider = Provider.of<NoteProvider>(context, listen: false);
     final now = DateTime.now();
@@ -147,9 +149,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             recurrence: _isRecurring ? _recurringInterval : RecurringInterval.none,
           );
         }
-        if (GoogleDriveSyncService().isSignedIn) {
-          GoogleDriveSyncService().syncToDrive();
-        }
       });
     } else {
       final updatedNote = widget.note!.copyWith(
@@ -178,11 +177,20 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         } else if (widget.note!.reminderTime != null) {
           await NotificationService().cancelNotification(noteId);
         }
-        if (GoogleDriveSyncService().isSignedIn) {
-          GoogleDriveSyncService().syncToDrive();
-        }
       });
     }
+  }
+
+  bool get _hasNoteChanges {
+    final note = widget.note!;
+    return _titleController.text != note.title ||
+        _currentContent != _initialContent ||
+        _selectedColor != note.color ||
+        _isPinned != note.isPinned ||
+        note.type != NoteType.text ||
+        _reminderTime != note.reminderTime ||
+        _isRecurring != note.isRecurring ||
+        _recurringInterval != note.recurringInterval;
   }
 
   Future<void> _selectReminder() async {

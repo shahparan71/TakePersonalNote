@@ -10,6 +10,7 @@ import 'package:take_personal_note/services/tab_provider.dart';
 import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/widgets/syncing_indicator.dart';
 import 'package:take_personal_note/utils/drive_sync_utils.dart';
 import 'package:take_personal_note/services/preference_service.dart';
 import 'package:take_personal_note/services/folder_provider.dart';
@@ -152,7 +153,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         return const Center(
                           child: Padding(
                             padding: EdgeInsets.only(right: 8.0, left: 8.0),
-                            child: _SyncingIcon(),
+                            child: SyncingIndicator(size: 24),
                           ),
                         );
                       }
@@ -543,7 +544,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-
 class _StatTile extends StatelessWidget {
   final String label;
   final String value;
@@ -585,33 +585,3 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _SyncingIcon extends StatefulWidget {
-  const _SyncingIcon();
-
-  @override
-  State<_SyncingIcon> createState() => _SyncingIconState();
-}
-
-class _SyncingIconState extends State<_SyncingIcon> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _controller,
-      child: const Icon(Icons.sync, color: Colors.green, size: 24),
-    );
-  }
-}

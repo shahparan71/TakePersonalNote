@@ -15,6 +15,7 @@ import 'package:take_personal_note/utils/note_utils.dart';
 import 'package:take_personal_note/widgets/delete_animation_dialog.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
+import 'package:take_personal_note/widgets/syncing_indicator.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -1101,11 +1102,7 @@ class _NotesScreenState extends State<NotesScreen> {
             if (syncService.isSyncing) {
               return const Padding(
                 padding: EdgeInsets.only(right: 8.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                child: SyncingIndicator(),
               );
             }
 

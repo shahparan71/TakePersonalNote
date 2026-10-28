@@ -8,6 +8,7 @@ import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/delete_animation_dialog.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:take_personal_note/widgets/design_widgets.dart';
+import 'package:take_personal_note/widgets/syncing_indicator.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
 
 import '../models/task.dart';
@@ -406,11 +407,7 @@ class _TasksScreenState extends State<TasksScreen> {
             if (syncService.isSyncing) {
               return const Padding(
                 padding: EdgeInsets.only(right: 8.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                child: SyncingIndicator(),
               );
             }
 
