@@ -1,8 +1,8 @@
-import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:take_personal_note/models/note.dart';
 import 'package:take_personal_note/routes/app_routes.dart';
 import 'package:take_personal_note/services/folder_provider.dart';
@@ -115,7 +115,8 @@ class _NotesScreenState extends State<NotesScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _buildSyncIcon(),
-                          Text(AppLocalizations.of(context)!.notesTitle, style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
+                          Text(AppLocalizations.of(context)!.notesTitle,
+                              style: GoogleFonts.caveat(fontWeight: FontWeight.w600, fontSize: 32)),
                         ],
                       );
                     },
@@ -137,7 +138,10 @@ class _NotesScreenState extends State<NotesScreen> {
                   onPressed: _toggleViewMode,
                   tooltip: _isListView ? AppLocalizations.of(context)!.cardViewTooltip : AppLocalizations.of(context)!.listViewTooltip,
                 ),
-                IconButton(icon: const Icon(Icons.swap_vert), onPressed: () => _showSortDialog(context), tooltip: AppLocalizations.of(context)!.sortTooltip),
+                IconButton(
+                    icon: const Icon(Icons.swap_vert),
+                    onPressed: () => _showSortDialog(context),
+                    tooltip: AppLocalizations.of(context)!.sortTooltip),
               ],
             ],
             floating: true,
@@ -158,7 +162,8 @@ class _NotesScreenState extends State<NotesScreen> {
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
                   onChanged: (val) {
-                    Provider.of<NoteProvider>(context, listen: false).fetchNotes(query: val.isEmpty ? null : val, category: _selectedFolder);
+                    Provider.of<NoteProvider>(context, listen: false)
+                        .fetchNotes(query: val.isEmpty ? null : val, category: _selectedFolder);
                   },
                 ),
               ),
@@ -247,9 +252,7 @@ class _NotesScreenState extends State<NotesScreen> {
           decoration: BoxDecoration(
             color: selected
                 ? const Color(0xFFF6C844)
-                : (Theme.of(context).brightness == Brightness.dark
-                    ? colors.cardSurface
-                    : const Color(0xFFF1F5F9)),
+                : (Theme.of(context).brightness == Brightness.dark ? colors.cardSurface : const Color(0xFFF1F5F9)),
             borderRadius: BorderRadius.circular(20),
           ),
           alignment: Alignment.center,
@@ -275,9 +278,7 @@ class _NotesScreenState extends State<NotesScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? colors.cardSurface
-                : const Color(0xFFF1F5F9),
+            color: Theme.of(context).brightness == Brightness.dark ? colors.cardSurface : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(
@@ -523,9 +524,7 @@ class _NotesScreenState extends State<NotesScreen> {
             const SizedBox(width: 3),
             Flexible(
               child: Text(
-                reminderExpired
-                    ? 'Expired'
-                    : AppDateUtils.formatReminder(_displayNoteReminderTime(note)!),
+                reminderExpired ? 'Expired' : AppDateUtils.formatReminder(_displayNoteReminderTime(note)!),
                 style: GoogleFonts.outfit(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -542,9 +541,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   bool _isNoteReminderExpired(MyNote note) {
-    return note.reminderTime != null &&
-        !note.isRecurring &&
-        note.reminderTime!.isBefore(DateTime.now());
+    return note.reminderTime != null && !note.isRecurring && note.reminderTime!.isBefore(DateTime.now());
   }
 
   DateTime? _displayNoteReminderTime(MyNote note) {
@@ -848,9 +845,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 const SizedBox(width: 3),
                 Expanded(
                   child: Text(
-                    reminderExpired
-                        ? 'Expired'
-                        : AppDateUtils.formatReminder(reminderTime!),
+                    reminderExpired ? 'Expired' : AppDateUtils.formatReminder(reminderTime!),
                     style: TextStyle(fontSize: 10, color: reminderExpired ? Colors.red : Colors.amber.shade800),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -934,7 +929,8 @@ class _NotesScreenState extends State<NotesScreen> {
               title: Text(AppLocalizations.of(context)!.removeFromFolder),
               onTap: () => Navigator.pop(context, ''),
             ),
-            ...folders.map((f) => ListTile(leading: const Icon(Icons.folder_outlined), title: Text(f), onTap: () => Navigator.pop(context, f))),
+            ...folders
+                .map((f) => ListTile(leading: const Icon(Icons.folder_outlined), title: Text(f), onTap: () => Navigator.pop(context, f))),
             const SizedBox(height: 8),
           ],
         ),
