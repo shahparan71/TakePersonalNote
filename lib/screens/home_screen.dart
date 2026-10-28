@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:take_personal_note/services/note_provider.dart';
+import 'package:take_personal_note/services/notification_service.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
 import 'package:take_personal_note/services/tab_provider.dart';
@@ -62,6 +63,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().handlePendingNotification();
+    });
     Future.microtask(() {
       Provider.of<NoteProvider>(context, listen: false).cleanOldTrash();
       _triggerDriveAutoSync();

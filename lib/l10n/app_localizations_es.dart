@@ -134,6 +134,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noteReminder => 'Recordatorio de Nota';
 
   @override
+  String get expired => 'Caducado';
+
+  @override
   String get repeat => 'Repetir';
 
   @override

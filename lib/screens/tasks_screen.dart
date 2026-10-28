@@ -289,8 +289,8 @@ class _TasksScreenState extends State<TasksScreen> {
     final now = DateTime.now();
     final created = task.createdAt;
     final String formatted = created.year == now.year
-        ? DateFormat('MMM d').format(created)
-        : DateFormat('MMM d, yyyy').format(created);
+      ? DateFormat('MMM d, h:mm a').format(created)
+      : DateFormat('MMM d, yyyy, h:mm a').format(created);
 
     return Padding(
       padding: const EdgeInsets.only(top: 4),
@@ -323,7 +323,7 @@ class _TasksScreenState extends State<TasksScreen> {
           Icon(Icons.alarm, size: 12, color: isExpired ? Colors.red : Colors.blue),
           const SizedBox(width: 4),
           Text(
-            isExpired ? 'Expired' : AppDateUtils.formatReminder(displayTime!),
+            isExpired ? 'Expired'  : AppDateUtils.formatReminder(displayTime!),
             style: TextStyle(fontSize: 11, color: isExpired ? Colors.red : Colors.blue),
           ),
         ],

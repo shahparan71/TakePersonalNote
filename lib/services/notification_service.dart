@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
 import '../main.dart';
-import '../screens/note_edit_screen.dart';
-import '../screens/task_edit_screen.dart';
 import '../models/recurring_interval.dart';
 import '../models/task.dart';
+import '../routes/app_routes.dart';
 import '../utils/date_utils.dart';
 import 'database_service.dart';
 import 'notification_channels.dart';
@@ -32,6 +31,7 @@ class NotificationService {
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  String? _pendingNotificationPayload;
 
   Future<void> init() async {
     tz.initializeTimeZones();
@@ -56,39 +56,57 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       settings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        final payload = response.payload;
-        if (payload != null && payload.isNotEmpty) {
-          final parts = payload.split('_');
-          if (parts.length == 2) {
-            final type = parts[0];
-            final id = int.tryParse(parts[1]);
-            if (id != null) {
-              if (type == 'note') {
-                final note = await DatabaseService().getNoteById(id);
-                if (note != null) {
-                  navigatorKey.currentState?.push(
-                    MaterialPageRoute(builder: (_) => NoteEditScreen(note: note)),
-                  );
-                }
-              } else if (type == 'task') {
-                final task = await DatabaseService().getTaskById(id);
-                if (task != null) {
-                  navigatorKey.currentState?.push(
-                    MaterialPageRoute(builder: (_) => TaskEditScreen(task: task)),
-                  );
-                }
-              }
-            }
-          }
-        }
+        await _openNotificationPayload(response.payload);
       },
     );
+
+    final launchDetails = await _notificationsPlugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      _pendingNotificationPayload = launchDetails?.notificationResponse?.payload;
+    }
 
     if (Platform.isAndroid) {
       await ensureReminderChannel(_notificationsPlugin);
       final androidImplementation = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       if (androidImplementation != null) {
         await androidImplementation.requestNotificationsPermission();
+      }
+    }
+  }
+
+  Future<void> handlePendingNotification() async {
+    final payload = _pendingNotificationPayload;
+    _pendingNotificationPayload = null;
+    await _openNotificationPayload(payload);
+  }
+
+  Future<void> _openNotificationPayload(String? payload) async {
+    if (payload == null || payload.isEmpty) return;
+    final parts = payload.split('_');
+    if (parts.length != 2) return;
+    final id = int.tryParse(parts[1]);
+    if (id == null) return;
+
+    final db = DatabaseService();
+    if (parts[0] == 'note') {
+      final note = await db.getNoteById(id);
+      if (note != null) {
+        final navigator = navigatorKey.currentState;
+        if (navigator == null) {
+          _pendingNotificationPayload = payload;
+        } else {
+          navigator.pushNamed(AppRoutes.noteEdit, arguments: {'note': note});
+        }
+      }
+    } else if (parts[0] == 'task') {
+      final task = await db.getTaskById(id);
+      if (task != null) {
+        final navigator = navigatorKey.currentState;
+        if (navigator == null) {
+          _pendingNotificationPayload = payload;
+        } else {
+          navigator.pushNamed(AppRoutes.taskEdit, arguments: {'task': task});
+        }
       }
     }
   }

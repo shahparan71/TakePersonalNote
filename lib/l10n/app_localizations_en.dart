@@ -134,6 +134,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteReminder => 'Note Reminder';
 
   @override
+  String get expired => 'Expired';
+
+  @override
   String get repeat => 'Repeat';
 
   @override

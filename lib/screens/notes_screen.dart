@@ -440,8 +440,8 @@ class _NotesScreenState extends State<NotesScreen> {
     );
     final hasReminder = note.reminderTime != null;
     final hasCategory = note.category != null && note.category!.isNotEmpty;
-    final reminderPast = hasReminder && note.reminderTime!.isBefore(DateTime.now());
-    final reminderColor = reminderPast ? Colors.red.shade400 : Colors.amber.shade800;
+    final reminderExpired = _isNoteReminderExpired(note);
+    final reminderColor = reminderExpired ? Colors.red.shade400 : Colors.amber.shade800;
 
     // When expire/reminder date is NOT available:
     // Display single row with folder name to the left of created date.
@@ -522,7 +522,9 @@ class _NotesScreenState extends State<NotesScreen> {
             const SizedBox(width: 3),
             Flexible(
               child: Text(
-                AppDateUtils.formatReminder(note.reminderTime!),
+                reminderExpired
+                    ? 'Expired'
+                    : AppDateUtils.formatReminder(_displayNoteReminderTime(note)!),
                 style: GoogleFonts.outfit(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -536,6 +538,27 @@ class _NotesScreenState extends State<NotesScreen> {
         ),
       ],
     );
+  }
+
+  bool _isNoteReminderExpired(MyNote note) {
+    return note.reminderTime != null &&
+        !note.isRecurring &&
+        note.reminderTime!.isBefore(DateTime.now());
+  }
+
+  DateTime? _displayNoteReminderTime(MyNote note) {
+    final reminderTime = note.reminderTime;
+    if (reminderTime == null) return null;
+    if (note.isRecurring && reminderTime.isBefore(DateTime.now())) {
+      return AppDateUtils.calculateNextOccurrence(
+            reminderTime,
+            note.recurringInterval,
+            customValue: note.customIntervalValue,
+            customUnit: note.customIntervalUnit,
+          ) ??
+          reminderTime;
+    }
+    return reminderTime;
   }
 
   Widget _buildNoteTrailingMenu(MyNote note, AppPalette colors) {
@@ -792,21 +815,47 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Widget _buildNoteFooter(MyNote note) {
     final colors = context.appColors;
+    final reminderExpired = _isNoteReminderExpired(note);
+    final reminderTime = _displayNoteReminderTime(note);
     return Padding(
       padding: const EdgeInsets.only(top: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(AppDateUtils.formatNoteDate(note.updatedAt), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
-          if (note.category != null && note.category!.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary),
-            const SizedBox(width: 2),
-            Flexible(
-              child: Text(
-                note.category!,
-                style: TextStyle(fontSize: 10, color: colors.textSecondary),
-                overflow: TextOverflow.ellipsis,
-              ),
+          Row(
+            children: [
+              Text(AppDateUtils.formatNoteDate(note.updatedAt), style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+              if (note.category != null && note.category!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.folder_outlined, size: 11, color: colors.textSecondary),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(
+                    note.category!,
+                    style: TextStyle(fontSize: 10, color: colors.textSecondary),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (note.reminderTime != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.notifications_active_outlined, size: 12, color: reminderExpired ? Colors.red : Colors.amber.shade800),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    reminderExpired
+                        ? 'Expired'
+                        : AppDateUtils.formatReminder(reminderTime!),
+                    style: TextStyle(fontSize: 10, color: reminderExpired ? Colors.red : Colors.amber.shade800),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ],
         ],
@@ -1025,7 +1074,7 @@ class _NotesScreenState extends State<NotesScreen> {
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
             ),
-            ListTile(title: Text(AppLocalizations.of(context)!.sortByDate), onTap: () => _sort('updatedAt DESC')),
+            ListTile(title: Text(AppLocalizations.of(context)!.sortByDate), onTap: () => _sort('isPinned DESC, createdAt DESC')),
             ListTile(title: Text(AppLocalizations.of(context)!.sortByTitle), onTap: () => _sort('title ASC')),
             ListTile(title: Text(AppLocalizations.of(context)!.sortByColor), onTap: () => _sort('color ASC')),
           ],

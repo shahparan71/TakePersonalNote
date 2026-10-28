@@ -340,6 +340,12 @@ abstract class AppLocalizations {
   /// **'Note Reminder'**
   String get noteReminder;
 
+  /// No description provided for @expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get expired;
+
   /// No description provided for @repeat.
   ///
   /// In en, this message translates to:

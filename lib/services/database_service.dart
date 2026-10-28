@@ -112,7 +112,7 @@ class DatabaseService {
       'notes',
       where: where,
       whereArgs: whereArgs,
-      orderBy: orderBy ?? 'isPinned DESC, updatedAt DESC',
+      orderBy: orderBy ?? 'isPinned DESC, createdAt DESC',
     );
     return List.generate(maps.length, (i) => MyNote.fromMap(maps[i]));
   }
