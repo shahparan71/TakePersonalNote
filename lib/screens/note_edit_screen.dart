@@ -38,6 +38,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   late ScrollController _scrollController;
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
+  bool _isClosing = false;
   late String? _selectedCategory;
   DateTime? _reminderTime;
   bool _isRecurring = false;
@@ -95,7 +96,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
     if (widget.note == null) {
       Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) _contentFocusNode.requestFocus();
+        if (mounted && !_isClosing) _contentFocusNode.requestFocus();
       });
     }
   }
@@ -414,6 +415,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        _isClosing = true;
+        _contentFocusNode.unfocus();
         _saveNote();
         if (mounted) {
           Navigator.pop(context, result);
