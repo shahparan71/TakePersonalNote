@@ -760,6 +760,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Widget _buildMetadataRow() {
     final colors = context.appColors;
     final l10n = AppLocalizations.of(context)!;
+    final folderLabel = _selectedCategory ?? l10n.noFolder;
+    final shortFolderLabel = folderLabel.characters.length > 5 ? '${folderLabel.characters.take(5)}..' : folderLabel;
     final dateStr = DateFormat('MMM d, yyyy • h:mm a').format(widget.note?.updatedAt ?? DateTime.now());
     final charCount = _contentController.document.toPlainText().trim().length;
 
@@ -769,18 +771,18 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         children: [
           Icon(
             Icons.access_time_rounded,
-            size: 13,
+            size: 11,
             color: colors.textSecondary.withValues(alpha: 0.7),
           ),
           const SizedBox(width: 5),
           Flexible(
-            flex: 3,
+            flex: 5,
             child: Text(
               dateStr,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.outfit(
-                fontSize: 12,
+                fontSize: 11,
                 color: colors.textSecondary.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w500,
               ),
@@ -791,18 +793,18 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             '•',
             style: TextStyle(
               color: colors.textSecondary.withValues(alpha: 0.5),
-              fontSize: 12,
+              fontSize: 11,
             ),
           ),
           const SizedBox(width: 8),
           Flexible(
             flex: 2,
             child: Text(
-              '$charCount characters',
+              '$charCount Charac',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.outfit(
-                fontSize: 12,
+                fontSize: 11,
                 color: colors.textSecondary.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w500,
               ),
@@ -860,7 +862,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
-                      _selectedCategory ?? l10n.noFolder,
+                      shortFolderLabel.length > 5
+                          ? '${shortFolderLabel.substring(0, 5)}...'
+                          : shortFolderLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.outfit(
