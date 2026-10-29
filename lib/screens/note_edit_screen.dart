@@ -768,6 +768,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Icon(
             Icons.access_time_rounded,
@@ -830,7 +831,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   child: Text(l10n.noFolder),
                 ),
                 ...folders.map(
-                  (folder) => PopupMenuItem<Object>(
+                      (folder) => PopupMenuItem<Object>(
                     value: folder,
                     child: Text(folder, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),

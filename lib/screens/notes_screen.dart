@@ -582,6 +582,25 @@ class _NotesScreenState extends State<NotesScreen> {
               ),
             );
           }
+        } else if (value == 'move') {
+          await _moveToFolder(note);
+        } else if (value == 'pin') {
+          await provider.updateNote(note.copyWith(isPinned: !note.isPinned, updatedAt: DateTime.now()));
+          _refreshNotes();
+        } else if (value == 'hide') {
+          await provider.hideNote(note);
+          _refreshNotes();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Note hidden. Tap the hidden icon in the app bar to view it.'),
+                action: SnackBarAction(
+                  label: 'View',
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.hiddenNotes).then((_) => _refreshNotes()),
+                ),
+              ),
+            );
+          }
         } else if (value == 'delete') {
           final confirmed = await showDialog<bool>(
             context: context,
@@ -632,6 +651,45 @@ class _NotesScreenState extends State<NotesScreen> {
               const SizedBox(width: 12),
               Text(
                 AppLocalizations.of(ctx)!.archive,
+                style: GoogleFonts.outfit(color: colors.textPrimary, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'move',
+          child: Row(
+            children: [
+              Icon(Icons.drive_file_move_outline, size: 20, color: colors.textPrimary),
+              const SizedBox(width: 12),
+              Text(
+                AppLocalizations.of(ctx)!.move,
+                style: GoogleFonts.outfit(color: colors.textPrimary, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'pin',
+          child: Row(
+            children: [
+              Icon(Icons.push_pin_outlined, size: 20, color: colors.textPrimary),
+              const SizedBox(width: 12),
+              Text(
+                AppLocalizations.of(ctx)!.pin,
+                style: GoogleFonts.outfit(color: colors.textPrimary, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'hide',
+          child: Row(
+            children: [
+              Icon(Icons.visibility_off_outlined, size: 20, color: colors.textPrimary),
+              const SizedBox(width: 12),
+              Text(
+                AppLocalizations.of(ctx)!.hide,
                 style: GoogleFonts.outfit(color: colors.textPrimary, fontSize: 14),
               ),
             ],
@@ -905,11 +963,11 @@ class _NotesScreenState extends State<NotesScreen> {
     return provider.notes.where((n) => n.id != null && _selectedNoteIds.contains(n.id)).toList();
   }
 
-  Future<void> _moveToFolder() async {
+  Future<void> _moveToFolder([MyNote? note]) async {
     final provider = Provider.of<NoteProvider>(context, listen: false);
     final folderProvider = Provider.of<FolderProvider>(context, listen: false);
     final folders = folderProvider.folders;
-    final notes = _getSelectedNotes(provider);
+    final notes = note == null ? _getSelectedNotes(provider) : [note];
     if (notes.isEmpty) return;
 
     final selected = await showModalBottomSheet<String>(
@@ -941,7 +999,7 @@ class _NotesScreenState extends State<NotesScreen> {
     for (final note in notes) {
       await provider.updateNote(note.copyWith(category: selected.isEmpty ? null : selected, updatedAt: DateTime.now()));
     }
-    _exitSelectionMode();
+    if (note == null) _exitSelectionMode();
     _refreshNotes();
   }
 
