@@ -179,6 +179,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get all => 'All';
 
   @override
+  String get folder => 'Folder';
+
+  @override
+  String get noFolder => 'No folder';
+
+  @override
+  String get addFolder => 'Add folder';
+
+  @override
   String get newFolder => 'New';
 
   @override

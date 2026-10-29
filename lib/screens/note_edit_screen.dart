@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:take_personal_note/l10n/app_localizations.dart';
 import 'package:take_personal_note/models/note.dart';
 import 'package:take_personal_note/models/recurring_interval.dart';
+import 'package:take_personal_note/services/folder_provider.dart';
 import 'package:take_personal_note/services/note_provider.dart';
 import 'package:take_personal_note/services/notification_service.dart';
 import 'package:take_personal_note/theme/app_colors.dart';
@@ -17,6 +18,8 @@ import 'package:take_personal_note/utils/date_utils.dart';
 import 'package:take_personal_note/widgets/sheet_safe_area.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:take_personal_note/utils/url_utils.dart';
+
+enum _FolderAction { noFolder, addFolder }
 
 class NoteEditScreen extends StatefulWidget {
   final MyNote? note;
@@ -35,6 +38,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   late ScrollController _scrollController;
   int _selectedColor = 0xFFFFFFFF;
   bool _isPinned = false;
+  late String? _selectedCategory;
   DateTime? _reminderTime;
   bool _isRecurring = false;
   RecurringInterval _recurringInterval = RecurringInterval.none;
@@ -78,6 +82,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _initialContent = _currentContent;
 
     _selectedColor = widget.note?.color ?? 0xFFFFFFFF;
+    _selectedCategory = widget.note?.category ?? widget.initialCategory;
     _isPinned = widget.note?.isPinned ?? false;
     _reminderTime = widget.note?.reminderTime;
     _isRecurring = widget.note?.isRecurring ?? false;
@@ -131,7 +136,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         // Always text now
         color: _selectedColor,
         isPinned: _isPinned,
-        category: widget.initialCategory,
+        category: _selectedCategory,
         reminderTime: _reminderTime,
         isRecurring: _reminderTime == null ? false : _isRecurring,
         recurringInterval: _reminderTime == null ? RecurringInterval.none : _recurringInterval,
@@ -157,7 +162,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         color: _selectedColor,
         isPinned: _isPinned,
         type: NoteType.text,
-        category: widget.note!.category,
+        category: _selectedCategory,
         reminderTime: _reminderTime,
         isRecurring: _reminderTime == null ? false : _isRecurring,
         recurringInterval: _reminderTime == null ? RecurringInterval.none : _recurringInterval,
@@ -186,6 +191,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return _titleController.text != note.title ||
         _currentContent != _initialContent ||
         _selectedColor != note.color ||
+        _selectedCategory != note.category ||
         _isPinned != note.isPinned ||
         note.type != NoteType.text ||
         _reminderTime != note.reminderTime ||
@@ -750,7 +756,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Widget _buildMetadataRow() {
     final colors = context.appColors;
-    final category = widget.note?.category ?? widget.initialCategory;
+    final l10n = AppLocalizations.of(context)!;
     final dateStr = DateFormat('MMM d, yyyy • h:mm a').format(widget.note?.updatedAt ?? DateTime.now());
     final charCount = _contentController.document.toPlainText().trim().length;
 
@@ -764,12 +770,17 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             color: colors.textSecondary.withValues(alpha: 0.7),
           ),
           const SizedBox(width: 5),
-          Text(
-            dateStr,
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              color: colors.textSecondary.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
+          Flexible(
+            flex: 3,
+            child: Text(
+              dateStr,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                color: colors.textSecondary.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -781,17 +792,58 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            '$charCount characters',
-            style: GoogleFonts.outfit(
-              fontSize: 12,
-              color: colors.textSecondary.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w500,
+          Flexible(
+            flex: 2,
+            child: Text(
+              '$charCount characters',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.outfit(
+                fontSize: 12,
+                color: colors.textSecondary.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          if (category != null && category.trim().isNotEmpty) ...[
-            const Spacer(),
-            Container(
+          const Spacer(),
+          const SizedBox(width: 8),
+          PopupMenuButton<Object>(
+            tooltip: l10n.folder,
+            onSelected: (selection) async {
+              if (selection == _FolderAction.addFolder) {
+                final folder = await _showCreateFolderDialog();
+                if (folder != null && mounted) setState(() => _selectedCategory = folder);
+                return;
+              }
+              setState(() => _selectedCategory = selection == _FolderAction.noFolder ? null : selection as String);
+            },
+            itemBuilder: (context) {
+              final folders = Provider.of<FolderProvider>(context, listen: false).folders;
+              return [
+                PopupMenuItem<Object>(
+                  value: _FolderAction.noFolder,
+                  child: Text(l10n.noFolder),
+                ),
+                ...folders.map(
+                  (folder) => PopupMenuItem<Object>(
+                    value: folder,
+                    child: Text(folder, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+                PopupMenuItem<Object>(
+                  value: _FolderAction.addFolder,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.add, size: 18),
+                      const SizedBox(width: 8),
+                      Text(l10n.addFolder),
+                    ],
+                  ),
+                ),
+              ];
+            },
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 132),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: colors.cardSurface,
@@ -801,27 +853,61 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.folder_outlined,
-                    size: 12,
-                    color: colors.textSecondary,
-                  ),
+                  Icon(Icons.folder_outlined, size: 12, color: colors.textSecondary),
                   const SizedBox(width: 4),
-                  Text(
-                    category,
-                    style: GoogleFonts.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: colors.textSecondary,
+                  Flexible(
+                    child: Text(
+                      _selectedCategory ?? l10n.noFolder,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textSecondary,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.arrow_drop_down, size: 16, color: colors.textSecondary),
                 ],
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
+  }
+
+  Future<String?> _showCreateFolderDialog() async {
+    final controller = TextEditingController();
+    final folderName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.newFolderTitle),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: AppLocalizations.of(context)!.folderNameHint),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) Navigator.pop(dialogContext, name);
+            },
+            child: Text(AppLocalizations.of(context)!.create),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (folderName == null || !mounted) return null;
+    await Provider.of<FolderProvider>(context, listen: false).addFolder(folderName);
+    return folderName;
   }
 
   Widget _buildReminderCard(AppPalette colors) {

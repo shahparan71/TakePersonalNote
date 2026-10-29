@@ -179,6 +179,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get all => 'Todo';
 
   @override
+  String get folder => 'Carpeta';
+
+  @override
+  String get noFolder => 'Sin carpeta';
+
+  @override
+  String get addFolder => 'Agregar carpeta';
+
+  @override
   String get newFolder => 'Nuevo';
 
   @override

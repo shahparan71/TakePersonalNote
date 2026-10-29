@@ -180,6 +180,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get all => 'Tout';
 
   @override
+  String get folder => 'Dossier';
+
+  @override
+  String get noFolder => 'Aucun dossier';
+
+  @override
+  String get addFolder => 'Ajouter un dossier';
+
+  @override
   String get newFolder => 'Nouveau';
 
   @override

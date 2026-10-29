@@ -430,6 +430,24 @@ abstract class AppLocalizations {
   /// **'All'**
   String get all;
 
+  /// No description provided for @folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get folder;
+
+  /// No description provided for @noFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'No folder'**
+  String get noFolder;
+
+  /// No description provided for @addFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add folder'**
+  String get addFolder;
+
   /// No description provided for @newFolder.
   ///
   /// In en, this message translates to:
