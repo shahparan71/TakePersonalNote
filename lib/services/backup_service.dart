@@ -28,8 +28,26 @@ class BackupService {
     return BackupImportResult(
       notesCount: noteMaps.length,
       tasksCount: taskMaps.length,
-      folders: (decoded['folders'] as List<dynamic>?)?.cast<String>() ?? [],
+      folders: foldersFromBackup(decoded),
     );
+  }
+
+  static List<String> foldersFromBackup(Map<String, dynamic> decoded) {
+    final folders = <String>{};
+    for (final folder in (decoded['folders'] as List<dynamic>? ?? const [])) {
+      if (folder is String && folder.trim().isNotEmpty) {
+        folders.add(folder.trim());
+      }
+    }
+    for (final note in (decoded['notes'] as List<dynamic>? ?? const [])) {
+      if (note is Map<String, dynamic>) {
+        final category = note['category'];
+        if (category is String && category.trim().isNotEmpty) {
+          folders.add(category.trim());
+        }
+      }
+    }
+    return folders.toList();
   }
 
   Future<String> exportAllToJson({List<String>? folders}) async {
