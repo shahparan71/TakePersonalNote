@@ -249,7 +249,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(FontAwesomeIcons.googleDrive, size: 36, color: googleDriveColor),
+                  child: const FaIcon(FontAwesomeIcons.googleDrive, size: 36, color: googleDriveColor),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -270,7 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: _isFetching ? null : _onFetchFromGoogleDrivePressed,
                     icon: _isFetching
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(FontAwesomeIcons.googleDrive, size: 18),
+                        : const FaIcon(FontAwesomeIcons.googleDrive, size: 18),
                     label: Text(
                       _isFetching ? AppLocalizations.of(context)!.fetching : AppLocalizations.of(context)!.fetchFromGoogleDrive,
                       style: const TextStyle(fontWeight: FontWeight.w600),
@@ -310,7 +310,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: googleDriveColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(FontAwesomeIcons.googleDrive, size: 24, color: googleDriveColor),
+                      child: const FaIcon(FontAwesomeIcons.googleDrive, size: 24, color: googleDriveColor),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -371,7 +371,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(FontAwesomeIcons.googleDrive, size: 36, color: googleDriveColor),
+                    child: const FaIcon(FontAwesomeIcons.googleDrive, size: 36, color: googleDriveColor),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -391,7 +391,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onPressed: _isSyncingToDrive ? null : _syncLocalDataToGoogleDrive,
                       icon: _isSyncingToDrive
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(FontAwesomeIcons.googleDrive, size: 18),
+                          : const FaIcon(FontAwesomeIcons.googleDrive, size: 18),
                       label: Text(
                         _isSyncingToDrive ? AppLocalizations.of(context)!.uploading : AppLocalizations.of(context)!.saveToGoogleDrive,
                         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -584,4 +584,3 @@ class _StatTile extends StatelessWidget {
     );
   }
 }
-

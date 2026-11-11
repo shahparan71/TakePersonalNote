@@ -460,48 +460,48 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
     Color bgColor = colors.fabDark.withValues(alpha: 0.08);
     Color borderColor = colors.fabDark.withValues(alpha: 0.2);
     Color fgColor = colors.fabDark;
-    IconData iconData = Icons.open_in_browser_rounded;
+    FaIconData? faIconData;
     String label = 'Open in browser';
     
     switch (platform) {
       case SocialPlatform.facebook:
         fgColor = const Color(0xFF1877F2);
-        iconData = FontAwesomeIcons.facebook;
+        faIconData = FontAwesomeIcons.facebook;
         label = 'Open in Facebook app';
         break;
       case SocialPlatform.youtube:
         fgColor = const Color(0xFFFF0000);
-        iconData = FontAwesomeIcons.youtube;
+        faIconData = FontAwesomeIcons.youtube;
         label = 'Open in YouTube app';
         break;
       case SocialPlatform.instagram:
         fgColor = const Color(0xFFE1306C);
-        iconData = FontAwesomeIcons.instagram;
+        faIconData = FontAwesomeIcons.instagram;
         label = 'Open in Instagram app';
         break;
       case SocialPlatform.whatsapp:
         fgColor = const Color(0xFF25D366);
-        iconData = FontAwesomeIcons.whatsapp;
+        faIconData = FontAwesomeIcons.whatsapp;
         label = 'Open in WhatsApp';
         break;
       case SocialPlatform.tiktok:
         fgColor = const Color(0xFF000000); // Or white in dark mode
-        iconData = FontAwesomeIcons.tiktok;
+        faIconData = FontAwesomeIcons.tiktok;
         label = 'Open in TikTok app';
         break;
       case SocialPlatform.telegram:
         fgColor = const Color(0xFF0088CC);
-        iconData = FontAwesomeIcons.telegram;
+        faIconData = FontAwesomeIcons.telegram;
         label = 'Open in Telegram';
         break;
       case SocialPlatform.messenger:
         fgColor = const Color(0xFF0084FF);
-        iconData = FontAwesomeIcons.facebookMessenger;
+        faIconData = FontAwesomeIcons.facebookMessenger;
         label = 'Open in Messenger';
         break;
       case SocialPlatform.wechat:
         fgColor = const Color(0xFF07C160);
-        iconData = FontAwesomeIcons.weixin;
+        faIconData = FontAwesomeIcons.weixin;
         label = 'Open in WeChat';
         break;
       case SocialPlatform.other:
@@ -535,10 +535,10 @@ class _TaskEditScreenState extends State<TaskEditScreen> {
           child: Row(
             children: [
               // Icon
-              if (platform != SocialPlatform.other)
-                FaIcon(iconData, size: 20, color: fgColor)
+              if (faIconData != null)
+                FaIcon(faIconData, size: 20, color: fgColor)
               else
-                Icon(iconData, size: 20, color: fgColor),
+                Icon(Icons.open_in_browser_rounded, size: 20, color: fgColor),
               const SizedBox(width: 10),
               // Label + URL preview
               Expanded(
